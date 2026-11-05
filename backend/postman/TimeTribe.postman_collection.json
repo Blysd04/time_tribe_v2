@@ -1,0 +1,3922 @@
+{
+  "info": {
+    "name": "TimeTribe API",
+    "description": "API backend Go + MongoDB cho TimeTribe v2. Xem API_TESTING.md để biết thứ tự chạy.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Tính sẵn các ngày theo giờ Việt Nam (UTC+7) để dùng trong body: {{today}}, {{tomorrow}}...",
+          "const d = (n) => new Date(Date.now() + 7 * 3600e3 + n * 86400e3).toISOString().slice(0, 10);",
+          "pm.collectionVariables.set('yesterday', d(-1));",
+          "pm.collectionVariables.set('today', d(0));",
+          "pm.collectionVariables.set('tomorrow', d(1));",
+          "pm.collectionVariables.set('in2days', d(2));",
+          "pm.collectionVariables.set('in3days', d(3));",
+          "pm.collectionVariables.set('in7days', d(7));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "rootUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "myUserId",
+      "value": ""
+    },
+    {
+      "key": "firebaseIdToken",
+      "value": ""
+    },
+    {
+      "key": "fcmToken",
+      "value": ""
+    },
+    {
+      "key": "resetToken",
+      "value": ""
+    },
+    {
+      "key": "timeblockId",
+      "value": ""
+    },
+    {
+      "key": "templateId",
+      "value": ""
+    },
+    {
+      "key": "shareToken",
+      "value": ""
+    },
+    {
+      "key": "tribeId",
+      "value": ""
+    },
+    {
+      "key": "tribeTmpId",
+      "value": ""
+    },
+    {
+      "key": "tribeBlockId",
+      "value": ""
+    },
+    {
+      "key": "notificationId",
+      "value": ""
+    },
+    {
+      "key": "userNga",
+      "value": "7cd8a455-438d-5402-a4d1-004f816dbeca"
+    },
+    {
+      "key": "userMinh",
+      "value": "b76f8a90-6d79-5c9a-80d5-2d34ae8c74b9"
+    },
+    {
+      "key": "userLinh",
+      "value": "433ac99a-4a8b-516c-b923-97c0e6c01f4e"
+    },
+    {
+      "key": "userAn",
+      "value": "668e2637-1e30-5858-bc05-06992dfab122"
+    },
+    {
+      "key": "userDavid",
+      "value": "46f507cf-fa41-535a-8f95-5c1551fea294"
+    },
+    {
+      "key": "userAdmin",
+      "value": "5e3e8dc5-5fef-5892-af5b-a42f52b162cd"
+    },
+    {
+      "key": "tribeNic",
+      "value": "7bc48d74-1b52-5485-ad17-bc82aeda2cf3"
+    },
+    {
+      "key": "tribeBadminton",
+      "value": "64f48035-9cc0-59d7-adf1-66ba31c05d2e"
+    },
+    {
+      "key": "tribeMarketing",
+      "value": "1ceb057c-e620-5b79-95ea-7e4d063e9dd2"
+    },
+    {
+      "key": "tribeGamedev",
+      "value": "a34504f2-16b6-5dcd-9e11-dff438d627e9"
+    },
+    {
+      "key": "blockNic1",
+      "value": "259ace28-b27c-5e11-94ec-2c65204e96eb"
+    },
+    {
+      "key": "blockNic3",
+      "value": "854ae210-cf17-5903-b598-9665485afc90"
+    },
+    {
+      "key": "blockBad1",
+      "value": "57803b3e-f100-535d-bbce-3388f17cdfed"
+    },
+    {
+      "key": "blockMkt2",
+      "value": "8cdbfc7f-c509-59b2-a9fa-d542721b06d8"
+    },
+    {
+      "key": "tplNgaNic",
+      "value": "7f9dbda9-b0e7-5bc7-8fa0-9aebd6947c6c"
+    },
+    {
+      "key": "tplNgaGym",
+      "value": "93691d25-785a-5be4-bfac-ae80ca3013fb"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Kiểm tra server",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{rootUrl}}/health",
+              "host": [
+                "{{rootUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Không cần token. firebase_auth/firebase_push = true nghĩa là đã đọc được serviceAccountKey.json.",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Xác thực (AU)",
+      "item": [
+        {
+          "name": "AU-01 Đăng ký",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Tạo tài khoản mới. Chạy lần 2 sẽ nhận lỗi account_exists (409).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nick_name\": \"Quốc Bảo\",\n  \"email\": \"quocbao@timetribe.app\",\n  \"password\": \"matkhau123\",\n  \"confirm_password\": \"matkhau123\",\n  \"timezone\": \"Asia/Ho_Chi_Minh\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "AU-01 Đăng ký sai dữ liệu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Trả 400 validation_error, details cho biết từng ô bị lỗi gì.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nick_name\": \"\",\n  \"email\": \"sai-email\",\n  \"password\": \"123\",\n  \"confirm_password\": \"456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi validation_error', () => pm.expect(res.error && res.error.code).to.eql('validation_error'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AU-02 Đăng nhập Tuyết Nga (tài khoản chính)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AU-02 Đăng nhập bằng nick_name",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "identifier nhận cả email lẫn nick_name.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"Tuyết Nga\",\n  \"password\": \"123456\",\n  \"remember_me\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AU-02 Đăng nhập sai mật khẩu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "401 wrong_credentials.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"saimatkhau\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi wrong_credentials', () => pm.expect(res.error && res.error.code).to.eql('wrong_credentials'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AU-02 Tài khoản bị khoá",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "403 account_banned kèm ban_reason.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"spam.bot\",\n  \"password\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi account_banned', () => pm.expect(res.error && res.error.code).to.eql('account_banned'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AU-02 Tài khoản Google đăng nhập bằng mật khẩu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "401 google_account.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"baongoc.gg@gmail.com\",\n  \"password\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi google_account', () => pm.expect(res.error && res.error.code).to.eql('google_account'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AU-03 Đăng nhập Google",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/google",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "google"
+              ]
+            },
+            "description": "Dán Firebase ID token vào biến firebaseIdToken (xem API_TESTING.md mục Google để lấy token).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_token\": \"{{firebaseIdToken}}\",\n  \"device_info\": \"Postman\",\n  \"timezone\": \"Asia/Ho_Chi_Minh\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Làm mới token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Đổi refresh token lấy cặp token mới, token cũ mất hiệu lực ngay.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\",\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AU-04 Quên mật khẩu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "description": "Chưa cấu hình SMTP thì API trả kèm debug_reset_token (chỉ ở APP_ENV=development). Script lưu vào biến resetToken.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hana.sato@timetribe.app\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.debug_reset_token; if (v) pm.collectionVariables.set('resetToken', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AU-04 Đặt lại mật khẩu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
+            },
+            "description": "Đặt lại mật khẩu cho Hana (vẫn để 123456 cho dễ test). Mọi phiên đăng nhập cũ của Hana bị thu hồi.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"new_password\": \"123456\",\n  \"confirm_password\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Đăng nhập Phúc Lâm (dùng để thử đổi mật khẩu)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng phuc.lam@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"phuc.lam@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AU-05 Đổi mật khẩu",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "change-password"
+              ]
+            },
+            "description": "Đổi xong access token hiện tại bị từ chối (token_revoked), phải đăng nhập lại.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"123456\",\n  \"new_password\": \"phuc2026\",\n  \"confirm_password\": \"phuc2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Token cũ sau khi đổi mật khẩu (lỗi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi token_revoked', () => pm.expect(res.error && res.error.code).to.eql('token_revoked'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Đăng nhập bằng mật khẩu mới",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"phuc.lam@timetribe.app\",\n  \"password\": \"phuc2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AU-05 Đổi lại mật khẩu 123456",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "change-password"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"phuc2026\",\n  \"new_password\": \"123456\",\n  \"confirm_password\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Đăng nhập lại Phúc Lâm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng phuc.lam@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"phuc.lam@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AU-06 Đăng xuất",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Xoá refresh token của thiết bị này (và mã FCM nếu gửi kèm). Sau đó gọi Làm mới token sẽ báo invalid_refresh_token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\",\n  \"fcm_token\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Hồ sơ & thiết bị (INFO)",
+      "item": [
+        {
+          "name": "Đăng nhập Tuyết Nga",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Xem hồ sơ của tôi",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Bảng users + role, auth_provider, has_password."
+          }
+        },
+        {
+          "name": "INFO-01 Sửa tên hiển thị",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Trùng nick_name người khác sẽ trả 409 account_exists.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nick_name\": \"Tuyết Nga Nguyễn\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "INFO-01 Sửa tên trùng người khác (lỗi)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nick_name\": \"Minh Trần\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi account_exists', () => pm.expect(res.error && res.error.code).to.eql('account_exists'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "INFO-01 Sửa email",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"tuyetnga.nguyen@timetribe.app\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "INFO-04 Đổi múi giờ",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Giá trị IANA, ví dụ Asia/Tokyo, Europe/London. Gửi Mars/Base sẽ báo timezone_invalid.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timezone\": \"America/Vancouver\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Trả lại thông tin ban đầu",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Để các folder sau vẫn đăng nhập bằng tuyetnga@timetribe.app được.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nick_name\": \"Tuyết Nga\",\n  \"email\": \"tuyetnga@timetribe.app\",\n  \"timezone\": \"Asia/Ho_Chi_Minh\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "INFO-02/03 Cập nhật ảnh đại diện",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/avatar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "avatar"
+              ]
+            },
+            "description": "Body form-data: key avatar, kiểu File, chọn ảnh jpg/png tối đa 5MB. Ảnh lên Cloudinary thư mục timetribe/avatars.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Đăng ký thiết bị nhận thông báo (FCM)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/devices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "devices"
+              ]
+            },
+            "description": "fcm_token lấy từ FirebaseMessaging.instance.getToken() trên app.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Pixel 7 - Android 14\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Huỷ thiết bị nhận thông báo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/devices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "devices"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcm_token\": \"{{fcmToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "AU-07 Xem trước khi xoá tài khoản (Nga)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/delete-preview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "delete-preview"
+              ]
+            },
+            "description": "Liệt kê nhóm sẽ rời / chuyển quyền trưởng nhóm / giải tán. Chỉ xem, không xoá."
+          }
+        },
+        {
+          "name": "Đăng nhập Quốc Bảo (tài khoản vừa đăng ký ở AU-01)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"quocbao@timetribe.app\",\n  \"password\": \"matkhau123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AU-07 Xoá tài khoản",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Xoá tài khoản đang đăng nhập (Quốc Bảo). Đăng nhập lại sẽ báo account_deleted.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Đổi sang ứng dụng khác\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Lịch cá nhân (PT)",
+      "item": [
+        {
+          "name": "Đăng nhập Tuyết Nga",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PT-03 Lịch trang chủ theo ngày",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/schedule?date={{today}}&filter=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "schedule"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{today}}"
+                },
+                {
+                  "key": "filter",
+                  "value": "all"
+                }
+              ]
+            },
+            "description": "filter: all | personal | group. Hoạt động nhóm đã quy đổi sang múi giờ người xem (local_start_time)."
+          }
+        },
+        {
+          "name": "PT-03 Đếm hoạt động mỗi ngày (huy hiệu lịch)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/schedule/counts?from={{today}}&to={{in7days}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "schedule",
+                "counts"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{today}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{in7days}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Danh sách lịch cá nhân theo ngày",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/timeblocks?date={{tomorrow}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "timeblocks"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{tomorrow}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Danh sách lịch cá nhân theo khoảng",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/timeblocks?from={{today}}&to={{in7days}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "timeblocks"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{today}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{in7days}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "PT-01 Tạo hoạt động + nhân bản",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/timeblocks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "timeblocks"
+              ]
+            },
+            "description": "Tạo ngày mai 06:00-07:00 và nhân bản sang 2 ngày sau. Ngày quá khứ hoặc trùng giờ nằm trong skipped_dates.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task\": \"Học tiếng Nhật\",\n  \"description\": \"Bài 5 Minna no Nihongo\",\n  \"date\": \"{{tomorrow}}\",\n  \"start_time\": \"06:00\",\n  \"end_time\": \"07:00\",\n  \"color_code\": \"#9B5DE5\",\n  \"remind\": 10,\n  \"repeating_dates\": [\n    \"{{in2days}}\",\n    \"{{in3days}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.timeblock.id; if (v) pm.collectionVariables.set('timeblockId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PT-01 Tạo trùng giờ (lỗi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/timeblocks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "timeblocks"
+              ]
+            },
+            "description": "Chạy sau request trên sẽ trả 409 overlap.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task\": \"Học tiếng Nhật\",\n  \"description\": \"Bài 5 Minna no Nihongo\",\n  \"date\": \"{{tomorrow}}\",\n  \"start_time\": \"06:00\",\n  \"end_time\": \"07:00\",\n  \"color_code\": \"#9B5DE5\",\n  \"remind\": 10,\n  \"repeating_dates\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi overlap', () => pm.expect(res.error && res.error.code).to.eql('overlap'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PT-01 Tạo ngày quá khứ (lỗi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/timeblocks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "timeblocks"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task\": \"Học tiếng Nhật\",\n  \"description\": \"Bài 5 Minna no Nihongo\",\n  \"date\": \"{{yesterday}}\",\n  \"start_time\": \"06:00\",\n  \"end_time\": \"07:00\",\n  \"color_code\": \"#9B5DE5\",\n  \"remind\": 10,\n  \"repeating_dates\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi past_date', () => pm.expect(res.error && res.error.code).to.eql('past_date'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Xem 1 hoạt động",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/timeblocks/{{timeblockId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "timeblocks",
+                "{{timeblockId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "PT-02 Sửa hoạt động",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/timeblocks/{{timeblockId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "timeblocks",
+                "{{timeblockId}}"
+              ]
+            },
+            "description": "Gửi đủ các trường như form trên app.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task\": \"Học tiếng Nhật N4\",\n  \"description\": \"Bài 6\",\n  \"date\": \"{{tomorrow}}\",\n  \"start_time\": \"06:00\",\n  \"end_time\": \"07:30\",\n  \"color_code\": \"#3A86FF\",\n  \"remind\": 15,\n  \"repeating_dates\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PT-04 Xoá hoạt động",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/timeblocks/{{timeblockId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "timeblocks",
+                "{{timeblockId}}"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Lịch mẫu (TP)",
+      "item": [
+        {
+          "name": "Đăng nhập Tuyết Nga",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TP-01 Danh sách lịch mẫu",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates"
+              ]
+            },
+            "description": "Kèm count/max (x/10), block_count, active_days."
+          }
+        },
+        {
+          "name": "TP-02 Tạo lịch mẫu",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template_name\": \"Lịch học kỳ 1\",\n  \"blocks\": [\n    {\n      \"day_index\": 2,\n      \"title\": \"Lập trình Go\",\n      \"description\": \"Phòng B204\",\n      \"start_time\": \"07:30\",\n      \"end_time\": \"09:30\",\n      \"color_code\": \"#3A86FF\",\n      \"remind\": 15\n    },\n    {\n      \"day_index\": 4,\n      \"title\": \"Cơ sở dữ liệu\",\n      \"start_time\": \"13:00\",\n      \"end_time\": \"15:00\",\n      \"color_code\": \"#00B894\",\n      \"remind\": 30\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.id; if (v) pm.collectionVariables.set('templateId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Xem 1 lịch mẫu",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "TP-04/07 Sửa khối (gửi lại toàn bộ danh sách)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}"
+              ]
+            },
+            "description": "blocks thay thế toàn bộ: khối nào không có trong danh sách coi như đã xoá.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template_name\": \"Lịch học kỳ 1\",\n  \"blocks\": [\n    {\n      \"day_index\": 2,\n      \"title\": \"Lập trình Go\",\n      \"description\": \"Phòng B204\",\n      \"start_time\": \"07:30\",\n      \"end_time\": \"09:30\",\n      \"color_code\": \"#3A86FF\",\n      \"remind\": 15\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "TP-05 Đổi tên lịch mẫu",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}"
+              ]
+            },
+            "description": "Không gửi blocks thì giữ nguyên các khối.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template_name\": \"Lịch học HK1 - 2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "TP-08 Chia sẻ lịch mẫu",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}/share",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}",
+                "share"
+              ]
+            },
+            "description": "Trả share_token và share_link https://timetribe.app/t/<token>."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.share_token; if (v) pm.collectionVariables.set('shareToken', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Xem trước lịch mẫu được chia sẻ",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/templates/shared/study-week",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "shared",
+                "study-week"
+              ]
+            },
+            "description": "study-week là mẫu của Linh có sẵn trong seed."
+          }
+        },
+        {
+          "name": "TP-03 Nhập lịch mẫu từ link",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates/import",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "import"
+              ]
+            },
+            "description": "Chạy lần 2 trả 409 duplicate.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"link\": \"https://timetribe.app/t/study-week\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "TP-03 Nhập mẫu của chính mình (lỗi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates/import",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "import"
+              ]
+            },
+            "description": "gym4day là mẫu của Nga.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"link\": \"https://timetribe.app/t/gym4day\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi duplicate', () => pm.expect(res.error && res.error.code).to.eql('duplicate'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TP-09 Áp dụng: xem trước",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{tplNgaNic}}/apply",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{tplNgaNic}}",
+                "apply"
+              ]
+            },
+            "description": "Không ghi gì, chỉ trả số khối sẽ thêm và danh sách trùng giờ.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"day_indexes\": [\n    1,\n    3,\n    5\n  ],\n  \"weeks\": 2,\n  \"dry_run\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "TP-09 Áp dụng (chưa đồng ý thay thế)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{tplNgaNic}}/apply",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{tplNgaNic}}",
+                "apply"
+              ]
+            },
+            "description": "Có trùng giờ thì trả 409 conflict kèm conflict_count, conflict_dates.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"day_indexes\": [\n    1,\n    3,\n    5\n  ],\n  \"weeks\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "TP-09 Áp dụng: Thay thế & Thêm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{tplNgaNic}}/apply",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{tplNgaNic}}",
+                "apply"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"day_indexes\": [\n    1,\n    3,\n    5\n  ],\n  \"weeks\": 2,\n  \"replace_conflicts\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "TP-06 Xoá lịch mẫu",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "templates",
+                "{{templateId}}"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Nhóm (COM)",
+      "item": [
+        {
+          "name": "Đăng nhập Tuyết Nga",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COM-01 Danh sách nhóm của tôi",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tribes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes"
+              ]
+            },
+            "description": "my_role, member_count/max_members, pending_count, next_block."
+          }
+        },
+        {
+          "name": "COM-02 Chi tiết nhóm + thành viên",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "COM-18 Lấy link mời",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/invite",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "invite"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "COM-11 Tham gia nhóm GAMEDEV26",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/join",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "join"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invite_link\": \"https://timetribe.app/tribe/GAMEDEV26\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "COM-11 Tham gia nhóm đã đủ 10 người (lỗi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/join",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "join"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invite_link\": \"FULLHOUSE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi tribe_full', () => pm.expect(res.error && res.error.code).to.eql('tribe_full'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COM-11 Tham gia nhóm đang ở (lỗi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/join",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "join"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invite_link\": \"NIC2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi already_member', () => pm.expect(res.error && res.error.code).to.eql('already_member'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COM-03 Tạo nhóm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes"
+              ]
+            },
+            "description": "Lúc này Nga đang ở 4 nhóm nên tạo được thêm 1. Quá 5 nhóm trả tribe_limit.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nhóm đọc sách\",\n  \"background_color\": \"#0FA3B1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.id; if (v) pm.collectionVariables.set('tribeId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COM-05 Đổi tên nhóm (trưởng nhóm)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Đồ án NIC 2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "COM-04 Đổi màu nhóm (JSON)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/appearance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "appearance"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"background_color\": \"#FF7F50\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "COM-04 Đổi ảnh nền nhóm (form-data)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/appearance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "appearance"
+              ]
+            },
+            "description": "form-data: background_image (File), background_color (Text, tuỳ chọn), remove_image=true để bỏ ảnh.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "background_image",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "background_color",
+                  "value": "#3A86FF",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "COM-15 Bổ nhiệm An làm phó nhóm",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/members/{{userAn}}/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "members",
+                "{{userAn}}",
+                "role"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"vice_leader\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "COM-17 Bãi nhiệm An",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/members/{{userAn}}/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "members",
+                "{{userAn}}",
+                "role"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"member\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "COM-14 Mời David rời nhóm",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/members/{{userDavid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "members",
+                "{{userDavid}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "COM-13 Trưởng nhóm rời mà chưa chọn người kế nhiệm (lỗi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/leave",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "leave"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi need_new_leader', () => pm.expect(res.error && res.error.code).to.eql('need_new_leader'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COM-14 Thành viên thường mời người khác rời (lỗi)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeMarketing}}/members/{{userLinh}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeMarketing}}",
+                "members",
+                "{{userLinh}}"
+              ]
+            },
+            "description": "Nga là phó nhóm Marketing, không được mời trưởng nhóm rời."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi not_allowed', () => pm.expect(res.error && res.error.code).to.eql('not_allowed'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COM-06 Giải tán nhóm vừa tạo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeId}}"
+              ]
+            },
+            "description": "Chỉ trưởng nhóm mới giải tán được."
+          }
+        },
+        {
+          "name": "COM-03 Tạo nhóm tạm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nhóm tạm\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.id; if (v) pm.collectionVariables.set('tribeTmpId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COM-13 Trưởng nhóm ở một mình rời nhóm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeTmpId}}/leave",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeTmpId}}",
+                "leave"
+              ]
+            },
+            "description": "Nhóm chỉ có 1 người nên rời nhóm = giải tán (action: dissolved). Nhóm đông người thì gửi {\"new_leader_id\": \"<user_id>\"}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "COM-12 Thành viên rời nhóm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeBadminton}}/leave",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeBadminton}}",
+                "leave"
+              ]
+            },
+            "description": "Nga đang là thành viên CLB Cầu lông.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Hoạt động nhóm (COM-07..10, 19)",
+      "item": [
+        {
+          "name": "Đăng nhập Tuyết Nga",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COM-08 Hoạt động nhóm trong ngày",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/blocks?date={{today}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "blocks"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{today}}"
+                }
+              ]
+            },
+            "description": "date tính theo múi giờ người xem. Có thể dùng from/to thay cho date."
+          }
+        },
+        {
+          "name": "COM-07/08 Giờ bận và gợi ý giờ rảnh",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/availability?date={{tomorrow}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "availability"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{tomorrow}}"
+                }
+              ]
+            },
+            "description": "members[].busy là khoảng bận UTC (không lộ nội dung lịch riêng), free_windows là các khoảng >= 30 phút cả nhóm rảnh."
+          }
+        },
+        {
+          "name": "COM-07 Tạo hoạt động nhóm (date/start_time/end_time UTC)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/blocks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "blocks"
+              ]
+            },
+            "description": "Giờ gửi lên là UTC: 07:00 UTC = 14:00 giờ Việt Nam. busy_member_ids là những ai đang bận đúng khung giờ.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task\": \"Họp thiết kế CSDL\",\n  \"description\": \"Chốt 11 bảng\",\n  \"date\": \"{{tomorrow}}\",\n  \"start_time\": \"07:00:00\",\n  \"end_time\": \"08:00:00\",\n  \"color_code\": \"#3A86FF\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.block.id; if (v) pm.collectionVariables.set('tribeBlockId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COM-07 Tạo hoạt động nhóm (start_utc/end_utc)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/blocks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "blocks"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task\": \"Luyện thuyết trình\",\n  \"start_utc\": \"{{tomorrow}}T12:00:00Z\",\n  \"end_utc\": \"{{tomorrow}}T13:30:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Xem chi tiết hoạt động nhóm",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tribe-blocks/{{tribeBlockId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribe-blocks",
+                "{{tribeBlockId}}"
+              ]
+            },
+            "description": "attendance: ai tham gia, từ chối, đang chờ."
+          }
+        },
+        {
+          "name": "Đăng nhập Minh Trần (phó nhóm)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng minh.tran@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"minh.tran@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COM-19 Minh tham gia",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribe-blocks/{{tribeBlockId}}/attendance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribe-blocks",
+                "{{tribeBlockId}}",
+                "attendance"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"accepted\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Đăng nhập An Lê (thành viên)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng an.le@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"an.le@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "COM-19 An không tham gia",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribe-blocks/{{tribeBlockId}}/attendance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribe-blocks",
+                "{{tribeBlockId}}",
+                "attendance"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"declined\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Thành viên thường tạo hoạt động (lỗi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/blocks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "blocks"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task\": \"Thử\",\n  \"date\": \"{{tomorrow}}\",\n  \"start_time\": \"10:00\",\n  \"end_time\": \"11:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi not_allowed', () => pm.expect(res.error && res.error.code).to.eql('not_allowed'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Đăng nhập lại Tuyết Nga",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Thông báo phản hồi gửi về trưởng nhóm",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?filter={{tribeNic}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "filter",
+                  "value": "{{tribeNic}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "COM-09 Đổi giờ (mọi người phải xác nhận lại)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribe-blocks/{{tribeBlockId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribe-blocks",
+                "{{tribeBlockId}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"start_utc\": \"{{tomorrow}}T02:00:00Z\",\n  \"end_utc\": \"{{tomorrow}}T03:30:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "COM-09 Sửa nội dung",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribe-blocks/{{tribeBlockId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribe-blocks",
+                "{{tribeBlockId}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"task\": \"Họp chốt CSDL\",\n  \"description\": \"Mang theo laptop\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "COM-10 Huỷ hoạt động nhóm",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tribe-blocks/{{tribeBlockId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribe-blocks",
+                "{{tribeBlockId}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "COM-19 Nga trả lời lời mời Marketing",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribe-blocks/{{blockMkt2}}/attendance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribe-blocks",
+                "{{blockMkt2}}",
+                "attendance"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"accepted\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "COM-16 Chuyển quyền trưởng nhóm NIC cho Minh",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/members/{{userMinh}}/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "members",
+                "{{userMinh}}",
+                "role"
+              ]
+            },
+            "description": "Nga xuống phó nhóm (nếu chưa đủ 3 phó), không thì xuống thành viên. Để cuối vì sau bước này Nga không còn là trưởng nhóm NIC.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"leader\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Thông báo (NOTI)",
+      "item": [
+        {
+          "name": "Đăng nhập Tuyết Nga",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "NOTI-01 Tất cả thông báo (30 ngày)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?filter=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "filter",
+                  "value": "all"
+                }
+              ]
+            },
+            "description": "filter: all | personal | <tribe_id>. kind + args để app tự dựng câu chữ theo ngôn ngữ."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data[0] && res.data[0].id; if (v) pm.collectionVariables.set('notificationId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "NOTI-01 Lọc thông báo cá nhân",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?filter=personal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "filter",
+                  "value": "personal"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "NOTI-01 Lọc theo nhóm",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?filter={{tribeMarketing}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "filter",
+                  "value": "{{tribeMarketing}}"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Đếm chưa đọc (badge)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "unread-count"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "NOTI-02 Đánh dấu đã đọc 1 thông báo",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notificationId}}",
+                "read"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "NOTI-02 Đánh dấu đọc tất cả",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "read-all"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Admin",
+      "item": [
+        {
+          "name": "Đăng nhập admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập bằng admin@timetribe.com. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"admin@timetribe.com\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('success', () => pm.expect(res.success).to.eql(true));",
+                  "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gửi thông báo cho toàn bộ người dùng",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/notifications/broadcast",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "notifications",
+                "broadcast"
+              ]
+            },
+            "description": "Lưu notifications với user_id = null và đẩy FCM qua topic all_users.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bảo trì hệ thống\",\n  \"content\": \"TimeTribe bảo trì từ 23:00 đến 23:30 tối nay, mong bạn thông cảm.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Khoá tài khoản",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/{{userDavid}}/ban",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "{{userDavid}}",
+                "ban"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_banned\": true,\n  \"ban_reason\": \"Vi phạm điều khoản\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Mở khoá tài khoản",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/{{userDavid}}/ban",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "{{userDavid}}",
+                "ban"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_banned\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
