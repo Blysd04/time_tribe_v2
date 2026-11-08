@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,8 +14,44 @@ import 'notification_text.dart';
 
 /// Tab Thông báo: 30 ngày gần nhất, lọc theo Cá nhân hoặc từng nhóm.
 /// Thanh lọc luôn hiện đủ các nhóm, kể cả nhóm chưa có thông báo nào.
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
+
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen>
+    with WidgetsBindingObserver {
+  /// Vẽ lại mỗi 30 giây để nhãn "x phút trước" luôn đúng với giờ hiện tại
+  /// (trước đây nhãn chỉ tính một lần nên để lâu sẽ hiện sai giờ).
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// App quay lại từ nền: tải lại danh sách (có thể đã có thông báo mới
+  /// trong lúc app ở nền) và cập nhật nhãn thời gian.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<NotificationViewModel>().load(silent: true);
+      setState(() {});
+    }
+  }
 
   /// Dựng giao diện tab Thông báo.
   @override

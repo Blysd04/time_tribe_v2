@@ -115,7 +115,18 @@ func (s *NotificationService) pushToUsers(userIDs []string, title, body string, 
 			Tokens:       regs,
 			Notification: &messaging.Notification{Title: title, Body: body},
 			Data:         data,
-			Android:      &messaging.AndroidConfig{Priority: "high"},
+			// Ưu tiên cao để máy đang tiết kiệm pin (Doze, MIUI...) vẫn hiện ngay, không gom lại gửi trễ
+			Android: &messaging.AndroidConfig{
+				Priority: "high",
+				Notification: &messaging.AndroidNotification{
+					Priority:     messaging.PriorityHigh,
+					DefaultSound: true,
+				},
+			},
+			APNS: &messaging.APNSConfig{
+				Headers: map[string]string{"apns-priority": "10", "apns-push-type": "alert"},
+				Payload: &messaging.APNSPayload{Aps: &messaging.Aps{Sound: "default"}},
+			},
 		})
 		if err != nil {
 			log.Printf("gửi FCM lỗi: %v", err)

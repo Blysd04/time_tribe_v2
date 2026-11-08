@@ -8,6 +8,7 @@ import 'core/l10n/l10n.dart';
 import 'core/l10n/locale_provider.dart';
 import 'core/services/push_service.dart';
 import 'core/session/app_reset.dart';
+import 'core/session/session.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/utils/app_time.dart';
 import 'features/auth/viewmodels/auth_viewmodel.dart';
@@ -57,6 +58,10 @@ Future<void> main() async {
     );
   };
 
+  // Thông báo đẩy tới lúc đang mở app (Android không tự hiện): hiện banner trong app,
+  // bấm "Xem" để mở tab Thông báo.
+  PushService.onForeground = _showForegroundPush;
+
   runApp(
     MultiProvider(
       providers: [
@@ -73,6 +78,66 @@ Future<void> main() async {
       child: const TimeTribeApp(),
     ),
   );
+}
+
+/// Banner nổi ở cuối màn hình cho thông báo đẩy tới khi app đang mở.
+void _showForegroundPush(String title, String body) {
+  final messenger = messengerKey.currentState;
+  final ctx = navigatorKey.currentContext;
+  if (messenger == null || ctx == null || (title.isEmpty && body.isEmpty)) {
+    return;
+  }
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 6),
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        content: Row(
+          children: [
+            const Icon(Icons.notifications_active, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (title.isNotEmpty)
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  if (body.isNotEmpty)
+                    Text(
+                      body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        action: SnackBarAction(
+          label: ctx.l10n.view,
+          textColor: const Color(0xFF8AB6FF),
+          onPressed: () {
+            final c = navigatorKey.currentContext;
+            if (c == null || Session.currentUserId.isEmpty) return;
+            navigatorKey.currentState?.popUntil((r) => r.isFirst);
+            c.read<HomeViewModel>().changeTab(3);
+          },
+        ),
+      ),
+    );
 }
 
 class TimeTribeApp extends StatelessWidget {

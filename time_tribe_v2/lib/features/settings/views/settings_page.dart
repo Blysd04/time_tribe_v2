@@ -9,6 +9,8 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_dialogs.dart';
 import '../../auth/viewmodels/auth_viewmodel.dart';
 import '../../auth/views/login_screen.dart';
+import '../../home/viewmodels/home_viewmodel.dart';
+import '../../onboarding/onboarding_service.dart';
 import 'delete_account_screen.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -121,6 +123,22 @@ class SettingsPage extends StatelessWidget {
                 subtitle:
                     '${LocaleProvider.flag(locale)}  ${LocaleProvider.nativeName(locale)}',
                 onTap: () => _pickLanguage(context),
+              ),
+            ],
+          ),
+          AppSection(
+            title: l.help,
+            children: [
+              AppListTile(
+                icon: Icons.tips_and_updates_outlined,
+                color: AppColors.primary,
+                title: l.replayTour,
+                subtitle: l.replayTourSubtitle,
+                // Trang chủ thấy cờ này sẽ tự chạy hướng dẫn khi vẽ lại
+                onTap: () {
+                  Onboarding.pendingTour = true;
+                  context.read<HomeViewModel>().changeTab(1);
+                },
               ),
             ],
           ),

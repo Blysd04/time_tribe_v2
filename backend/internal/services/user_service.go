@@ -46,6 +46,8 @@ type UpdateMeInput struct {
 	NickName *string `json:"nick_name"`
 	Email    *string `json:"email"`
 	Timezone *string `json:"timezone"`
+	// Chỉ nhận false: app báo người dùng đã xem xong phần chào mừng
+	NeedsOnboarding *bool `json:"needs_onboarding"`
 }
 
 // UpdateMe (INFO-01, INFO-04): sửa tên hiển thị, email, múi giờ IANA.
@@ -77,6 +79,9 @@ func (s *UserService) UpdateMe(ctx context.Context, userID string, in UpdateMeIn
 		} else {
 			set["timezone"] = *in.Timezone
 		}
+	}
+	if in.NeedsOnboarding != nil && !*in.NeedsOnboarding {
+		set["needs_onboarding"] = false
 	}
 	if len(fields) > 0 {
 		return nil, utils.BadRequest("validation_error", "Thông tin chưa hợp lệ").WithDetails(fields)

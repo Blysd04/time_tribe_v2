@@ -105,7 +105,7 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*MeRespon
 		return nil, err
 	}
 	now := time.Now().UTC()
-	user := models.User{ID: uuid.NewString(), Email: email, NickName: nick, Timezone: tz, CreatedAt: now, UpdatedAt: now}
+	user := models.User{ID: uuid.NewString(), Email: email, NickName: nick, Timezone: tz, NeedsOnboarding: true, CreatedAt: now, UpdatedAt: now}
 	sec := models.UserSecurity{
 		UserID: user.ID, Role: models.RoleCustomer, AuthProvider: models.ProviderLocal,
 		PasswordHash: utils.Ptr(string(hash)), PasswordChangedAt: &now,
@@ -380,7 +380,7 @@ func (s *AuthService) createGoogleUser(ctx context.Context, email, name, picture
 		tz = models.DefaultTimezone
 	}
 	now := time.Now().UTC()
-	user := &models.User{ID: uuid.NewString(), Email: email, NickName: nick, Timezone: tz, CreatedAt: now, UpdatedAt: now}
+	user := &models.User{ID: uuid.NewString(), Email: email, NickName: nick, Timezone: tz, NeedsOnboarding: true, CreatedAt: now, UpdatedAt: now}
 	if picture != "" {
 		user.AvatarURL = &picture
 	}

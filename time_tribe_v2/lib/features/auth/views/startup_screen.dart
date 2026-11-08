@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../home/views/home_screen.dart';
+import '../../onboarding/onboarding_service.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import 'login_screen.dart';
 import 'widgets/app_logo.dart';
@@ -27,12 +27,12 @@ class _StartupScreenState extends State<StartupScreen> {
   /// Thử lấy lại phiên đăng nhập cũ rồi chuyển màn hình.
   Future<void> _decide() async {
     final ok = await context.read<AuthViewModel>().restoreSession();
+    // Tài khoản mới chưa xem phần chào mừng thì vào đó trước
+    final next = ok ? await Onboarding.entryScreen() : const LoginScreen();
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => ok ? const HomeScreen() : const LoginScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => next),
     );
   }
 

@@ -6,7 +6,7 @@ import '../../../core/l10n/locale_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_dialogs.dart';
 import '../../../core/widgets/google_logo.dart';
-import '../../home/views/home_screen.dart';
+import '../../onboarding/onboarding_service.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import 'register_screen.dart';
 import 'widgets/app_logo.dart';
@@ -43,13 +43,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   /// Xử lý chung sau khi đăng nhập: vào trang chủ hoặc báo lỗi.
-  void _afterAuth(AuthViewModel vm, bool success) {
+  /// Tài khoản mới (vừa đăng ký hoặc Google lần đầu) thì vào màn hình chào mừng trước.
+  Future<void> _afterAuth(AuthViewModel vm, bool success) async {
     if (!mounted) return;
     if (success) {
+      final next = await Onboarding.entryScreen();
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, _, _) => const HomeScreen(),
+          pageBuilder: (_, _, _) => next,
           transitionsBuilder: (_, animation, _, child) =>
               FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 400),

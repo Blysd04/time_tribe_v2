@@ -2211,6 +2211,210 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Hoạt động của nhóm {tribe} bắt đầu lúc {time}.'**
   String nBodyTribeReminder(String tribe, String time);
+
+  /// No description provided for @onbSkip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ qua'**
+  String get onbSkip;
+
+  /// No description provided for @onbNext.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếp tục'**
+  String get onbNext;
+
+  /// No description provided for @onbBack.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quay lại'**
+  String get onbBack;
+
+  /// No description provided for @onbWelcomeTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chào mừng bạn đến với TimeTribe!'**
+  String get onbWelcomeTitle;
+
+  /// No description provided for @onbWelcomeBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nơi bạn sắp xếp thời gian của mình và hẹn lịch với cả nhóm chỉ trong vài chạm.'**
+  String get onbWelcomeBody;
+
+  /// No description provided for @onbPersonalTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lịch cá nhân gọn gàng'**
+  String get onbPersonalTitle;
+
+  /// No description provided for @onbPersonalBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia ngày thành các khối thời gian, tô màu từng việc, áp dụng lịch mẫu và nhận nhắc nhở trước khi bắt đầu.'**
+  String get onbPersonalBody;
+
+  /// No description provided for @onbTribeTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hẹn lịch nhóm dễ dàng'**
+  String get onbTribeTitle;
+
+  /// No description provided for @onbTribeBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo nhóm (Tribe), mời bạn bè bằng mã và xem ngay khung giờ mọi người cùng rảnh, kể cả khi mỗi người ở một múi giờ.'**
+  String get onbTribeBody;
+
+  /// No description provided for @onbNotiTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không bỏ lỡ điều gì'**
+  String get onbNotiTitle;
+
+  /// No description provided for @onbNotiBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhận thông báo khi nhóm có hoạt động mới, trả lời Tham gia / Không tham gia chỉ với một chạm.'**
+  String get onbNotiBody;
+
+  /// No description provided for @onbChoiceTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn đã quen với TimeTribe chưa?'**
+  String get onbChoiceTitle;
+
+  /// No description provided for @onbChoiceSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn một mục để chúng mình hỗ trợ bạn tốt nhất.'**
+  String get onbChoiceSubtitle;
+
+  /// No description provided for @onbChoiceExpert.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tôi đã biết sử dụng'**
+  String get onbChoiceExpert;
+
+  /// No description provided for @onbChoiceExpertDesc.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vào thẳng trang chủ và bắt đầu ngay.'**
+  String get onbChoiceExpertDesc;
+
+  /// No description provided for @onbChoiceNewbie.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tôi là người mới'**
+  String get onbChoiceNewbie;
+
+  /// No description provided for @onbChoiceNewbieDesc.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem hướng dẫn nhanh các chức năng chính (khoảng 1 phút).'**
+  String get onbChoiceNewbieDesc;
+
+  /// No description provided for @tourMenuTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Menu chức năng'**
+  String get tourMenuTitle;
+
+  /// No description provided for @tourMenuBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuyển giữa Lịch cá nhân, Nhóm và Lịch mẫu tại đây.'**
+  String get tourMenuBody;
+
+  /// No description provided for @tourContentTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lịch của bạn'**
+  String get tourContentTitle;
+
+  /// No description provided for @tourContentBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Các khối thời gian trong ngày hiện ở đây. Chọn ngày ở phía trên để xem ngày khác, chạm vào một khối để xem hoặc sửa.'**
+  String get tourContentBody;
+
+  /// No description provided for @tourAddTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nút tạo mới'**
+  String get tourAddTitle;
+
+  /// No description provided for @tourAddBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm lịch, tạo hoặc tham gia nhóm, tạo lịch mẫu, tuỳ theo mục bạn đang mở.'**
+  String get tourAddBody;
+
+  /// No description provided for @tourNotiTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thông báo'**
+  String get tourNotiTitle;
+
+  /// No description provided for @tourNotiBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhắc lịch và lời mời tham gia hoạt động nhóm hiện ở đây. Bạn có thể trả lời ngay trong danh sách.'**
+  String get tourNotiBody;
+
+  /// No description provided for @tourProfileTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hồ sơ'**
+  String get tourProfileTitle;
+
+  /// No description provided for @tourProfileBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi ảnh đại diện, tên và múi giờ. Đặt đúng múi giờ để nhóm thấy đúng giờ rảnh của bạn.'**
+  String get tourProfileBody;
+
+  /// No description provided for @tourSettingsTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cài đặt'**
+  String get tourSettingsTitle;
+
+  /// No description provided for @tourSettingsBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi giao diện sáng/tối, ngôn ngữ và xem lại hướng dẫn này bất cứ lúc nào.'**
+  String get tourSettingsBody;
+
+  /// No description provided for @tourDone.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bắt đầu thôi!'**
+  String get tourDone;
+
+  /// No description provided for @help.
+  ///
+  /// In vi, this message translates to:
+  /// **'Trợ giúp'**
+  String get help;
+
+  /// No description provided for @replayTour.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem hướng dẫn sử dụng'**
+  String get replayTour;
+
+  /// No description provided for @replayTourSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giới thiệu nhanh các chức năng chính'**
+  String get replayTourSubtitle;
+
+  /// No description provided for @view.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem'**
+  String get view;
 }
 
 class _AppLocalizationsDelegate

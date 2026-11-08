@@ -1342,4 +1342,106 @@ class AppLocalizationsEn extends AppLocalizations {
   String nBodyTribeReminder(String tribe, String time) {
     return 'An activity of $tribe starts at $time.';
   }
+
+  @override
+  String get onbSkip => 'Skip';
+
+  @override
+  String get onbNext => 'Next';
+
+  @override
+  String get onbBack => 'Back';
+
+  @override
+  String get onbWelcomeTitle => 'Welcome to TimeTribe!';
+
+  @override
+  String get onbWelcomeBody => 'The place to organise your own time and plan with your whole group in just a few taps.';
+
+  @override
+  String get onbPersonalTitle => 'A tidy personal schedule';
+
+  @override
+  String get onbPersonalBody => 'Split your day into time blocks, colour each task, reuse templates and get reminded before things start.';
+
+  @override
+  String get onbTribeTitle => 'Group planning made easy';
+
+  @override
+  String get onbTribeBody => 'Create a Tribe, invite friends with a code and instantly see when everyone is free, even across time zones.';
+
+  @override
+  String get onbNotiTitle => 'Never miss a thing';
+
+  @override
+  String get onbNotiBody => 'Get notified when your Tribe adds an activity and answer Join / Decline with a single tap.';
+
+  @override
+  String get onbChoiceTitle => 'Are you familiar with TimeTribe?';
+
+  @override
+  String get onbChoiceSubtitle => 'Pick one so we can help you get started.';
+
+  @override
+  String get onbChoiceExpert => 'I already know how to use it';
+
+  @override
+  String get onbChoiceExpertDesc => 'Go straight to the home screen.';
+
+  @override
+  String get onbChoiceNewbie => 'I\'m new here';
+
+  @override
+  String get onbChoiceNewbieDesc => 'Take a quick tour of the main features (about 1 minute).';
+
+  @override
+  String get tourMenuTitle => 'Feature menu';
+
+  @override
+  String get tourMenuBody => 'Switch between Personal schedule, Tribes and Templates here.';
+
+  @override
+  String get tourContentTitle => 'Your schedule';
+
+  @override
+  String get tourContentBody => 'Your time blocks for the day appear here. Pick another date at the top, tap a block to view or edit it.';
+
+  @override
+  String get tourAddTitle => 'Create button';
+
+  @override
+  String get tourAddBody => 'Add a time block, create or join a Tribe, or make a template, depending on the section you\'re in.';
+
+  @override
+  String get tourNotiTitle => 'Notifications';
+
+  @override
+  String get tourNotiBody => 'Reminders and Tribe activity invites show up here. You can reply right from the list.';
+
+  @override
+  String get tourProfileTitle => 'Profile';
+
+  @override
+  String get tourProfileBody => 'Change your avatar, name and time zone. Set the right time zone so your Tribe sees your real free time.';
+
+  @override
+  String get tourSettingsTitle => 'Settings';
+
+  @override
+  String get tourSettingsBody => 'Switch light/dark mode, change language and replay this tour any time.';
+
+  @override
+  String get tourDone => 'Let\'s go!';
+
+  @override
+  String get help => 'Help';
+
+  @override
+  String get replayTour => 'Replay app tour';
+
+  @override
+  String get replayTourSubtitle => 'A quick look at the main features';
+
+  @override
+  String get view => 'View';
 }

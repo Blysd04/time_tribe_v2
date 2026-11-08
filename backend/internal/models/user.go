@@ -15,6 +15,9 @@ const (
 	CollTribeBlocks          = "tribe_blocks"
 	CollTribeBlockAttendance = "tribe_block_attendance"
 	CollNotifications        = "notifications"
+	// Hai collection phụ của bộ nhắc lịch
+	CollWorkerState  = "worker_state"  // mốc quét cuối, để nhắc bù khi server khởi động lại
+	CollReminderLogs = "reminder_logs" // các lần đã nhắc, chống gửi trùng
 )
 
 const DefaultTimezone = "Asia/Ho_Chi_Minh"
@@ -22,14 +25,17 @@ const DefaultTimezone = "Asia/Ho_Chi_Minh"
 // Bảng users: thông tin công khai của người dùng.
 // fcm_token là mã thiết bị nhận thông báo đẩy, app gửi lên khi đăng nhập Google, không có thì để null.
 type User struct {
-	ID        string    `bson:"_id" json:"id"`
-	Email     string    `bson:"email" json:"email"`
-	NickName  string    `bson:"nick_name" json:"nick_name"`
-	AvatarURL *string   `bson:"avatar_url" json:"avatar_url"`
-	Timezone  string    `bson:"timezone" json:"timezone"`
-	FCMToken  *string   `bson:"fcm_token" json:"fcm_token"`
-	CreatedAt time.Time `bson:"created_at" json:"created_at"`
-	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+	ID        string  `bson:"_id" json:"id"`
+	Email     string  `bson:"email" json:"email"`
+	NickName  string  `bson:"nick_name" json:"nick_name"`
+	AvatarURL *string `bson:"avatar_url" json:"avatar_url"`
+	Timezone  string  `bson:"timezone" json:"timezone"`
+	FCMToken  *string `bson:"fcm_token" json:"fcm_token"`
+	// NeedsOnboarding = true với tài khoản mới tạo, app hiện màn hình chào mừng + hướng dẫn
+	// rồi gửi false lên. Tài khoản cũ không có trường này nên coi như đã xong.
+	NeedsOnboarding bool      `bson:"needs_onboarding,omitempty" json:"needs_onboarding"`
+	CreatedAt       time.Time `bson:"created_at" json:"created_at"`
+	UpdatedAt       time.Time `bson:"updated_at" json:"updated_at"`
 }
 
 // AppUser là bản rút gọn để hiển thị trong danh sách thành viên, người tham gia...

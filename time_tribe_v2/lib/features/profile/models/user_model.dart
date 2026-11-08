@@ -9,6 +9,9 @@ class UserModel {
   final String role;
   final String authProvider;
   final bool hasPassword;
+
+  /// Tài khoản mới tạo, chưa xem màn hình chào mừng / hướng dẫn.
+  final bool needsOnboarding;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -22,6 +25,7 @@ class UserModel {
     this.role = 'customer',
     this.authProvider = 'local',
     this.hasPassword = true,
+    this.needsOnboarding = false,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) : createdAt = createdAt ?? DateTime.now(),
@@ -39,6 +43,7 @@ class UserModel {
       role: json['role'] ?? 'customer',
       authProvider: json['auth_provider'] ?? 'local',
       hasPassword: json['has_password'] ?? true,
+      needsOnboarding: json['needs_onboarding'] == true,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,

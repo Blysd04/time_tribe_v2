@@ -1263,4 +1263,106 @@ class AppLocalizationsVi extends AppLocalizations {
   String nBodyTribeReminder(String tribe, String time) {
     return 'Hoạt động của nhóm $tribe bắt đầu lúc $time.';
   }
+
+  @override
+  String get onbSkip => 'Bỏ qua';
+
+  @override
+  String get onbNext => 'Tiếp tục';
+
+  @override
+  String get onbBack => 'Quay lại';
+
+  @override
+  String get onbWelcomeTitle => 'Chào mừng bạn đến với TimeTribe!';
+
+  @override
+  String get onbWelcomeBody => 'Nơi bạn sắp xếp thời gian của mình và hẹn lịch với cả nhóm chỉ trong vài chạm.';
+
+  @override
+  String get onbPersonalTitle => 'Lịch cá nhân gọn gàng';
+
+  @override
+  String get onbPersonalBody => 'Chia ngày thành các khối thời gian, tô màu từng việc, áp dụng lịch mẫu và nhận nhắc nhở trước khi bắt đầu.';
+
+  @override
+  String get onbTribeTitle => 'Hẹn lịch nhóm dễ dàng';
+
+  @override
+  String get onbTribeBody => 'Tạo nhóm (Tribe), mời bạn bè bằng mã và xem ngay khung giờ mọi người cùng rảnh, kể cả khi mỗi người ở một múi giờ.';
+
+  @override
+  String get onbNotiTitle => 'Không bỏ lỡ điều gì';
+
+  @override
+  String get onbNotiBody => 'Nhận thông báo khi nhóm có hoạt động mới, trả lời Tham gia / Không tham gia chỉ với một chạm.';
+
+  @override
+  String get onbChoiceTitle => 'Bạn đã quen với TimeTribe chưa?';
+
+  @override
+  String get onbChoiceSubtitle => 'Chọn một mục để chúng mình hỗ trợ bạn tốt nhất.';
+
+  @override
+  String get onbChoiceExpert => 'Tôi đã biết sử dụng';
+
+  @override
+  String get onbChoiceExpertDesc => 'Vào thẳng trang chủ và bắt đầu ngay.';
+
+  @override
+  String get onbChoiceNewbie => 'Tôi là người mới';
+
+  @override
+  String get onbChoiceNewbieDesc => 'Xem hướng dẫn nhanh các chức năng chính (khoảng 1 phút).';
+
+  @override
+  String get tourMenuTitle => 'Menu chức năng';
+
+  @override
+  String get tourMenuBody => 'Chuyển giữa Lịch cá nhân, Nhóm và Lịch mẫu tại đây.';
+
+  @override
+  String get tourContentTitle => 'Lịch của bạn';
+
+  @override
+  String get tourContentBody => 'Các khối thời gian trong ngày hiện ở đây. Chọn ngày ở phía trên để xem ngày khác, chạm vào một khối để xem hoặc sửa.';
+
+  @override
+  String get tourAddTitle => 'Nút tạo mới';
+
+  @override
+  String get tourAddBody => 'Thêm lịch, tạo hoặc tham gia nhóm, tạo lịch mẫu, tuỳ theo mục bạn đang mở.';
+
+  @override
+  String get tourNotiTitle => 'Thông báo';
+
+  @override
+  String get tourNotiBody => 'Nhắc lịch và lời mời tham gia hoạt động nhóm hiện ở đây. Bạn có thể trả lời ngay trong danh sách.';
+
+  @override
+  String get tourProfileTitle => 'Hồ sơ';
+
+  @override
+  String get tourProfileBody => 'Đổi ảnh đại diện, tên và múi giờ. Đặt đúng múi giờ để nhóm thấy đúng giờ rảnh của bạn.';
+
+  @override
+  String get tourSettingsTitle => 'Cài đặt';
+
+  @override
+  String get tourSettingsBody => 'Đổi giao diện sáng/tối, ngôn ngữ và xem lại hướng dẫn này bất cứ lúc nào.';
+
+  @override
+  String get tourDone => 'Bắt đầu thôi!';
+
+  @override
+  String get help => 'Trợ giúp';
+
+  @override
+  String get replayTour => 'Xem hướng dẫn sử dụng';
+
+  @override
+  String get replayTourSubtitle => 'Giới thiệu nhanh các chức năng chính';
+
+  @override
+  String get view => 'Xem';
 }

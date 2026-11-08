@@ -54,6 +54,8 @@ dependencies:
   firebase_messaging: ^17.0.1
   google_sign_in: ^7.2.0
   image_picker: ^1.2.4
+  # Hướng dẫn sử dụng lần đầu (làm nổi từng nút trên trang chủ)
+  tutorial_coach_mark: ^1.3.4
 dev_dependencies:
   flutter_test:
     sdk: flutter

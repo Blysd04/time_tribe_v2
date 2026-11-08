@@ -84,6 +84,10 @@ func EnsureIndexes(db *mongo.Database) error {
 		models.CollNotifications: {
 			{Keys: bson.D{{Key: "user_id", Value: 1}, {Key: "created_at", Value: -1}}},
 		},
+		// Nhật ký nhắc lịch chỉ cần giữ vài ngày để chống trùng, sau đó MongoDB tự xoá
+		models.CollReminderLogs: {
+			{Keys: bson.D{{Key: "created_at", Value: 1}}, Options: options.Index().SetExpireAfterSeconds(3 * 24 * 3600)},
+		},
 	}
 
 	// Tạo từng index một, cái nào lỗi thì chỉ cảnh báo để server vẫn chạy được
@@ -98,7 +102,7 @@ func EnsureIndexes(db *mongo.Database) error {
 		}
 	}
 	if failed == 0 {
-		log.Println("đã kiểm tra index cho 11 collection")
+		log.Println("đã kiểm tra index cho các collection")
 	}
 	return nil
 }

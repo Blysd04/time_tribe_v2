@@ -8,6 +8,8 @@ import '../../../core/session/app_reset.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../notifications/viewmodels/notification_viewmodel.dart';
 import '../../notifications/views/notification_screen.dart';
+import '../../onboarding/onboarding_service.dart';
+import '../../onboarding/views/home_tour.dart';
 import '../../profile/views/profile_screen.dart';
 import '../../settings/views/settings_page.dart';
 import '../../template/views/template_dialogs.dart';
@@ -30,6 +32,19 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _tourKeys = HomeTourKeys();
+
+  /// Mở hướng dẫn từng bước (người mới chọn "Tôi là người mới", hoặc bấm xem lại ở Cài đặt).
+  /// Đưa về tab Trang chủ + Lịch cá nhân trước để các nút cần chỉ đều đang hiện.
+  Future<void> _startTour() async {
+    final home = context.read<HomeViewModel>();
+    _scaffoldKey.currentState?.closeDrawer();
+    home.changeDrawerSubFeature(HomeViewModel.personal);
+    // Chờ hiệu ứng chuyển trang kết thúc và các nút được vẽ xong
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+    HomeTour.show(context, _tourKeys);
+  }
 
   /// Chạy một lần lúc trang chủ vừa được tạo, chuẩn bị dữ liệu ban đầu.
   @override
@@ -89,6 +104,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final l = context.l10n;
     final home = context.watch<HomeViewModel>();
     final unread = context.watch<NotificationViewModel>().unreadCount;
+    if (Onboarding.pendingTour) {
+      Onboarding.pendingTour = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _startTour());
+    }
     final cs = Theme.of(context).colorScheme;
 
     final sections = [
@@ -120,6 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: showMainAppBar
           ? AppBar(
               leading: IconButton(
+                key: _tourKeys.menu,
                 tooltip: l.menu,
                 icon: const Icon(
                   Icons.menu,
@@ -210,7 +230,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      body: IndexedStack(index: home.currentTabIndex, children: tabs),
+      body: KeyedSubtree(
+        key: _tourKeys.content,
+        child: IndexedStack(index: home.currentTabIndex, children: tabs),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: cs.surface,
@@ -223,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (i) => i == 2 ? _onAdd(context, home) : home.changeTab(i),
         items: [
           BottomNavigationBarItem(
-            icon: const Icon(Icons.person_outline),
+            icon: Icon(Icons.person_outline, key: _tourKeys.profile),
             activeIcon: const Icon(Icons.person),
             label: l.profile,
           ),
@@ -233,8 +256,9 @@ class _HomeScreenState extends State<HomeScreen> {
             label: l.home,
           ),
           BottomNavigationBarItem(
-            icon: const Icon(
+            icon: Icon(
               Icons.add_circle,
+              key: _tourKeys.add,
               size: 42,
               color: AppColors.primary,
             ),
@@ -243,6 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: Badge(
+              key: _tourKeys.notifications,
               isLabelVisible: unread > 0,
               label: Text('$unread'),
               backgroundColor: AppColors.danger,
@@ -252,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
             label: l.notifications,
           ),
           BottomNavigationBarItem(
-            icon: const Icon(Icons.settings_outlined),
+            icon: Icon(Icons.settings_outlined, key: _tourKeys.settings),
             activeIcon: const Icon(Icons.settings),
             label: l.settings,
           ),

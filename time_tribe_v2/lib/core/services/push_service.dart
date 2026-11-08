@@ -19,6 +19,10 @@ class PushService {
   /// Mỗi khi có thông báo mới lúc app đang mở thì gọi hàm này (để tải lại danh sách).
   static void Function()? onMessage;
 
+  /// Android không tự hiện thông báo đẩy khi app đang mở, nên gọi hàm này để app
+  /// tự hiện banner trong app (tiêu đề, nội dung). iOS đã có banner hệ thống.
+  static void Function(String title, String body)? onForeground;
+
   /// Gọi khi Firebase cấp mã FCM mới, app cần gửi mã mới lên server.
   static void Function(String token)? onTokenRefresh;
 
@@ -32,8 +36,21 @@ class PushService {
     try {
       await Firebase.initializeApp();
       _ready = true;
-      FirebaseMessaging.onMessage.listen((_) => onMessage?.call());
+      FirebaseMessaging.onMessage.listen((m) {
+        onMessage?.call();
+        final n = m.notification;
+        if (n != null && defaultTargetPlatform == TargetPlatform.android) {
+          onForeground?.call(n.title ?? '', n.body ?? '');
+        }
+      });
       FirebaseMessaging.onMessageOpenedApp.listen((_) => onMessage?.call());
+      // iOS: vẫn hiện banner hệ thống khi app đang mở
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
       // Bản firebase_messaging 17 khuyên dùng onRegistered (trả Firebase Installation ID),
       // nhưng Firebase Admin SDK bên backend Go đang gửi theo registration token,
       // nên vẫn dùng onTokenRefresh / getToken cho hai bên khớp nhau.
