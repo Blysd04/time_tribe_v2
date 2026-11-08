@@ -28,6 +28,7 @@ const seedPassword = "123456"
 
 var ns = uuid.MustParse("6f1c2a3e-5b7d-4e8f-9a0b-1c2d3e4f5a6b")
 
+// id sinh UUID cố định từ loại và tên (UUID v5), seed lại bao nhiêu lần cũng ra đúng id cũ.
 func id(kind, key string) string { return uuid.NewSHA1(ns, []byte(kind+":"+key)).String() }
 
 type seedUser struct {
@@ -96,6 +97,7 @@ var weekly = map[string]map[int][]slot{
 	},
 }
 
+// main xoá 11 collection, tạo lại index rồi nạp dữ liệu mẫu, cuối cùng in danh sách tài khoản và id để test.
 func main() {
 	cfg := config.Load()
 	client, db, err := database.Connect(cfg.MongoURI, cfg.DBName)
@@ -191,7 +193,7 @@ func main() {
 	addTemplate := func(key, owner, name string, share *string, original *string, blocks []tb) {
 		tid := id("template", key)
 		must(s.Templates.InsertOne(ctx, models.Template{
-			ID: tid, UserID: id("user", owner), OriginalTemplateID: original, TemplateName: name, ShareToken: share,
+			ID: tid, UserID: id("user", owner), OriginalTemplateID: original, TemplateName: name, ShareCode: share,
 			DateModified: now.AddDate(0, 0, -2), CreatedAt: now.AddDate(0, 0, -5),
 		}))
 		for i, b := range blocks {
@@ -206,13 +208,13 @@ func main() {
 		{3, "Làm part-time", "13:00", "17:00", "#FFB703", ""},
 		{5, "Học UI/UX", "08:00", "11:30", "#3A86FF", "Phòng Lab 3"},
 	})
-	addTemplate("nga-gym", "nga", "Quy trình tập Gym 4 ngày", utils.Ptr("gym4day"), nil, []tb{
+	addTemplate("nga-gym", "nga", "Quy trình tập Gym 4 ngày", utils.Ptr("GYM4DAY"), nil, []tb{
 		{1, "Push Day", "17:30", "19:00", "#FF007F", "Ngực, Vai, Tay sau"},
 		{2, "Pull Day", "17:30", "19:00", "#9B5DE5", "Lưng, Tay trước"},
 		{4, "Leg Day", "17:30", "19:00", "#00B894", "Đùi, Mông, Bắp chân"},
 		{6, "Cardio nhẹ", "07:00", "08:00", "#0FA3B1", "Chạy bộ công viên"},
 	})
-	addTemplate("linh-exam", "linh", "Tuần ôn thi cuối kỳ", utils.Ptr("study-week"), nil, []tb{
+	addTemplate("linh-exam", "linh", "Tuần ôn thi cuối kỳ", utils.Ptr("STUDYWEEK"), nil, []tb{
 		{1, "Ôn Toán", "19:00", "21:00", "#3A86FF", ""},
 		{3, "Ôn Tiếng Anh", "19:00", "21:00", "#00F5D4", ""},
 		{5, "Làm đề thi thử", "19:00", "21:30", "#FF7F50", "Bấm giờ như thi thật"},
@@ -225,10 +227,10 @@ func main() {
 
 	// ---------------- tribes + tribe_attendees ----------------
 	type member struct{ key, role string }
-	addTribe := func(key, name, owner, code, color string, created time.Time, members []member) {
+	addTribe := func(key, name, owner, code string, created time.Time, members []member) {
 		must(s.Tribes.InsertOne(ctx, models.Tribe{
-			ID: id("tribe", key), Name: name, CreatedBy: id("user", owner), InviteLink: code,
-			BackgroundColor: utils.Ptr(color), CreatedAt: created,
+			ID: id("tribe", key), Name: name, CreatedBy: id("user", owner),
+			InviteCode: code, CreatedAt: created,
 		}))
 		for i, m := range members {
 			must(s.TribeAttendees.InsertOne(ctx, models.TribeAttendee{
@@ -238,19 +240,19 @@ func main() {
 		}
 	}
 	L, V, M := models.TribeRoleLeader, models.TribeRoleViceLeader, models.TribeRoleMember
-	addTribe("nic", "Đồ án NIC", "nga", "NIC2026", "#3A86FF", now.AddDate(0, 0, -20), []member{
+	addTribe("nic", "Đồ án NIC", "nga", "NIC2026", now.AddDate(0, 0, -20), []member{
 		{"nga", L}, {"minh", V}, {"linh", M}, {"hana", M}, {"david", M}, {"an", M},
 	})
-	addTribe("badminton", "CLB Cầu lông Q7", "mai", "CAULONGQ7", "#00B894", now.AddDate(0, 0, -18), []member{
+	addTribe("badminton", "CLB Cầu lông Q7", "mai", "CAULONGQ7", now.AddDate(0, 0, -18), []member{
 		{"mai", L}, {"minh", V}, {"nga", M}, {"an", M},
 	})
-	addTribe("marketing", "Team Marketing Global", "linh", "MKTGLOBAL", "#9B5DE5", now.AddDate(0, 0, -15), []member{
+	addTribe("marketing", "Team Marketing Global", "linh", "MKTGLOBAL", now.AddDate(0, 0, -15), []member{
 		{"linh", L}, {"nga", V}, {"hana", V}, {"david", M}, {"khoa", M}, {"an", M}, {"mai", M}, {"minh", M},
 	})
-	addTribe("gamedev", "Hội Game Dev", "tuan", "GAMEDEV26", "#FF7F50", now.AddDate(0, 0, -10), []member{
+	addTribe("gamedev", "Hội Game Dev", "tuan", "GAMEDEV26", now.AddDate(0, 0, -10), []member{
 		{"tuan", L}, {"vy", V}, {"khoa", M},
 	})
-	addTribe("full", "Nhóm đã đủ người", "tuan", "FULLHOUSE", "#6C757D", now.AddDate(0, 0, -9), []member{
+	addTribe("full", "Nhóm đã đủ người", "tuan", "FULLHOUSE", now.AddDate(0, 0, -9), []member{
 		{"tuan", L}, {"vy", M}, {"khoa", M}, {"mai", M}, {"an", M}, {"minh", M}, {"linh", M}, {"hana", M}, {"david", M}, {"phuc", M},
 	})
 
@@ -359,6 +361,7 @@ func main() {
 	}
 }
 
+// must dừng chương trình ngay nếu có lỗi, cho code seed ngắn gọn.
 func must[T any](v T, err error) T {
 	if err != nil {
 		log.Fatal(err)

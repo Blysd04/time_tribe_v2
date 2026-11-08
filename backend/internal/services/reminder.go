@@ -21,10 +21,12 @@ type ReminderWorker struct {
 	last     time.Time
 }
 
+// NewReminderWorker tạo bộ nhắc lịch.
 func NewReminderWorker(store *repository.Store, n *NotificationService) *ReminderWorker {
 	return &ReminderWorker{store: store, notifier: n}
 }
 
+// Start chạy vòng quét mỗi phút ở goroutine riêng cho tới khi server tắt.
 func (w *ReminderWorker) Start(ctx context.Context) {
 	w.last = time.Now().UTC()
 	ticker := time.NewTicker(time.Minute)
@@ -42,6 +44,7 @@ func (w *ReminderWorker) Start(ctx context.Context) {
 	log.Println("đã bật bộ nhắc lịch, quét mỗi phút")
 }
 
+// tick là một lần quét: tìm lịch cá nhân và lịch nhóm tới giờ nhắc trong phút vừa qua.
 func (w *ReminderWorker) tick(ctx context.Context, now time.Time) {
 	from := w.last
 	w.last = now
@@ -61,6 +64,7 @@ func due(start time.Time, remind int, from, now time.Time) bool {
 	return at.After(from) && !at.After(now)
 }
 
+// personal gửi nhắc cho lịch cá nhân, giờ tính theo múi giờ của từng người.
 func (w *ReminderWorker) personal(ctx context.Context, from, now time.Time) error {
 	// Mọi múi giờ đều nằm trong khoảng hôm qua tới ngày mai so với UTC
 	list, err := repository.FindMany[models.Timeblock](ctx, w.store.Timeblocks, bson.M{"date": bson.M{
@@ -96,6 +100,7 @@ func (w *ReminderWorker) personal(ctx context.Context, from, now time.Time) erro
 	return nil
 }
 
+// group gửi nhắc cho hoạt động nhóm, bỏ qua người đã từ chối tham gia.
 func (w *ReminderWorker) group(ctx context.Context, from, now time.Time) error {
 	list, err := repository.FindMany[models.TribeBlock](ctx, w.store.TribeBlocks, bson.M{"date": bson.M{
 		"$gte": now.AddDate(0, 0, -1).Format(utils.DateLayout), "$lte": now.AddDate(0, 0, 1).Format(utils.DateLayout),

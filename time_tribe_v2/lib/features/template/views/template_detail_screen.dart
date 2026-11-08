@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
+import '../../../core/l10n/api_errors.dart';
 import '../../../core/l10n/l10n.dart';
+import '../../../core/session/session.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/overlap_layout.dart';
@@ -25,6 +26,7 @@ class TemplateDetailScreen extends StatefulWidget {
     this.isEditMode = false,
   });
 
+  /// Tạo phần state giữ dữ liệu thay đổi của màn hình chi tiết lịch mẫu.
   @override
   State<TemplateDetailScreen> createState() => _TemplateDetailScreenState();
 }
@@ -35,7 +37,9 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
   final _gridController = ScrollController();
   int _day = 1;
   bool _savedOfficially = false;
+  bool _saving = false;
 
+  /// Chạy một lần lúc màn hình chi tiết lịch mẫu vừa được tạo, chuẩn bị dữ liệu ban đầu.
   @override
   void initState() {
     super.initState();
@@ -48,6 +52,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToFirst());
   }
 
+  /// Dọn controller, listener khi màn hình chi tiết lịch mẫu bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     _nameController.dispose();
@@ -55,6 +60,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
     super.dispose();
   }
 
+  /// Cuộn lưới giờ tới hoạt động sớm nhất của thứ đang xem.
   void _scrollToFirst() {
     final dayBlocks = _blocks.where((b) => b.dayIndex == _day).toList();
     final hour = dayBlocks.isEmpty
@@ -65,8 +71,10 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
     TimeGrid.scrollToHour(_gridController, hour);
   }
 
-  void _saveOfficial() {
+  /// Bấm Lưu: gửi tên và toàn bộ khối lên server. Mẫu mới thì tạo, mẫu cũ thì ghi đè.
+  Future<void> _saveOfficial() async {
     final l = context.l10n;
+    if (_saving) return;
     if (_nameController.text.trim().isEmpty) {
       AppSnack.show(
         context,
@@ -75,31 +83,44 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
       );
       return;
     }
-    context.read<TemplateViewModel>().saveTemplate(
+    setState(() => _saving = true);
+    final err = await context.read<TemplateViewModel>().saveTemplate(
       TemplateModel(
-        id: widget.template?.id ?? const Uuid().v4(),
-        userId: widget.template?.userId ?? 'current-user',
+        id: widget.template?.id ?? '',
+        userId: widget.template?.userId ?? Session.currentUserId,
         templateName: _nameController.text.trim(),
         blocks: _blocks,
       ),
+      isNew: widget.template == null,
     );
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (err != null) {
+      final msg = err == 'limit_exceeded'
+          ? l.errorTemplateLimit(TemplateLimits.maxTemplates)
+          : l.apiError(err);
+      AppSnack.show(context, msg, type: AppSnackType.error);
+      return;
+    }
     _savedOfficially = true; // Đã lưu thật thì không lưu nháp khi đóng trang
     Navigator.pop(context);
     AppSnack.show(context, l.saved);
   }
 
+  /// Thoát trang khi chưa bấm Lưu thì giữ lại bản nháp trên máy.
   void _autoDraft() {
     if (!widget.isEditMode || _savedOfficially) return;
     context.read<TemplateViewModel>().saveDraft(
       TemplateModel(
         id: widget.template?.id ?? 'draft_id',
-        userId: 'current-user',
+        userId: Session.currentUserId,
         templateName: _nameController.text.trim(),
         blocks: _blocks,
       ),
     );
   }
 
+  /// Mở màn hình thêm/sửa một hoạt động trong mẫu, xong thì cập nhật danh sách khối.
   Future<void> _openBlock({TemplateBlockModel? block, int? hour}) async {
     final result = await Navigator.push(
       context,
@@ -131,6 +152,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
     });
   }
 
+  /// Dựng giao diện màn hình chi tiết lịch mẫu.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -184,7 +206,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
             : null,
         body: Column(
           children: [
-            // THANH CHỌN THỨ
+            // Thanh chọn thứ trong tuần
             SizedBox(
               height: 62,
               child: ListView.builder(

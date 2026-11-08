@@ -8,6 +8,7 @@ import (
 	"timetribe-backend/internal/utils"
 )
 
+// ListTribes xử lý GET /tribes.
 func (h *Handler) ListTribes(c *gin.Context) {
 	res, err := h.svc.Tribes.List(c.Request.Context(), middleware.UserID(c))
 	if err != nil {
@@ -17,6 +18,7 @@ func (h *Handler) ListTribes(c *gin.Context) {
 	utils.OK(c, "", res)
 }
 
+// GetTribe xử lý GET /tribes/:id.
 func (h *Handler) GetTribe(c *gin.Context) {
 	res, err := h.svc.Tribes.Get(c.Request.Context(), c.Param("id"), middleware.UserID(c))
 	if err != nil {
@@ -26,15 +28,15 @@ func (h *Handler) GetTribe(c *gin.Context) {
 	utils.OK(c, "", res)
 }
 
+// CreateTribe xử lý POST /tribes.
 func (h *Handler) CreateTribe(c *gin.Context) {
 	var in struct {
-		Name            string  `json:"name"`
-		BackgroundColor *string `json:"background_color"`
+		Name string `json:"name"`
 	}
 	if !utils.BindJSON(c, &in) {
 		return
 	}
-	res, err := h.svc.Tribes.Create(c.Request.Context(), middleware.UserID(c), in.Name, in.BackgroundColor)
+	res, err := h.svc.Tribes.Create(c.Request.Context(), middleware.UserID(c), in.Name)
 	if err != nil {
 		utils.Fail(c, err)
 		return
@@ -42,14 +44,15 @@ func (h *Handler) CreateTribe(c *gin.Context) {
 	utils.Created(c, "Đã tạo nhóm", res)
 }
 
+// JoinTribe xử lý POST /tribes/join, body có invite_code.
 func (h *Handler) JoinTribe(c *gin.Context) {
 	var in struct {
-		InviteLink string `json:"invite_link"`
+		InviteCode string `json:"invite_code"`
 	}
 	if !utils.BindJSON(c, &in) {
 		return
 	}
-	res, err := h.svc.Tribes.Join(c.Request.Context(), middleware.UserID(c), in.InviteLink)
+	res, err := h.svc.Tribes.Join(c.Request.Context(), middleware.UserID(c), in.InviteCode)
 	if err != nil {
 		utils.Fail(c, err)
 		return
@@ -57,6 +60,7 @@ func (h *Handler) JoinTribe(c *gin.Context) {
 	utils.OK(c, "Đã tham gia nhóm", res)
 }
 
+// RenameTribe xử lý PATCH /tribes/:id.
 func (h *Handler) RenameTribe(c *gin.Context) {
 	var in struct {
 		Name string `json:"name"`
@@ -72,36 +76,7 @@ func (h *Handler) RenameTribe(c *gin.Context) {
 	utils.OK(c, "Đã đổi tên nhóm", res)
 }
 
-// UpdateTribeAppearance nhận multipart/form-data: background_color (tuỳ chọn),
-// background_image (file, tuỳ chọn), remove_image=true để bỏ ảnh nền.
-// Gửi JSON {"background_color": "#..."} cũng được nếu chỉ đổi màu.
-func (h *Handler) UpdateTribeAppearance(c *gin.Context) {
-	var color *string
-	removeImage := false
-	if c.ContentType() == "application/json" {
-		var in struct {
-			BackgroundColor *string `json:"background_color"`
-			RemoveImage     bool    `json:"remove_image"`
-		}
-		if !utils.BindJSON(c, &in) {
-			return
-		}
-		color, removeImage = in.BackgroundColor, in.RemoveImage
-	} else {
-		if v := c.PostForm("background_color"); v != "" {
-			color = &v
-		}
-		removeImage = c.PostForm("remove_image") == "true"
-	}
-	fh, _ := c.FormFile("background_image")
-	res, err := h.svc.Tribes.UpdateAppearance(c.Request.Context(), middleware.UserID(c), c.Param("id"), color, fh, removeImage)
-	if err != nil {
-		utils.Fail(c, err)
-		return
-	}
-	utils.OK(c, "Đã cập nhật giao diện nhóm", res)
-}
-
+// DissolveTribe xử lý DELETE /tribes/:id.
 func (h *Handler) DissolveTribe(c *gin.Context) {
 	if err := h.svc.Tribes.Dissolve(c.Request.Context(), middleware.UserID(c), c.Param("id")); err != nil {
 		utils.Fail(c, err)
@@ -110,6 +85,7 @@ func (h *Handler) DissolveTribe(c *gin.Context) {
 	utils.OK(c, "Đã giải tán nhóm", nil)
 }
 
+// LeaveTribe xử lý POST /tribes/:id/leave, trưởng nhóm gửi kèm new_leader_id.
 func (h *Handler) LeaveTribe(c *gin.Context) {
 	var in struct {
 		NewLeaderID string `json:"new_leader_id"`
@@ -124,6 +100,7 @@ func (h *Handler) LeaveTribe(c *gin.Context) {
 	utils.OK(c, "Đã rời nhóm", res)
 }
 
+// TribeInvite xử lý GET /tribes/:id/invite: trả invite_code.
 func (h *Handler) TribeInvite(c *gin.Context) {
 	res, err := h.svc.Tribes.Invite(c.Request.Context(), middleware.UserID(c), c.Param("id"))
 	if err != nil {
@@ -133,6 +110,7 @@ func (h *Handler) TribeInvite(c *gin.Context) {
 	utils.OK(c, "", res)
 }
 
+// KickMember xử lý DELETE /tribes/:id/members/:userId.
 func (h *Handler) KickMember(c *gin.Context) {
 	if err := h.svc.Tribes.Kick(c.Request.Context(), middleware.UserID(c), c.Param("id"), c.Param("userId")); err != nil {
 		utils.Fail(c, err)
@@ -141,6 +119,7 @@ func (h *Handler) KickMember(c *gin.Context) {
 	utils.OK(c, "Đã mời thành viên rời nhóm", nil)
 }
 
+// ChangeMemberRole xử lý PATCH /tribes/:id/members/:userId/role.
 func (h *Handler) ChangeMemberRole(c *gin.Context) {
 	var in struct {
 		Role string `json:"role"`
@@ -156,6 +135,7 @@ func (h *Handler) ChangeMemberRole(c *gin.Context) {
 	utils.OK(c, "Đã cập nhật chức vụ", res)
 }
 
+// ListTribeBlocks xử lý GET /tribes/:id/blocks.
 func (h *Handler) ListTribeBlocks(c *gin.Context) {
 	res, err := h.svc.Tribes.ListBlocks(c.Request.Context(), middleware.UserID(c), c.Param("id"), c.Query("date"), c.Query("from"), c.Query("to"))
 	if err != nil {
@@ -165,6 +145,7 @@ func (h *Handler) ListTribeBlocks(c *gin.Context) {
 	utils.OK(c, "", res)
 }
 
+// TribeAvailability xử lý GET /tribes/:id/availability: giờ bận và giờ rảnh chung của một ngày.
 func (h *Handler) TribeAvailability(c *gin.Context) {
 	res, err := h.svc.Tribes.Availability(c.Request.Context(), middleware.UserID(c), c.Param("id"), c.Query("date"))
 	if err != nil {
@@ -174,6 +155,17 @@ func (h *Handler) TribeAvailability(c *gin.Context) {
 	utils.OK(c, "", res)
 }
 
+// TribeBusy trả giờ bận của các thành viên trong khoảng ngày (from, to).
+func (h *Handler) TribeBusy(c *gin.Context) {
+	res, err := h.svc.Tribes.Busy(c.Request.Context(), middleware.UserID(c), c.Param("id"), c.Query("from"), c.Query("to"))
+	if err != nil {
+		utils.Fail(c, err)
+		return
+	}
+	utils.OK(c, "", res)
+}
+
+// CreateTribeBlock xử lý POST /tribes/:id/blocks.
 func (h *Handler) CreateTribeBlock(c *gin.Context) {
 	var in services.TribeBlockInput
 	if !utils.BindJSON(c, &in) {
@@ -187,6 +179,7 @@ func (h *Handler) CreateTribeBlock(c *gin.Context) {
 	utils.Created(c, "Đã tạo hoạt động nhóm", res)
 }
 
+// GetTribeBlock xử lý GET /tribe-blocks/:id.
 func (h *Handler) GetTribeBlock(c *gin.Context) {
 	res, err := h.svc.Tribes.GetBlock(c.Request.Context(), middleware.UserID(c), c.Param("id"))
 	if err != nil {
@@ -196,6 +189,7 @@ func (h *Handler) GetTribeBlock(c *gin.Context) {
 	utils.OK(c, "", res)
 }
 
+// UpdateTribeBlock xử lý PUT /tribe-blocks/:id.
 func (h *Handler) UpdateTribeBlock(c *gin.Context) {
 	var in services.TribeBlockInput
 	if !utils.BindJSON(c, &in) {
@@ -209,6 +203,7 @@ func (h *Handler) UpdateTribeBlock(c *gin.Context) {
 	utils.OK(c, "Đã cập nhật hoạt động nhóm", res)
 }
 
+// DeleteTribeBlock xử lý DELETE /tribe-blocks/:id.
 func (h *Handler) DeleteTribeBlock(c *gin.Context) {
 	if err := h.svc.Tribes.DeleteBlock(c.Request.Context(), middleware.UserID(c), c.Param("id")); err != nil {
 		utils.Fail(c, err)
@@ -217,6 +212,7 @@ func (h *Handler) DeleteTribeBlock(c *gin.Context) {
 	utils.OK(c, "Đã huỷ hoạt động nhóm", nil)
 }
 
+// RespondTribeBlock xử lý PUT /tribe-blocks/:id/attendance.
 func (h *Handler) RespondTribeBlock(c *gin.Context) {
 	var in struct {
 		Status string `json:"status"`

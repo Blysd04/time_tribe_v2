@@ -12,8 +12,10 @@ type Handler struct {
 	svc *services.Services
 }
 
+// New tạo handler dùng chung cho mọi API.
 func New(svc *services.Services) *Handler { return &Handler{svc: svc} }
 
+// Register xử lý POST /auth/register.
 func (h *Handler) Register(c *gin.Context) {
 	var in services.RegisterInput
 	if !utils.BindJSON(c, &in) {
@@ -27,6 +29,7 @@ func (h *Handler) Register(c *gin.Context) {
 	utils.Created(c, "Đăng ký thành công, mời bạn đăng nhập", user)
 }
 
+// Login xử lý POST /auth/login, body có thể kèm fcm_token.
 func (h *Handler) Login(c *gin.Context) {
 	var in services.LoginInput
 	if !utils.BindJSON(c, &in) {
@@ -40,6 +43,7 @@ func (h *Handler) Login(c *gin.Context) {
 	utils.OK(c, "Đăng nhập thành công", res)
 }
 
+// GoogleLogin xử lý POST /auth/google.
 func (h *Handler) GoogleLogin(c *gin.Context) {
 	var in services.GoogleLoginInput
 	if !utils.BindJSON(c, &in) {
@@ -53,15 +57,15 @@ func (h *Handler) GoogleLogin(c *gin.Context) {
 	utils.OK(c, "Đăng nhập Google thành công", res)
 }
 
+// Refresh xử lý POST /auth/refresh: đổi refresh token lấy access token mới.
 func (h *Handler) Refresh(c *gin.Context) {
 	var in struct {
 		RefreshToken string `json:"refresh_token"`
-		DeviceInfo   string `json:"device_info"`
 	}
 	if !utils.BindJSON(c, &in) {
 		return
 	}
-	res, err := h.svc.Auth.Refresh(c.Request.Context(), in.RefreshToken, in.DeviceInfo)
+	res, err := h.svc.Auth.Refresh(c.Request.Context(), in.RefreshToken)
 	if err != nil {
 		utils.Fail(c, err)
 		return
@@ -69,21 +73,16 @@ func (h *Handler) Refresh(c *gin.Context) {
 	utils.OK(c, "Đã cấp token mới", res)
 }
 
+// Logout xử lý POST /auth/logout: xoá phiên hiện tại (lấy từ access token) và fcm_token.
 func (h *Handler) Logout(c *gin.Context) {
-	var in struct {
-		RefreshToken string `json:"refresh_token"`
-		FCMToken     string `json:"fcm_token"`
-	}
-	if !utils.BindJSON(c, &in) {
-		return
-	}
-	if err := h.svc.Auth.Logout(c.Request.Context(), middleware.UserID(c), in.RefreshToken, in.FCMToken); err != nil {
+	if err := h.svc.Auth.Logout(c.Request.Context(), middleware.UserID(c), middleware.SessionID(c)); err != nil {
 		utils.Fail(c, err)
 		return
 	}
 	utils.OK(c, "Đã đăng xuất", nil)
 }
 
+// ForgotPassword xử lý POST /auth/forgot-password.
 func (h *Handler) ForgotPassword(c *gin.Context) {
 	var in struct {
 		Email string `json:"email"`
@@ -99,6 +98,7 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 	utils.OK(c, "Nếu email tồn tại, đường dẫn đặt lại mật khẩu đã được gửi", res)
 }
 
+// ResetPassword xử lý POST /auth/reset-password.
 func (h *Handler) ResetPassword(c *gin.Context) {
 	var in services.ResetPasswordInput
 	if !utils.BindJSON(c, &in) {
@@ -111,6 +111,7 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 	utils.OK(c, "Đặt mật khẩu mới thành công, mời bạn đăng nhập lại", nil)
 }
 
+// ChangePassword xử lý PUT /auth/change-password.
 func (h *Handler) ChangePassword(c *gin.Context) {
 	var in services.ChangePasswordInput
 	if !utils.BindJSON(c, &in) {

@@ -20,6 +20,7 @@ type TimeblockService struct {
 	tribes *TribeService
 }
 
+// NewTimeblockService tạo service lịch cá nhân.
 func NewTimeblockService(store *repository.Store, tribes *TribeService) *TimeblockService {
 	return &TimeblockService{store: store, tribes: tribes}
 }
@@ -36,6 +37,7 @@ type TimeblockInput struct {
 	RepeatingDates []string `json:"repeating_dates"`
 }
 
+// loc lấy múi giờ của người dùng để tính "hôm nay" cho đúng.
 func (s *TimeblockService) loc(ctx context.Context, userID string) *time.Location {
 	u, err := s.store.UserByID(ctx, userID)
 	if err != nil || u == nil {
@@ -144,6 +146,7 @@ func (s *TimeblockService) CountByDay(ctx context.Context, userID, from, to stri
 	return out, nil
 }
 
+// Get lấy một hoạt động cá nhân, phải là của chính mình.
 func (s *TimeblockService) Get(ctx context.Context, userID, id string) (*models.Timeblock, error) {
 	t, err := repository.FindOne[models.Timeblock](ctx, s.store.Timeblocks, bson.M{"_id": id, "user_id": userID})
 	if err != nil {
@@ -224,6 +227,7 @@ func (s *TimeblockService) makeCopies(ctx context.Context, base *models.Timebloc
 	return copies, skipped, nil
 }
 
+// insertCopies lưu nhiều hoạt động một lần (bản nhân bản hoặc lịch sinh từ lịch mẫu).
 func (s *TimeblockService) insertCopies(ctx context.Context, copies []models.Timeblock) error {
 	if len(copies) == 0 {
 		return nil
@@ -236,6 +240,7 @@ func (s *TimeblockService) insertCopies(ctx context.Context, copies []models.Tim
 	return err
 }
 
+// copyDates lấy danh sách ngày của các bản nhân bản để ghi vào repeating_dates.
 func copyDates(copies []models.Timeblock) []string {
 	if len(copies) == 0 {
 		return nil

@@ -26,13 +26,14 @@ import 'widgets/tribe_block_sheet.dart';
 ///
 /// - Cột trái "Lịch thành viên": khung xám = có người bận (hiện ai bận),
 ///   càng nhiều người bận càng đậm. Bật "Giờ rảnh chung" để chỉ thấy các
-///   khung xanh lá mà TẤT CẢ đều rảnh.
+///   khung xanh lá mà tất cả đều rảnh.
 /// - Cột phải "Hoạt động nhóm": các tribe_block (trùng giờ thì chia cột).
 /// - Mọi mốc giờ được quy đổi về múi giờ trong Profile của người xem.
 class TribeDetailScreen extends StatefulWidget {
   final String tribeId;
   const TribeDetailScreen({super.key, required this.tribeId});
 
+  /// Tạo phần state giữ dữ liệu thay đổi của trang lịch nhóm.
   @override
   State<TribeDetailScreen> createState() => _TribeDetailScreenState();
 }
@@ -47,13 +48,25 @@ class _TribeDetailScreenState extends State<TribeDetailScreen> {
   bool _onlyFree = false;
   bool _closing = false;
 
+  /// Chạy một lần lúc trang lịch nhóm vừa được tạo, chuẩn bị dữ liệu ban đầu.
   @override
   void initState() {
     super.initState();
     AppTime.changes.addListener(_onTimezoneChanged);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollGridToFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollGridToFocus();
+      _loadAround(_selectedDate);
+    });
   }
 
+  /// Tải giờ bận của thành viên và hoạt động nhóm quanh ngày đang xem (đã có thì bỏ qua).
+  void _loadAround(DateTime date) {
+    final vm = context.read<TribeViewModel>();
+    vm.ensureBusyLoaded(widget.tribeId, date);
+    vm.ensureBlocksLoaded(date);
+  }
+
+  /// Dọn controller, listener khi trang lịch nhóm bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     AppTime.changes.removeListener(_onTimezoneChanged);
@@ -61,17 +74,21 @@ class _TribeDetailScreenState extends State<TribeDetailScreen> {
     super.dispose();
   }
 
+  /// Đổi múi giờ thì vẽ lại và cuộn lưới về giờ phù hợp.
   void _onTimezoneChanged() {
     if (!mounted) return;
     setState(() {});
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollGridToFocus());
   }
 
+  /// Hai mốc thời gian có cùng một ngày không.
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
+  /// Chọn ngày khác trên thanh ngày.
   void _selectDate(DateTime date) {
     setState(() => _selectedDate = DateTime(date.year, date.month, date.day));
+    _loadAround(_selectedDate);
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollGridToFocus());
   }
 
@@ -105,9 +122,11 @@ class _TribeDetailScreenState extends State<TribeDetailScreen> {
     return local.hour * 60.0 + local.minute;
   }
 
+  /// Chữ khoảng giờ "08:00 - 09:00" đã đổi sang giờ người xem.
   String _range(DateTime startUtc, DateTime endUtc) =>
       Fmt.range(context, AppTime.fromUtc(startUtc), AppTime.fromUtc(endUtc));
 
+  /// Mở màn hình tạo hoạt động nhóm, có thể điền sẵn giờ bắt đầu và kết thúc.
   void _openAddBlock({DateTime? startUtc, DateTime? endUtc}) {
     Navigator.push(
       context,
@@ -135,6 +154,7 @@ class _TribeDetailScreenState extends State<TribeDetailScreen> {
     );
   }
 
+  /// Dựng giao diện trang lịch nhóm.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -260,7 +280,7 @@ class _TribeDetailScreenState extends State<TribeDetailScreen> {
                 ]);
 
                 return [
-                  // CỘT TRÁI: lịch thành viên
+                  // Cột trái: lịch thành viên
                   if (!_onlyFree)
                     for (final s in segments.where(
                       (s) => s.busyUserIds.isNotEmpty,
@@ -300,7 +320,7 @@ class _TribeDetailScreenState extends State<TribeDetailScreen> {
                         ),
                       ),
 
-                  // CỘT PHẢI: hoạt động nhóm
+                  // Cột phải: hoạt động nhóm
                   for (int i = 0; i < dayBlocks.length; i++)
                     gridBlock(
                       startMinute: _minuteOf(dayBlocks[i].startUtc, day),
@@ -354,7 +374,7 @@ class _TribeDetailScreenState extends State<TribeDetailScreen> {
     );
   }
 
-  /// Màu ô ngày theo số thành viên bận trong khung 7h–22h (giờ người xem).
+  /// Màu ô ngày theo số thành viên bận trong khung 7h-22h (giờ người xem).
   DayDecoration _decorateDay(
     TribeViewModel vm,
     TribeModel tribe,
@@ -386,6 +406,7 @@ class _TribeDetailScreenState extends State<TribeDetailScreen> {
     );
   }
 
+  /// Dòng chú thích màu Rảnh / Nửa bận / Bận và nút lọc giờ rảnh chung.
   Widget _buildLegendAndFilter(ColorScheme cs) {
     final l = context.l10n;
     Widget dot(Color c, String label) => Padding(
@@ -456,6 +477,7 @@ class _TribeDetailScreenState extends State<TribeDetailScreen> {
     );
   }
 
+  /// Tiêu đề hai cột: Lịch thành viên và Hoạt động nhóm.
   Widget _buildLaneHeader(ColorScheme cs) {
     final l = context.l10n;
     final style = TextStyle(
@@ -624,6 +646,7 @@ class TribeBlockTile extends StatelessWidget {
     this.caption,
   });
 
+  /// Dựng giao diện ô hoạt động nhóm trên lưới giờ.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -678,6 +701,7 @@ class _BusySegmentCard extends StatelessWidget {
     required this.onTap,
   });
 
+  /// Dựng giao diện ô giờ bận của thành viên.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -767,6 +791,7 @@ class _FreeSlotCard extends StatelessWidget {
     required this.onTap,
   });
 
+  /// Dựng giao diện ô giờ rảnh chung.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;

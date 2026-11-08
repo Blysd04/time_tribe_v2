@@ -1,4 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../core/api/api_client.dart';
+import '../../../core/services/google_auth_service.dart';
+import '../../../core/services/push_service.dart';
+import '../../../core/session/session.dart';
+import '../../profile/models/user_model.dart';
 
 /// Mã lỗi xác thực; câu chữ hiển thị nằm ở giao diện (đa ngôn ngữ).
 enum AuthError {
@@ -9,39 +16,104 @@ enum AuthError {
   emailRequired,
   createPasswordRequired,
   passwordMismatch,
+  nameLength,
+  emailInvalid,
+  passwordTooShort,
+  emailTaken,
+  nameTaken,
+  accountBanned,
+  accountDeleted,
+  googleAccount,
+  googleFailed,
+  googleUnsupported,
+  network,
+  server,
 }
 
 class AuthViewModel extends ChangeNotifier {
+  AuthViewModel({ApiClient? api}) : _api = api ?? ApiClient.instance;
+
+  final ApiClient _api;
+
   bool _isLoading = false;
+
+  /// Đang gọi API đăng nhập/đăng ký hay không, để khoá nút và hiện vòng tải.
   bool get isLoading => _isLoading;
 
   AuthError? _identifierError; // Email hoặc Username
   AuthError? _passwordError;
   AuthError? _nameError;
   AuthError? _confirmPasswordError;
+  AuthError? _generalError;
 
+  /// Lỗi của ô email hoặc tên đăng nhập.
   AuthError? get emailError => _identifierError;
+
+  /// Lỗi của ô mật khẩu.
   AuthError? get passwordError => _passwordError;
+
+  /// Lỗi của ô tên hiển thị (màn đăng ký).
   AuthError? get nameError => _nameError;
+
+  /// Lỗi của ô xác nhận mật khẩu (màn đăng ký).
   AuthError? get confirmPasswordError => _confirmPasswordError;
 
+  /// Lỗi không thuộc ô nhập nào (mất mạng, tài khoản bị khoá...), giao diện hiện bằng snackbar.
+  AuthError? get generalError => _generalError;
+
   bool _rememberMe = true;
+
+  /// Người dùng có tích "Ghi nhớ đăng nhập" không.
   bool get rememberMe => _rememberMe;
 
+  /// Bật tắt ô "Ghi nhớ đăng nhập".
   void toggleRememberMe() {
     _rememberMe = !_rememberMe;
     notifyListeners();
   }
 
+  /// Xoá hết thông báo lỗi cũ trước mỗi lần bấm nút.
   void _clearErrors() {
     _identifierError = null;
     _passwordError = null;
     _nameError = null;
     _confirmPasswordError = null;
+    _generalError = null;
   }
 
-  /// Đăng nhập bằng email hoặc tên người dùng.
-  /// Tài khoản mẫu: admin / admin@timetribe.com, mật khẩu 123456.
+  /// Bật tắt trạng thái đang tải rồi báo giao diện vẽ lại.
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
+
+  /// Tên máy gửi kèm khi đăng nhập để backend biết phiên này ở thiết bị nào.
+  String get _deviceInfo => kIsWeb ? 'web' : defaultTargetPlatform.name;
+
+  /// Đổi lỗi chung từ server sang mã lỗi của app.
+  AuthError _generalFrom(ApiException e) => switch (e.code) {
+    'account_banned' => AuthError.accountBanned,
+    'account_deleted' => AuthError.accountDeleted,
+    'google_account' => AuthError.googleAccount,
+    'network_error' => AuthError.network,
+    _ => AuthError.server,
+  };
+
+  /// Lưu token và người dùng sau khi đăng nhập thành công.
+  Future<void> _startSession(
+    Map<String, dynamic> data, {
+    required bool persist,
+  }) async {
+    await _api.setTokens(
+      data['access_token'],
+      data['refresh_token'],
+      persist: persist,
+    );
+    Session.start(UserModel.fromJson(data['user']));
+  }
+
+  /// AU-02: đăng nhập bằng email hoặc tên hiển thị.
+  /// Gửi kèm mã FCM của máy (nếu có) để server lưu vào users.fcm_token.
   Future<bool> login(String emailOrUsername, String password) async {
     _clearErrors();
     if (emailOrUsername.trim().isEmpty) {
@@ -53,26 +125,67 @@ class AuthViewModel extends ChangeNotifier {
       return false;
     }
 
-    _isLoading = true;
-    notifyListeners();
-    await Future.delayed(
-      const Duration(seconds: 1),
-    ); // TODO(backend): POST /auth/login
-
-    final id = emailOrUsername.trim();
-    final ok =
-        (id == 'admin' || id == 'admin@timetribe.com') && password == '123456';
-    _isLoading = false;
-    if (!ok) {
-      // Gom chung lỗi tài khoản/mật khẩu để tránh bị dò tài khoản
-      _passwordError = AuthError.wrongCredentials;
-      notifyListeners();
+    _setLoading(true);
+    try {
+      final data = await _api.post('/auth/login', {
+        'identifier': emailOrUsername.trim(),
+        'password': password,
+        'remember_me': _rememberMe,
+        'fcm_token': await PushService.getToken() ?? '',
+        'device_info': _deviceInfo,
+      });
+      await _startSession(data, persist: _rememberMe);
+      return true;
+    } on ApiException catch (e) {
+      if (e.code == 'wrong_credentials') {
+        // Gom chung lỗi tài khoản/mật khẩu để tránh bị dò tài khoản
+        _passwordError = AuthError.wrongCredentials;
+      } else {
+        _generalError = _generalFrom(e);
+      }
       return false;
+    } finally {
+      _setLoading(false);
     }
-    notifyListeners();
-    return true;
   }
 
+  /// AU-03: đăng nhập Google. App lấy Firebase ID token rồi gửi lên backend cùng mã FCM.
+  /// Trả về false khi người dùng tự đóng hộp chọn tài khoản (không báo lỗi).
+  Future<bool> loginWithGoogle() async {
+    _clearErrors();
+    _setLoading(true);
+    try {
+      final google = await GoogleAuthService.signIn();
+      switch (google.status) {
+        case GoogleSignInStatus.cancelled:
+          return false;
+        case GoogleSignInStatus.unsupported:
+          _generalError = AuthError.googleUnsupported;
+          return false;
+        case GoogleSignInStatus.failed:
+          _generalError = AuthError.googleFailed;
+          return false;
+        case GoogleSignInStatus.success:
+          break;
+      }
+      final data = await _api.post('/auth/google', {
+        'id_token': google.idToken,
+        'fcm_token': await PushService.getToken() ?? '',
+        'device_info': _deviceInfo,
+      });
+      await _startSession(data, persist: true);
+      return true;
+    } on ApiException catch (e) {
+      _generalError = e.code == 'invalid_google_token'
+          ? AuthError.googleFailed
+          : _generalFrom(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// AU-01: đăng ký tài khoản. Thành công thì quay về màn hình đăng nhập.
   Future<bool> register(
     String name,
     String email,
@@ -94,31 +207,134 @@ class AuthViewModel extends ChangeNotifier {
       return false;
     }
 
-    _isLoading = true;
-    notifyListeners();
-    await Future.delayed(
-      const Duration(seconds: 1),
-    ); // TODO(backend): POST /auth/register
-    _isLoading = false;
-    notifyListeners();
-    return true;
+    _setLoading(true);
+    try {
+      await _api.post('/auth/register', {
+        'nick_name': name.trim(),
+        'email': email.trim(),
+        'password': password,
+        'confirm_password': confirm,
+      });
+      return true;
+    } on ApiException catch (e) {
+      _applyFieldErrors(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 
-  void logout() {
+  /// Đọc details của lỗi validation_error / account_exists rồi gắn vào đúng ô nhập.
+  void _applyFieldErrors(ApiException e) {
+    final details = e.details is Map ? e.details as Map : const {};
+    if (details.isEmpty) {
+      _generalError = _generalFrom(e);
+      return;
+    }
+    _nameError = switch (details['nick_name']) {
+      'name_required' => AuthError.nameRequired,
+      'name_length' => AuthError.nameLength,
+      'already_taken' => AuthError.nameTaken,
+      _ => null,
+    };
+    _identifierError = switch (details['email']) {
+      'email_required' => AuthError.emailRequired,
+      'email_invalid' => AuthError.emailInvalid,
+      'already_taken' => AuthError.emailTaken,
+      _ => null,
+    };
+    _passwordError = switch (details['password']) {
+      'create_password_required' => AuthError.createPasswordRequired,
+      'password_too_short' => AuthError.passwordTooShort,
+      _ => null,
+    };
+    if (details['confirm_password'] == 'password_mismatch') {
+      _confirmPasswordError = AuthError.passwordMismatch;
+    }
+  }
+
+  /// AU-04: gửi email đặt lại mật khẩu. Server luôn trả thành công dù email có tồn tại hay không.
+  Future<bool> forgotPassword(String email) async {
     _clearErrors();
-    // TODO(backend): xoá refresh token (user_tokens)
+    final value = email.trim();
+    if (value.isEmpty) {
+      _identifierError = AuthError.emailRequired;
+      notifyListeners();
+      return false;
+    }
+    _setLoading(true);
+    try {
+      await _api.post('/auth/forgot-password', {'email': value});
+      return true;
+    } on ApiException catch (e) {
+      _identifierError = e.code == 'validation_error'
+          ? AuthError.emailInvalid
+          : null;
+      if (_identifierError == null) _generalError = _generalFrom(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Mở app: nếu lần trước có ghi nhớ đăng nhập thì lấy lại hồ sơ, vào thẳng trang chủ.
+  Future<bool> restoreSession() async {
+    await _api.loadTokens();
+    if (!_api.hasSession) return false;
+    try {
+      final data = await _api.get('/users/me');
+      Session.start(UserModel.fromJson(data));
+      return true;
+    } on ApiException {
+      // Token hết hạn hoặc máy chủ không trả lời thì bắt đăng nhập lại
+      return false;
+    }
+  }
+
+  /// AU-06: đăng xuất. Server xoá phiên và đặt fcm_token về null.
+  /// Dù gọi server lỗi (mất mạng) thì máy vẫn xoá sạch dữ liệu đăng nhập.
+  Future<void> logout() async {
+    _clearErrors();
+    try {
+      await _api.post('/auth/logout');
+    } on ApiException {
+      // Bỏ qua, phiên trên server sẽ tự hết hạn
+    }
+    await clearDeviceData(_api);
     notifyListeners();
   }
 
-  /// Xoá tài khoản: ghi `user_securities.delete_at` + `delete_reason`.
-  Future<void> deleteAccount(String reason) async {
-    _isLoading = true;
-    notifyListeners();
-    await Future.delayed(
-      const Duration(milliseconds: 800),
-    ); // TODO(backend): DELETE /users/me { reason }
-    _isLoading = false;
+  /// AU-07: xoá tài khoản vĩnh viễn với lý do người dùng chọn.
+  Future<bool> deleteAccount(String reason) async {
     _clearErrors();
-    notifyListeners();
+    _setLoading(true);
+    try {
+      await _api.delete('/users/me', {'reason': reason});
+      await clearDeviceData(_api);
+      return true;
+    } on ApiException catch (e) {
+      _generalError = _generalFrom(e);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Xoá mọi thông tin của tài khoản trên máy: token, hồ sơ, cài đặt múi giờ, tài khoản Google.
+  /// Giữ lại ngôn ngữ và chế độ sáng tối vì đó là cài đặt của máy, không phải của tài khoản.
+  static Future<void> clearDeviceData(ApiClient api) async {
+    await api.clearTokens();
+    Session.clear();
+    await GoogleAuthService.signOut();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final key in prefs.getKeys().toList()) {
+        if (key.startsWith('profile.') ||
+            key.startsWith('auth.') ||
+            key.startsWith('timeblock.')) {
+          await prefs.remove(key);
+        }
+      }
+    } catch (_) {}
   }
 }

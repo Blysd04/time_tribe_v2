@@ -1,22 +1,14 @@
-import 'dart:convert';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/session/session.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/app_time.dart';
-import '../../notifications/models/app_notification.dart';
-import '../../notifications/models/notification_model.dart';
 import '../../timeblock/models/timeblock_model.dart';
-import '../data/tribe_mock_data.dart';
 import '../models/tribe_block_model.dart';
 import '../models/tribe_model.dart';
 import '../services/availability_calculator.dart';
 
-/// Giới hạn — khớp các cột mặc định của `pricing_plans`.
-/// TODO(backend): đọc theo gói đăng ký của user (max_tribes, max_members_per_tribe).
+/// Giới hạn của nhóm, khớp với hằng số bên backend.
 class TribeLimits {
   static const int maxTribesPerUser = 5;
   static const int maxMembersPerTribe = 10;
@@ -25,13 +17,13 @@ class TribeLimits {
 }
 
 /// Kết quả các thao tác trong nhóm. Câu chữ hiển thị nằm ở giao diện
-/// (`tribe_texts.dart`) để dịch được sang nhiều ngôn ngữ.
+/// (tribe_texts.dart) để dịch được sang nhiều ngôn ngữ.
 enum TribeResult {
   success,
   emptyName,
   nameTooLong,
   tribeLimit,
-  invalidLink,
+  invalidCode,
   notFound,
   alreadyMember,
   tribeFull,
@@ -39,16 +31,24 @@ enum TribeResult {
   needNewLeader,
   notAllowed,
   notFoundItem,
+  pastTime,
+  blockEnded,
+  network,
+  failed,
 }
 
 /// Các quyền trong nhóm, gom về một chỗ cho dễ đọc và dễ test.
+/// Server cũng kiểm tra lại y hệt, ở đây chỉ để ẩn hoặc khoá nút trên giao diện.
 class TribePermissions {
   TribePermissions._();
 
+  /// Chỉ trưởng nhóm được đổi tên nhóm.
   static bool canRename(TribeRole? r) => r == TribeRole.leader;
+
+  /// Chỉ trưởng nhóm được giải tán nhóm.
   static bool canDissolve(TribeRole? r) => r == TribeRole.leader;
-  static bool canChangeColor(TribeRole? r) =>
-      r == TribeRole.leader || r == TribeRole.viceLeader;
+
+  /// Trưởng và phó nhóm được tạo, sửa, xoá hoạt động nhóm.
   static bool canManageBlocks(TribeRole? r) => r?.canManageBlocks ?? false;
 
   /// Trưởng nhóm quản lý mọi người (trừ chính mình).
@@ -59,8 +59,11 @@ class TribePermissions {
     return false;
   }
 
+  /// Có được mời người này rời nhóm không.
   static bool canKick(TribeRole? actor, TribeRole target) =>
       canManageMember(actor, target);
+
+  /// Chỉ trưởng nhóm được bổ nhiệm, bãi nhiệm, chuyển quyền.
   static bool canAppoint(TribeRole? actor) => actor == TribeRole.leader;
 }
 
@@ -77,49 +80,50 @@ class LocalTribeBlock {
       localEnd = AppTime.fromUtc(block.endUtc);
 }
 
+/// Giờ bận của các thành viên một nhóm, tải từ /tribes/:id/busy cho cả một khoảng ngày.
+class _BusyCache {
+  final DateTime from;
+  final DateTime to;
+  final Map<String, List<TimeRange>> byUser;
+
+  _BusyCache(this.from, this.to, this.byUser);
+
+  /// Khoảng đã tải có bao trọn ngày [day] không.
+  bool covers(DateTime day) => !day.isBefore(from) && !day.isAfter(to);
+}
+
 class TribeViewModel extends ChangeNotifier {
-  final List<TribeModel> _tribes = TribeMockData.tribes();
-  final List<TribeBlockModel> _blocks = TribeMockData.blocks();
-  final Map<String, TribeModel> _joinable = TribeMockData.joinableTribes();
+  TribeViewModel({ApiClient? api}) : _api = api ?? ApiClient.instance;
 
-  /// Thông báo gửi cho NGƯỜI KHÁC (chưa có backend nên chỉ lưu lại).
-  /// TODO(backend): server tự tạo bản ghi `notifications` (dịch theo ngôn ngữ
-  /// của người nhận) + push FCM. `title` = loại thông báo, `content` = tham số JSON.
-  final List<NotificationModel> outbox = [];
+  final ApiClient _api;
 
-  /// Nơi nhận thông báo dành cho chính người dùng hiện tại.
-  void Function(AppNotification notification)? notificationSink;
+  List<TribeModel> _tribes = [];
+  List<TribeBlockModel> _blocks = [];
+  final Map<String, _BusyCache> _busy = {};
 
+  // Khoảng ngày (theo giờ người xem) đã tải hoạt động nhóm
+  DateTime? _blocksFrom;
+  DateTime? _blocksTo;
+
+  bool _isLoading = false;
+
+  /// Đang tải danh sách nhóm hay không.
+  bool get isLoading => _isLoading;
+
+  /// id của người đang đăng nhập.
   String get me => Session.currentUserId;
 
-  TribeViewModel({this.notificationSink}) {
-    // Lời mời đang chờ mình xác nhận -> hiện trong tab Thông báo
-    for (final b in _blocks) {
-      if (b.statusOf(me) == AttendanceStatus.pending && b.createdBy != me) {
-        final tribe = tribeById(b.tribeId);
-        if (tribe == null) continue;
-        _notifyUsers(
-          [me],
-          tribe: tribe,
-          kind: NotificationKind.tribeNewBlock,
-          args: {'actor': _name(b.createdBy), 'task': b.task},
-          type: 'group_schedule',
-          referenceId: b.id,
-          referenceType: 'tribe_block',
-          createdAt: b.createdAt.subtract(const Duration(minutes: 11)),
-        );
-      }
-    }
-  }
-
   // ---------------------------------------------------------------------------
-  // ĐỌC DỮ LIỆU
+  // Đọc dữ liệu
   // ---------------------------------------------------------------------------
 
+  /// Các nhóm mình đang tham gia (không cho sửa trực tiếp từ ngoài).
   List<TribeModel> get tribes => List.unmodifiable(_tribes);
 
+  /// Còn được tạo hoặc tham gia thêm nhóm không (tối đa 5 nhóm).
   bool get canCreateOrJoin => _tribes.length < TribeLimits.maxTribesPerUser;
 
+  /// Tìm nhóm trong danh sách đã tải.
   TribeModel? tribeById(String id) {
     for (final t in _tribes) {
       if (t.id == id) return t;
@@ -127,8 +131,10 @@ class TribeViewModel extends ChangeNotifier {
     return null;
   }
 
+  /// Chức vụ của mình trong một nhóm.
   TribeRole? myRoleIn(String tribeId) => tribeById(tribeId)?.roleOf(me);
 
+  /// Tìm hoạt động nhóm trong danh sách đã tải.
   TribeBlockModel? blockById(String id) {
     for (final b in _blocks) {
       if (b.id == id) return b;
@@ -136,6 +142,7 @@ class TribeViewModel extends ChangeNotifier {
     return null;
   }
 
+  /// Hoạt động của một nhóm, sắp theo giờ bắt đầu.
   List<TribeBlockModel> blocksOf(String tribeId) =>
       _blocks.where((b) => b.tribeId == tribeId).toList()
         ..sort((a, b) => a.startUtc.compareTo(b.startUtc));
@@ -146,12 +153,13 @@ class TribeViewModel extends ChangeNotifier {
     AppTime.toUtc(DateTime(localDate.year, localDate.month, localDate.day + 1)),
   );
 
+  /// Hoạt động của nhóm có giao với khoảng thời gian [window].
   List<TribeBlockModel> blocksInWindow(String tribeId, TimeRange window) =>
       blocksOf(
         tribeId,
       ).where((b) => b.overlaps(window.start, window.end)).toList();
 
-  /// Số hoạt động đang chờ mình phản hồi trong nhóm.
+  /// Số hoạt động chưa kết thúc mà mình chưa trả lời trong nhóm.
   int pendingCountForMe(String tribeId) => blocksOf(tribeId)
       .where(
         (b) =>
@@ -184,41 +192,43 @@ class TribeViewModel extends ChangeNotifier {
     return result;
   }
 
-  /// Khoảng bận của từng thành viên trong [window] — KHÔNG tính hoạt động
-  /// của chính nhóm đang xem (vì chúng được vẽ riêng), và với các nhóm khác
-  /// chỉ tính hoạt động mà thành viên đã XÁC NHẬN tham gia.
+  /// Khoảng bận của từng thành viên trong [window], không tính hoạt động của
+  /// chính nhóm đang xem (vì chúng được vẽ riêng).
+  /// - Mình: lấy lịch cá nhân đang có trên máy + hoạt động nhóm khác đã nhận tham gia.
+  /// - Người khác: lấy từ server (/tribes/:id/busy), server chỉ trả khoảng bận chứ
+  ///   không trả nội dung lịch riêng của họ.
   Map<String, List<TimeRange>> busyByMember(
     TribeModel tribe,
     TimeRange window, {
     required List<TimeblockModel> myPersonalBlocks,
   }) {
+    final cache = _busy[tribe.id];
     final result = <String, List<TimeRange>>{};
     for (final member in tribe.members) {
       final ranges = <TimeRange>[];
-
-      // 1. Lịch cá nhân
       if (member.userId == me) {
         for (final t in myPersonalBlocks) {
           final c = _personalRange(t).clip(window);
           if (c != null) ranges.add(c);
         }
+        for (final b in _blocks) {
+          if (b.tribeId == tribe.id) continue;
+          if (b.statusOf(me) != AttendanceStatus.accepted) continue;
+          final c = TimeRange(b.startUtc, b.endUtc).clip(window);
+          if (c != null) ranges.add(c);
+        }
       } else {
-        ranges.addAll(TribeMockData.personalBusyOf(member.userId, window));
+        for (final r in cache?.byUser[member.userId] ?? const <TimeRange>[]) {
+          final c = r.clip(window);
+          if (c != null) ranges.add(c);
+        }
       }
-
-      // 2. Hoạt động của các nhóm KHÁC mà người đó đã nhận tham gia
-      for (final b in _blocks) {
-        if (b.tribeId == tribe.id) continue;
-        if (b.statusOf(member.userId) != AttendanceStatus.accepted) continue;
-        final c = TimeRange(b.startUtc, b.endUtc).clip(window);
-        if (c != null) ranges.add(c);
-      }
-
       result[member.userId] = ranges;
     }
     return result;
   }
 
+  /// Đổi lịch cá nhân (giờ địa phương) sang khoảng thời gian UTC.
   TimeRange _personalRange(TimeblockModel t) {
     final start = AppTime.toUtc(
       DateTime(
@@ -242,286 +252,6 @@ class TribeViewModel extends ChangeNotifier {
     return TimeRange(start, end);
   }
 
-  // ---------------------------------------------------------------------------
-  // QUẢN LÝ NHÓM
-  // ---------------------------------------------------------------------------
-
-  /// COM-03: tạo nhóm, người tạo là trưởng nhóm.
-  ({TribeResult result, TribeModel? tribe}) createTribe(String rawName) {
-    final name = rawName.trim();
-    if (name.isEmpty) return (result: TribeResult.emptyName, tribe: null);
-    if (name.length > TribeLimits.maxNameLength) {
-      return (result: TribeResult.nameTooLong, tribe: null);
-    }
-    if (!canCreateOrJoin) return (result: TribeResult.tribeLimit, tribe: null);
-
-    final id = const Uuid().v4();
-    final tribe = TribeModel(
-      id: id,
-      name: name,
-      createdBy: me,
-      inviteCode: _newInviteCode(),
-      backgroundColor:
-          AppColors.palette[_tribes.length % AppColors.palette.length],
-      members: [
-        TribeMember(
-          id: '$id-$me',
-          tribeId: id,
-          user: _user(me),
-          role: TribeRole.leader,
-        ),
-      ],
-    );
-    _tribes.add(tribe);
-    notifyListeners();
-    // TODO(backend): POST /tribes
-    return (result: TribeResult.success, tribe: tribe);
-  }
-
-  /// Lấy mã mời từ link: https://timetribe.app/tribe/ABC123 hoặc chỉ "ABC123".
-  static String? extractInviteCode(String link) {
-    final segments =
-        (Uri.tryParse(link.trim())?.pathSegments ?? const <String>[])
-            .where((s) => s.isNotEmpty)
-            .toList();
-    if (segments.isEmpty) return null;
-    return segments.last.toUpperCase();
-  }
-
-  /// COM-11: tham gia nhóm bằng link.
-  ({TribeResult result, TribeModel? tribe}) joinByLink(String link) {
-    final code = extractInviteCode(link);
-    if (code == null) return (result: TribeResult.invalidLink, tribe: null);
-
-    for (final t in _tribes) {
-      if (t.inviteCode.toUpperCase() == code) {
-        return (result: TribeResult.alreadyMember, tribe: t);
-      }
-    }
-    if (!canCreateOrJoin) return (result: TribeResult.tribeLimit, tribe: null);
-
-    // TODO(backend): POST /tribes/join { invite_code }
-    final found = _joinable[code];
-    if (found == null) return (result: TribeResult.notFound, tribe: null);
-    if (found.members.length >= TribeLimits.maxMembersPerTribe) {
-      return (result: TribeResult.tribeFull, tribe: found);
-    }
-
-    final joined = found.copyWith(
-      members: [
-        ...found.members,
-        TribeMember(id: '${found.id}-$me', tribeId: found.id, user: _user(me)),
-      ],
-    );
-    _joinable.remove(code);
-    _tribes.add(joined);
-    _notifyUsers(
-      _others(joined),
-      tribe: joined,
-      kind: NotificationKind.tribeMemberJoined,
-      args: {'actor': _name(me)},
-      type: 'tribe_join',
-      referenceId: joined.id,
-      referenceType: 'tribe',
-    );
-    notifyListeners();
-    return (result: TribeResult.success, tribe: joined);
-  }
-
-  TribeResult renameTribe(String tribeId, String rawName) {
-    final tribe = tribeById(tribeId);
-    if (tribe == null) return TribeResult.notFoundItem;
-    if (!TribePermissions.canRename(tribe.roleOf(me))) {
-      return TribeResult.notAllowed;
-    }
-    final name = rawName.trim();
-    if (name.isEmpty) return TribeResult.emptyName;
-    if (name.length > TribeLimits.maxNameLength) return TribeResult.nameTooLong;
-
-    _replaceTribe(tribe.copyWith(name: name));
-    _notifyUsers(
-      _others(tribe),
-      tribe: tribe,
-      kind: NotificationKind.tribeRenamed,
-      args: {'actor': _name(me), 'old': tribe.name, 'new': name},
-      type: 'tribe_role',
-      referenceId: tribe.id,
-      referenceType: 'tribe',
-    );
-    notifyListeners();
-    return TribeResult.success;
-  }
-
-  /// COM-09: đổi màu nhóm (không lưu ảnh nền).
-  TribeResult updateColor(String tribeId, String color) {
-    final tribe = tribeById(tribeId);
-    if (tribe == null) return TribeResult.notFoundItem;
-    if (!TribePermissions.canChangeColor(tribe.roleOf(me))) {
-      return TribeResult.notAllowed;
-    }
-    _replaceTribe(tribe.copyWith(backgroundColor: color));
-    // TODO(backend): PATCH /tribes/{id} { background_color }
-    notifyListeners();
-    return TribeResult.success;
-  }
-
-  /// COM-06: giải tán nhóm.
-  TribeResult dissolveTribe(String tribeId) {
-    final tribe = tribeById(tribeId);
-    if (tribe == null) return TribeResult.notFoundItem;
-    if (!TribePermissions.canDissolve(tribe.roleOf(me))) {
-      return TribeResult.notAllowed;
-    }
-
-    _tribes.removeWhere((t) => t.id == tribeId);
-    _blocks.removeWhere((b) => b.tribeId == tribeId);
-    _notifyUsers(
-      _others(tribe),
-      tribe: tribe,
-      kind: NotificationKind.tribeDissolved,
-      args: {'actor': _name(me)},
-      type: 'tribe_role',
-      referenceId: tribe.id,
-      referenceType: 'tribe',
-    );
-    // TODO(backend): PATCH /tribes/{id} { deleted_at: now }
-    notifyListeners();
-    return TribeResult.success;
-  }
-
-  /// COM-12 / COM-13: rời nhóm.
-  /// Trưởng nhóm còn thành viên khác phải bổ nhiệm người mới trước.
-  /// Trưởng nhóm ở một mình -> rời = giải tán nhóm.
-  TribeResult leaveTribe(String tribeId) {
-    final tribe = tribeById(tribeId);
-    if (tribe == null) return TribeResult.notFoundItem;
-    if (tribe.roleOf(me) == TribeRole.leader) {
-      if (tribe.members.length > 1) return TribeResult.needNewLeader;
-      return dissolveTribe(tribeId);
-    }
-    _removeMember(tribe, me);
-    _notifyUsers(
-      _others(tribe),
-      tribe: tribe,
-      kind: NotificationKind.tribeMemberLeft,
-      args: {'actor': _name(me)},
-      type: 'tribe_join',
-      referenceId: tribe.id,
-      referenceType: 'tribe',
-    );
-    _tribes.removeWhere((t) => t.id == tribeId);
-    notifyListeners();
-    return TribeResult.success;
-  }
-
-  /// COM-14: mời một thành viên rời nhóm.
-  TribeResult kickMember(String tribeId, String userId) {
-    final tribe = tribeById(tribeId);
-    final target = tribe?.memberOf(userId);
-    if (tribe == null || target == null) return TribeResult.notFoundItem;
-    if (!TribePermissions.canKick(tribe.roleOf(me), target.role)) {
-      return TribeResult.notAllowed;
-    }
-
-    _removeMember(tribe, userId);
-    _notifyUsers(
-      [userId],
-      tribe: tribe,
-      kind: NotificationKind.tribeKickedYou,
-      args: {'actor': _name(me)},
-      type: 'tribe_role',
-      referenceId: tribe.id,
-      referenceType: 'tribe',
-    );
-    _notifyUsers(
-      _others(tribe).where((id) => id != userId),
-      tribe: tribe,
-      kind: NotificationKind.tribeMemberLeft,
-      args: {'actor': target.user.nickName},
-      type: 'tribe_join',
-      referenceId: tribe.id,
-      referenceType: 'tribe',
-    );
-    notifyListeners();
-    return TribeResult.success;
-  }
-
-  /// COM-15: bổ nhiệm phó nhóm (tối đa 3).
-  TribeResult appointVice(String tribeId, String userId) {
-    final tribe = tribeById(tribeId);
-    final target = tribe?.memberOf(userId);
-    if (tribe == null || target == null) return TribeResult.notFoundItem;
-    if (!TribePermissions.canAppoint(tribe.roleOf(me)) ||
-        target.role != TribeRole.member) {
-      return TribeResult.notAllowed;
-    }
-    if (tribe.viceLeaders.length >= TribeLimits.maxViceLeaders) {
-      return TribeResult.viceLimit;
-    }
-
-    _setRole(tribe, userId, TribeRole.viceLeader);
-    _notifyRole(tribe, userId, NotificationKind.tribeRoleVice);
-    notifyListeners();
-    return TribeResult.success;
-  }
-
-  /// COM-17: bãi nhiệm phó nhóm -> thành viên.
-  TribeResult dismissVice(String tribeId, String userId) {
-    final tribe = tribeById(tribeId);
-    final target = tribe?.memberOf(userId);
-    if (tribe == null || target == null) return TribeResult.notFoundItem;
-    if (!TribePermissions.canAppoint(tribe.roleOf(me)) ||
-        target.role != TribeRole.viceLeader) {
-      return TribeResult.notAllowed;
-    }
-    _setRole(tribe, userId, TribeRole.member);
-    _notifyRole(tribe, userId, NotificationKind.tribeRoleViceRemoved);
-    notifyListeners();
-    return TribeResult.success;
-  }
-
-  /// COM-16: chuyển quyền trưởng nhóm. Trưởng nhóm cũ trở thành phó nhóm
-  /// nếu nhóm còn chỗ (< 3 phó), ngược lại trở thành thành viên.
-  TribeResult transferLeader(String tribeId, String userId) {
-    final tribe = tribeById(tribeId);
-    final target = tribe?.memberOf(userId);
-    if (tribe == null || target == null || userId == me) {
-      return TribeResult.notFoundItem;
-    }
-    if (tribe.roleOf(me) != TribeRole.leader) return TribeResult.notAllowed;
-
-    final vicesAfter = tribe.viceLeaders
-        .where((v) => v.userId != userId)
-        .length;
-    final myNewRole = vicesAfter < TribeLimits.maxViceLeaders
-        ? TribeRole.viceLeader
-        : TribeRole.member;
-
-    _setRole(tribe, userId, TribeRole.leader);
-    _setRole(tribeById(tribeId)!, me, myNewRole);
-    _notifyRole(tribe, userId, NotificationKind.tribeRoleLeader);
-    notifyListeners();
-    return TribeResult.success;
-  }
-
-  /// Khi xoá tài khoản: tự chuyển quyền trưởng nhóm (ưu tiên phó nhóm, rồi
-  /// thành viên vào sớm nhất) và rời mọi nhóm; nhóm chỉ có mình thì giải tán.
-  void leaveAllForAccountDeletion() {
-    for (final tribe in _tribes.toList()) {
-      if (tribe.roleOf(me) == TribeRole.leader && tribe.members.length > 1) {
-        final others = tribe.sortedMembers
-            .where((m) => m.userId != me)
-            .toList();
-        transferLeader(tribe.id, others.first.userId);
-      }
-      leaveTribe(tribe.id);
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // HOẠT ĐỘNG NHÓM
-  // ---------------------------------------------------------------------------
-
   /// Các hoạt động khác của nhóm bị trùng giờ.
   List<TribeBlockModel> conflictsOf(
     String tribeId,
@@ -532,24 +262,305 @@ class TribeViewModel extends ChangeNotifier {
     tribeId,
   ).where((b) => b.id != ignoreId && b.overlaps(startUtc, endUtc)).toList();
 
-  /// COM-07: tạo hoạt động nhóm, báo cho mọi người để xác nhận.
-  TribeResult createBlock({
+  // ---------------------------------------------------------------------------
+  // Tải dữ liệu từ server
+  // ---------------------------------------------------------------------------
+
+  /// COM-01: tải danh sách nhóm và hoạt động nhóm quanh hôm nay (gọi sau khi đăng nhập).
+  Future<void> load() async {
+    if (me.isEmpty) return;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final data = await _api.get('/tribes');
+      _tribes = [for (final j in data as List) TribeModel.fromJson(j)];
+      _blocks = [];
+      _busy.clear();
+      _blocksFrom = null;
+      _blocksTo = null;
+      await ensureBlocksLoaded(AppTime.today());
+    } on ApiException catch (e) {
+      debugPrint('tải danh sách nhóm lỗi: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Đảm bảo đã có hoạt động của mọi nhóm trong tháng trước, tháng này và tháng sau của [date].
+  Future<void> ensureBlocksLoaded(DateTime date) async {
+    final from = DateTime(date.year, date.month - 1, 1);
+    final to = DateTime(date.year, date.month + 2, 0);
+    if (_blocksFrom != null &&
+        !from.isBefore(_blocksFrom!) &&
+        !to.isAfter(_blocksTo!)) {
+      return;
+    }
+    // Server giới hạn mỗi lần hỏi tối đa 62 ngày nên chia làm hai lần
+    final mid = DateTime(date.year, date.month, 15);
+    for (final t in _tribes.toList()) {
+      await _fetchBlocks(t.id, from, mid);
+      await _fetchBlocks(t.id, mid.add(const Duration(days: 1)), to);
+    }
+    _blocksFrom = _blocksFrom == null || from.isBefore(_blocksFrom!)
+        ? from
+        : _blocksFrom;
+    _blocksTo = _blocksTo == null || to.isAfter(_blocksTo!) ? to : _blocksTo;
+    notifyListeners();
+  }
+
+  /// Gọi GET /tribes/:id/blocks?from=&to= rồi thay vào danh sách đang có.
+  Future<void> _fetchBlocks(String tribeId, DateTime from, DateTime to) async {
+    try {
+      final data = await _api.get(
+        '/tribes/$tribeId/blocks',
+        query: {
+          'from': TimeblockModel.formatDate(from),
+          'to': TimeblockModel.formatDate(to),
+        },
+      );
+      final fresh = [for (final j in data as List) TribeBlockModel.fromJson(j)];
+      final ids = fresh.map((b) => b.id).toSet();
+      _blocks = [..._blocks.where((b) => !ids.contains(b.id)), ...fresh];
+    } on ApiException catch (e) {
+      debugPrint('tải hoạt động nhóm lỗi: $e');
+    }
+  }
+
+  /// Tải giờ bận của thành viên nhóm quanh ngày [date] (cả tháng đó, cộng thêm vài ngày hai đầu).
+  Future<void> ensureBusyLoaded(String tribeId, DateTime date) async {
+    final cache = _busy[tribeId];
+    final day = DateTime(date.year, date.month, date.day);
+    if (cache != null && cache.covers(day)) return;
+    final from = DateTime(
+      date.year,
+      date.month,
+      1,
+    ).subtract(const Duration(days: 7));
+    final to = DateTime(date.year, date.month + 1, 7);
+    try {
+      final data = await _api.get(
+        '/tribes/$tribeId/busy',
+        query: {
+          'from': TimeblockModel.formatDate(from),
+          'to': TimeblockModel.formatDate(to),
+        },
+      );
+      final byUser = <String, List<TimeRange>>{};
+      for (final m in (data['members'] as List)) {
+        byUser[m['user_id']] = [
+          for (final r in (m['busy'] as List))
+            TimeRange(DateTime.parse(r['start']), DateTime.parse(r['end'])),
+        ];
+      }
+      _busy[tribeId] = _BusyCache(from, to, byUser);
+      notifyListeners();
+    } on ApiException catch (e) {
+      debugPrint('tải giờ bận lỗi: $e');
+    }
+  }
+
+  /// Tải lại một nhóm (sau khi có người rời nhóm, đổi chức vụ...).
+  Future<void> refreshTribe(String tribeId) async {
+    try {
+      final data = await _api.get('/tribes/$tribeId');
+      _upsertTribe(TribeModel.fromJson(data));
+    } on ApiException catch (e) {
+      if (e.code == 'not_found_item') _removeTribeLocal(tribeId);
+    }
+    notifyListeners();
+  }
+
+  /// Xoá dữ liệu khi đăng xuất.
+  void clear() {
+    _tribes = [];
+    _blocks = [];
+    _busy.clear();
+    _requestedBlocks.clear();
+    _blocksFrom = null;
+    _blocksTo = null;
+    notifyListeners();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Quản lý nhóm
+  // ---------------------------------------------------------------------------
+
+  /// Đổi mã lỗi server thành TribeResult.
+  static TribeResult resultFrom(ApiException e) => switch (e.code) {
+    'empty_name' => TribeResult.emptyName,
+    'name_too_long' => TribeResult.nameTooLong,
+    'tribe_limit' => TribeResult.tribeLimit,
+    'invalid_code' => TribeResult.invalidCode,
+    'not_found' => TribeResult.notFound,
+    'already_member' => TribeResult.alreadyMember,
+    'tribe_full' => TribeResult.tribeFull,
+    'vice_limit' => TribeResult.viceLimit,
+    'need_new_leader' => TribeResult.needNewLeader,
+    'not_allowed' => TribeResult.notAllowed,
+    'not_found_item' => TribeResult.notFoundItem,
+    'past_time' => TribeResult.pastTime,
+    'block_ended' => TribeResult.blockEnded,
+    'network_error' => TribeResult.network,
+    _ => TribeResult.failed,
+  };
+
+  /// Kiểm tra nhanh tên nhóm ở máy trước khi gửi lên server.
+  static TribeResult? _checkName(String rawName) {
+    final name = rawName.trim();
+    if (name.isEmpty) return TribeResult.emptyName;
+    if (name.length > TribeLimits.maxNameLength) return TribeResult.nameTooLong;
+    return null;
+  }
+
+  /// COM-03: tạo nhóm, mình là trưởng nhóm.
+  Future<({TribeResult result, TribeModel? tribe})> createTribe(
+    String rawName,
+  ) async {
+    final invalid = _checkName(rawName);
+    if (invalid != null) return (result: invalid, tribe: null);
+    if (!canCreateOrJoin) return (result: TribeResult.tribeLimit, tribe: null);
+    try {
+      final data = await _api.post('/tribes', {'name': rawName.trim()});
+      final tribe = TribeModel.fromJson(data);
+      _upsertTribe(tribe);
+      notifyListeners();
+      return (result: TribeResult.success, tribe: tribe);
+    } on ApiException catch (e) {
+      return (result: resultFrom(e), tribe: null);
+    }
+  }
+
+  /// COM-11: tham gia nhóm bằng mã mời. Nếu đã ở trong nhóm thì trả kèm nhóm đó để mở nhanh.
+  Future<({TribeResult result, TribeModel? tribe})> joinByCode(
+    String code,
+  ) async {
+    if (code.trim().isEmpty) {
+      return (result: TribeResult.invalidCode, tribe: null);
+    }
+    try {
+      final data = await _api.post('/tribes/join', {
+        'invite_code': code.trim(),
+      });
+      final tribe = TribeModel.fromJson(data);
+      _upsertTribe(tribe);
+      final now = AppTime.today();
+      await _fetchBlocks(
+        tribe.id,
+        _blocksFrom ?? now,
+        _blocksTo ?? now.add(const Duration(days: 30)),
+      );
+      notifyListeners();
+      return (result: TribeResult.success, tribe: tribe);
+    } on ApiException catch (e) {
+      TribeModel? existing;
+      if (e.code == 'already_member' && e.details is Map) {
+        existing = tribeById((e.details as Map)['tribe_id'] ?? '');
+      }
+      return (result: resultFrom(e), tribe: existing);
+    }
+  }
+
+  /// COM-05: đổi tên nhóm (chỉ trưởng nhóm).
+  Future<TribeResult> renameTribe(String tribeId, String rawName) async {
+    final invalid = _checkName(rawName);
+    if (invalid != null) return invalid;
+    return _tribeAction(
+      () => _api.patch('/tribes/$tribeId', {'name': rawName.trim()}),
+    );
+  }
+
+  /// COM-06: giải tán nhóm.
+  Future<TribeResult> dissolveTribe(String tribeId) async {
+    try {
+      await _api.delete('/tribes/$tribeId');
+      _removeTribeLocal(tribeId);
+      notifyListeners();
+      return TribeResult.success;
+    } on ApiException catch (e) {
+      return resultFrom(e);
+    }
+  }
+
+  /// COM-12, COM-13: rời nhóm. Trưởng nhóm còn người khác thì phải truyền [newLeaderId].
+  /// Trưởng nhóm ở một mình thì rời nhóm cũng là giải tán.
+  Future<TribeResult> leaveTribe(String tribeId, {String? newLeaderId}) async {
+    try {
+      await _api.post('/tribes/$tribeId/leave', {
+        'new_leader_id': ?newLeaderId,
+      });
+      _removeTribeLocal(tribeId);
+      notifyListeners();
+      return TribeResult.success;
+    } on ApiException catch (e) {
+      return resultFrom(e);
+    }
+  }
+
+  /// COM-14: mời một thành viên rời nhóm.
+  Future<TribeResult> kickMember(String tribeId, String userId) async {
+    try {
+      await _api.delete('/tribes/$tribeId/members/$userId');
+      await refreshTribe(tribeId);
+      return TribeResult.success;
+    } on ApiException catch (e) {
+      return resultFrom(e);
+    }
+  }
+
+  /// COM-15: bổ nhiệm phó nhóm (tối đa 3).
+  Future<TribeResult> appointVice(String tribeId, String userId) =>
+      _changeRole(tribeId, userId, TribeRole.viceLeader);
+
+  /// COM-17: bãi nhiệm phó nhóm xuống thành viên.
+  Future<TribeResult> dismissVice(String tribeId, String userId) =>
+      _changeRole(tribeId, userId, TribeRole.member);
+
+  /// COM-16: chuyển quyền trưởng nhóm. Trưởng nhóm cũ thành phó nhóm nếu còn chỗ,
+  /// không thì thành thành viên (server tự xử lý).
+  Future<TribeResult> transferLeader(String tribeId, String userId) =>
+      _changeRole(tribeId, userId, TribeRole.leader);
+
+  /// Gọi API đổi chức vụ một thành viên rồi cập nhật lại nhóm.
+  Future<TribeResult> _changeRole(
+    String tribeId,
+    String userId,
+    TribeRole role,
+  ) {
+    return _tribeAction(
+      () => _api.patch('/tribes/$tribeId/members/$userId/role', {
+        'role': role.value,
+      }),
+    );
+  }
+
+  /// Chạy một API trả về chi tiết nhóm rồi cập nhật lại nhóm đó trong danh sách.
+  Future<TribeResult> _tribeAction(Future<dynamic> Function() call) async {
+    try {
+      final data = await call();
+      _upsertTribe(TribeModel.fromJson(data));
+      notifyListeners();
+      return TribeResult.success;
+    } on ApiException catch (e) {
+      return resultFrom(e);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hoạt động nhóm
+  // ---------------------------------------------------------------------------
+
+  /// COM-07: tạo hoạt động nhóm. Server ghi mình là đã tham gia, người khác đang chờ.
+  Future<TribeResult> createBlock({
     required String tribeId,
     required String task,
     String? description,
     required DateTime startUtc,
     required DateTime endUtc,
     required String colorCode,
-  }) {
-    final tribe = tribeById(tribeId);
-    if (tribe == null) return TribeResult.notFoundItem;
-    if (!TribePermissions.canManageBlocks(tribe.roleOf(me))) {
-      return TribeResult.notAllowed;
-    }
-
-    final id = const Uuid().v4();
-    final block = TribeBlockModel(
-      id: id,
+  }) async {
+    final draft = TribeBlockModel(
+      id: '',
       tribeId: tribeId,
       createdBy: me,
       task: task.trim(),
@@ -557,249 +568,119 @@ class TribeViewModel extends ChangeNotifier {
       startUtc: startUtc,
       endUtc: endUtc,
       colorCode: colorCode,
-      attendance: [
-        for (final m in tribe.members)
-          TribeBlockAttendance(
-            id: '$id-${m.userId}',
-            tribeBlockId: id,
-            userId: m.userId,
-            // Người tạo mặc định tham gia
-            status: m.userId == me
-                ? AttendanceStatus.accepted
-                : AttendanceStatus.pending,
-          ),
-      ],
     );
-    _blocks.add(block);
-    _notifyUsers(
-      _others(tribe),
-      tribe: tribe,
-      kind: NotificationKind.tribeNewBlock,
-      args: {'actor': _name(me), 'task': block.task},
-      type: 'group_schedule',
-      referenceId: id,
-      referenceType: 'tribe_block',
-    );
-    // TODO(backend): POST /tribes/{id}/blocks
-    notifyListeners();
-    return TribeResult.success;
-  }
-
-  /// COM-05: sửa hoạt động. Nếu đổi giờ, mọi người cần xác nhận lại.
-  TribeResult updateBlock(TribeBlockModel updated) {
-    final index = _blocks.indexWhere((b) => b.id == updated.id);
-    final tribe = tribeById(updated.tribeId);
-    if (index == -1 || tribe == null) return TribeResult.notFoundItem;
-    if (!TribePermissions.canManageBlocks(tribe.roleOf(me))) {
-      return TribeResult.notAllowed;
-    }
-
-    final old = _blocks[index];
-    final timeChanged =
-        old.startUtc != updated.startUtc || old.endUtc != updated.endUtc;
-    var result = updated;
-    if (timeChanged) {
-      result = updated.copyWith(
-        attendance: [
-          for (final a in old.attendance)
-            a.copyWith(
-              status: a.userId == me
-                  ? AttendanceStatus.accepted
-                  : AttendanceStatus.pending,
-            ),
-        ],
+    try {
+      final data = await _api.post(
+        '/tribes/$tribeId/blocks',
+        draft.toRequest(),
       );
+      _upsertBlock(TribeBlockModel.fromJson(data['block']));
+      notifyListeners();
+      return TribeResult.success;
+    } on ApiException catch (e) {
+      return resultFrom(e);
     }
-    _blocks[index] = result;
-    _notifyUsers(
-      _others(tribe),
-      tribe: tribe,
-      kind: timeChanged
-          ? NotificationKind.tribeBlockRescheduled
-          : NotificationKind.tribeBlockUpdated,
-      args: {'actor': _name(me), 'task': result.task},
-      type: 'group_schedule',
-      referenceId: result.id,
-      referenceType: 'tribe_block',
-    );
-    notifyListeners();
-    return TribeResult.success;
   }
 
-  /// COM-10: xoá hoạt động nhóm.
-  TribeResult deleteBlock(String blockId) {
+  /// COM-09: sửa hoạt động. Nếu đổi giờ, mọi người cần xác nhận lại.
+  Future<TribeResult> updateBlock(TribeBlockModel updated) async {
+    try {
+      final data = await _api.put(
+        '/tribe-blocks/${updated.id}',
+        updated.toRequest(),
+      );
+      _upsertBlock(TribeBlockModel.fromJson(data));
+      notifyListeners();
+      return TribeResult.success;
+    } on ApiException catch (e) {
+      return resultFrom(e);
+    }
+  }
+
+  /// COM-10: huỷ hoạt động nhóm.
+  Future<TribeResult> deleteBlock(String blockId) async {
+    try {
+      await _api.delete('/tribe-blocks/$blockId');
+      _blocks.removeWhere((b) => b.id == blockId);
+      notifyListeners();
+      return TribeResult.success;
+    } on ApiException catch (e) {
+      return resultFrom(e);
+    }
+  }
+
+  /// COM-19: tham gia hoặc không tham gia. Server báo về cho trưởng và phó nhóm.
+  Future<TribeResult> respond(String blockId, AttendanceStatus status) async {
     final block = blockById(blockId);
-    final tribe = block == null ? null : tribeById(block.tribeId);
-    if (block == null || tribe == null) return TribeResult.notFoundItem;
-    if (!TribePermissions.canManageBlocks(tribe.roleOf(me))) {
-      return TribeResult.notAllowed;
+    if (block != null && block.statusOf(me) == status) {
+      return TribeResult.success;
     }
-
-    _blocks.removeWhere((b) => b.id == blockId);
-    _notifyUsers(
-      _others(tribe),
-      tribe: tribe,
-      kind: NotificationKind.tribeBlockCancelled,
-      args: {'actor': _name(me), 'task': block.task},
-      type: 'group_schedule',
-      referenceType: 'tribe_block',
-    );
-    notifyListeners();
-    return TribeResult.success;
+    try {
+      final data = await _api.put('/tribe-blocks/$blockId/attendance', {
+        'status': status.value,
+      });
+      _upsertBlock(TribeBlockModel.fromJson(data));
+      notifyListeners();
+      return TribeResult.success;
+    } on ApiException catch (e) {
+      return resultFrom(e);
+    }
   }
 
-  /// COM-19: xác nhận / từ chối tham gia. Báo về cho trưởng & phó nhóm.
-  TribeResult respond(String blockId, AttendanceStatus status) {
-    final index = _blocks.indexWhere((b) => b.id == blockId);
-    if (index == -1) return TribeResult.notFoundItem;
-    final block = _blocks[index];
-    final tribe = tribeById(block.tribeId);
-    if (tribe == null || tribe.memberOf(me) == null) {
-      return TribeResult.notAllowed;
-    }
-    if (block.statusOf(me) == status) return TribeResult.success;
+  final Set<String> _requestedBlocks = {};
 
-    final attendance = block.attendance.toList();
-    final i = attendance.indexWhere((a) => a.userId == me);
-    if (i == -1) {
-      attendance.add(
-        TribeBlockAttendance(
-          id: '$blockId-$me',
-          tribeBlockId: blockId,
-          userId: me,
-          status: status,
-        ),
-      );
-    } else {
-      attendance[i] = attendance[i].copyWith(status: status);
-    }
-    _blocks[index] = block.copyWith(attendance: attendance);
+  /// Hoạt động chưa có trên máy thì hỏi server một lần. Trả về true nếu đang tải,
+  /// false nếu đã hỏi rồi mà không có (hoạt động đã bị huỷ).
+  bool ensureBlock(String blockId) {
+    if (blockById(blockId) != null) return false;
+    if (!_requestedBlocks.add(blockId)) return false;
+    fetchBlock(blockId);
+    return true;
+  }
 
-    final managers = tribe.members
-        .where((m) => m.role != TribeRole.member && m.userId != me)
-        .map((m) => m.userId);
-    _notifyUsers(
-      managers,
-      tribe: tribe,
-      kind: status == AttendanceStatus.accepted
-          ? NotificationKind.tribeResponseAccepted
-          : NotificationKind.tribeResponseDeclined,
-      args: {'actor': _name(me), 'task': block.task},
-      type: 'group_schedule',
-      referenceId: blockId,
-      referenceType: 'tribe_block_response',
-    );
-    // TODO(backend): PUT /tribe-blocks/{id}/attendance { status }
-    notifyListeners();
-    return TribeResult.success;
+  /// Lấy một hoạt động nhóm từ server (mở từ thông báo mà máy chưa có hoạt động đó).
+  Future<TribeBlockModel?> fetchBlock(String blockId) async {
+    try {
+      final data = await _api.get('/tribe-blocks/$blockId');
+      final block = TribeBlockModel.fromJson(data);
+      _upsertBlock(block);
+      notifyListeners();
+      return block;
+    } on ApiException {
+      // Báo để giao diện thôi hiện vòng tải và ghi "hoạt động đã bị huỷ"
+      notifyListeners();
+      return null;
+    }
   }
 
   // ---------------------------------------------------------------------------
-  // NỘI BỘ
+  // Nội bộ
   // ---------------------------------------------------------------------------
 
-  AppUser _user(String id) => id == me
-      ? TribeMockData.users['u-me']!
-      : (TribeMockData.users[id] ?? AppUser(id: id, nickName: '?'));
-
-  String _name(String id) {
-    for (final t in _tribes) {
-      final m = t.memberOf(id);
-      if (m != null) return m.user.nickName;
-    }
-    return _user(id).nickName;
-  }
-
-  Iterable<String> _others(TribeModel tribe) =>
-      tribe.members.map((m) => m.userId).where((id) => id != me);
-
-  void _replaceTribe(TribeModel tribe) {
+  /// Thêm nhóm mới hoặc thay nhóm cũ cùng id.
+  void _upsertTribe(TribeModel tribe) {
     final i = _tribes.indexWhere((t) => t.id == tribe.id);
-    if (i != -1) _tribes[i] = tribe;
-  }
-
-  void _setRole(TribeModel tribe, String userId, TribeRole role) {
-    _replaceTribe(
-      tribe.copyWith(
-        members: [
-          for (final m in tribe.members)
-            m.userId == userId ? m.copyWith(role: role) : m,
-        ],
-      ),
-    );
-  }
-
-  void _removeMember(TribeModel tribe, String userId) {
-    _replaceTribe(
-      tribe.copyWith(
-        members: tribe.members.where((m) => m.userId != userId).toList(),
-      ),
-    );
-    // Bỏ phản hồi của người đã rời khỏi các hoạt động của nhóm
-    for (int i = 0; i < _blocks.length; i++) {
-      final b = _blocks[i];
-      if (b.tribeId != tribe.id) continue;
-      _blocks[i] = b.copyWith(
-        attendance: b.attendance.where((a) => a.userId != userId).toList(),
-      );
+    if (i == -1) {
+      _tribes.add(tribe);
+    } else {
+      _tribes[i] = tribe;
     }
   }
 
-  void _notifyRole(TribeModel tribe, String userId, NotificationKind kind) =>
-      _notifyUsers(
-        [userId],
-        tribe: tribe,
-        kind: kind,
-        args: {'actor': _name(me)},
-        type: 'tribe_role',
-        referenceId: tribe.id,
-        referenceType: 'tribe',
-      );
-
-  void _notifyUsers(
-    Iterable<String> userIds, {
-    required TribeModel tribe,
-    required NotificationKind kind,
-    required Map<String, String> args,
-    required String type,
-    String? referenceId,
-    String? referenceType,
-    DateTime? createdAt,
-  }) {
-    final fullArgs = {'tribe': tribe.name, ...args};
-    for (final userId in userIds) {
-      outbox.add(
-        NotificationModel(
-          id: const Uuid().v4(),
-          userId: userId,
-          createdBy: me,
-          title: kind.name,
-          content: jsonEncode(fullArgs),
-          type: type,
-          referenceId: referenceId,
-          referenceType: referenceType,
-        ),
-      );
-      if (userId == me) {
-        notificationSink?.call(
-          AppNotification(
-            id: const Uuid().v4(),
-            kind: kind,
-            args: fullArgs,
-            type: type,
-            tribeId: tribe.id,
-            referenceId: referenceId,
-            referenceType: referenceType,
-            createdAt: createdAt,
-          ),
-        );
-      }
-    }
+  /// Bỏ nhóm khỏi danh sách cùng các hoạt động của nhóm đó.
+  void _removeTribeLocal(String tribeId) {
+    _tribes.removeWhere((t) => t.id == tribeId);
+    _blocks.removeWhere((b) => b.tribeId == tribeId);
+    _busy.remove(tribeId);
   }
 
-  static String _newInviteCode() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    final rnd = Random();
-    return List.generate(8, (_) => chars[rnd.nextInt(chars.length)]).join();
+  /// Thêm hoạt động mới hoặc thay hoạt động cũ cùng id.
+  void _upsertBlock(TribeBlockModel block) {
+    final i = _blocks.indexWhere((b) => b.id == block.id);
+    if (i == -1) {
+      _blocks.add(block);
+    } else {
+      _blocks[i] = block;
+    }
   }
 }

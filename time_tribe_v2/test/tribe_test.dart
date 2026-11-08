@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:time_tribe_v2/core/utils/app_time.dart';
+import 'package:time_tribe_v2/features/timeblock/models/timeblock_model.dart';
 import 'package:time_tribe_v2/features/timeblock/viewmodels/timeblock_viewmodel.dart';
 import 'package:time_tribe_v2/features/tribe/models/tribe_block_model.dart';
 import 'package:time_tribe_v2/features/tribe/models/tribe_model.dart';
@@ -16,13 +18,18 @@ import 'package:time_tribe_v2/features/notifications/models/app_notification.dar
 import 'package:time_tribe_v2/features/notifications/viewmodels/notification_viewmodel.dart';
 import 'package:time_tribe_v2/features/tribe/views/tribe_dialogs.dart';
 
+import 'fake_server.dart';
 import 'test_helpers.dart';
 
 DateTime utc(int h, [int m = 0]) => DateTime.utc(2026, 11, 4, h, m);
 
 void main() {
   setUpAll(AppTime.ensureInitialized);
-  setUp(() => AppTime.useTimezone('Asia/Ho_Chi_Minh'));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    AppTime.useTimezone('Asia/Ho_Chi_Minh');
+    signInAsMe();
+  });
   tearDown(AppTime.useDeviceTimezone);
 
   group('AvailabilityCalculator', () {
@@ -116,230 +123,394 @@ void main() {
     });
   });
 
-  group('TribeViewModel', () {
-    test('tối đa 5 nhóm', () {
-      final vm = TribeViewModel();
-      expect(vm.tribes.length, 3);
-      expect(vm.createTribe('A').result, TribeResult.success);
-      expect(vm.createTribe('B').result, TribeResult.success);
-      expect(vm.createTribe('C').result, TribeResult.tribeLimit);
-      expect(
-        vm.joinByLink('timetribe.app/tribe/GAMEDEV26').result,
-        TribeResult.tribeLimit,
-      );
+  // Dữ liệu server giả: Nga là trưởng nhóm NIC (6 người), thành viên CLB cầu lông,
+  // phó nhóm Marketing (8 người).
+  final now = DateTime.now().toUtc();
+  final tomorrow = DateTime.utc(now.year, now.month, now.day + 1);
+  final nic = tribeJson('t-nic', 'Đồ án NIC', 'NIC2026', [
+    memberJson('t-nic', 'u-me', 'Tuyết Nga', 'leader'),
+    memberJson('t-nic', 'u-minh', 'Minh Trần', 'vice_leader'),
+    memberJson('t-nic', 'u-linh', 'Linh Phạm', 'member'),
+    memberJson(
+      't-nic',
+      'u-hana',
+      'Hana Sato',
+      'member',
+      timezone: 'Asia/Tokyo',
+    ),
+    memberJson('t-nic', 'u-david', 'David Nguyen', 'member'),
+    memberJson('t-nic', 'u-an', 'An Lê', 'member'),
+  ]);
+  final badminton = tribeJson('t-badminton', 'CLB Cầu lông Q7', 'CAULONGQ7', [
+    memberJson('t-badminton', 'u-mai', 'Mai Võ', 'leader'),
+    memberJson('t-badminton', 'u-me', 'Tuyết Nga', 'member'),
+  ]);
+  final marketing = tribeJson('t-mkt', 'Team Marketing Global', 'MKTGLOBAL', [
+    memberJson('t-mkt', 'u-linh', 'Linh Phạm', 'leader'),
+    memberJson('t-mkt', 'u-me', 'Tuyết Nga', 'vice_leader'),
+    for (final id in ['u-a', 'u-b', 'u-c', 'u-d', 'u-e', 'u-f'])
+      memberJson('t-mkt', id, 'Người $id', 'member'),
+  ]);
+
+  /// Server giả có sẵn 3 nhóm và vài hoạt động nhóm ngày mai.
+  FakeServer fakeServer() {
+    final server = FakeServer();
+    server.on('GET', '/tribes', (_) => [nic, badminton, marketing]);
+    server.on('GET', '/tribes/*/blocks', (req) {
+      final tribe = req.url.pathSegments[req.url.pathSegments.length - 2];
+      return switch (tribe) {
+        't-nic' => [
+          blockJson(
+            'b-nic',
+            't-nic',
+            'Họp chốt tiến độ',
+            tomorrow.add(const Duration(hours: 13)),
+            tomorrow.add(const Duration(hours: 14)),
+            {'u-me': 'accepted', 'u-minh': 'pending'},
+          ),
+        ],
+        't-badminton' => [
+          blockJson(
+            'b-bad',
+            't-badminton',
+            'Đánh cầu tối',
+            tomorrow.add(const Duration(hours: 11)),
+            tomorrow.add(const Duration(hours: 12)),
+            {'u-mai': 'accepted', 'u-me': 'pending'},
+            createdBy: 'u-mai',
+          ),
+        ],
+        't-mkt' => [
+          blockJson(
+            'b-mkt',
+            't-mkt',
+            'Họp tuần',
+            tomorrow.add(const Duration(hours: 8)),
+            tomorrow.add(const Duration(hours: 9)),
+            {'u-linh': 'accepted', 'u-me': 'accepted'},
+            createdBy: 'u-linh',
+          ),
+        ],
+        _ => [],
+      };
     });
+    return server;
+  }
 
-    test('tạo nhóm thì mình là trưởng nhóm', () {
-      final vm = TribeViewModel();
-      final res = vm.createTribe('  Nhóm mới  ');
-      expect(res.tribe!.name, 'Nhóm mới');
-      expect(vm.myRoleIn(res.tribe!.id), TribeRole.leader);
-      expect(vm.createTribe('   ').result, TribeResult.emptyName);
-    });
+  /// Tạo TribeViewModel đã tải xong dữ liệu từ server giả.
+  Future<(TribeViewModel, FakeServer)> loadedVm() async {
+    final server = fakeServer();
+    final vm = TribeViewModel(api: server.client());
+    await vm.load();
+    return (vm, server);
+  }
 
-    test('tham gia bằng link: các trường hợp lỗi và thành công', () {
-      final vm = TribeViewModel();
-      expect(vm.joinByLink('').result, TribeResult.invalidLink);
-      expect(
-        vm.joinByLink('timetribe.app/tribe/KHONGCO').result,
-        TribeResult.notFound,
-      );
-      expect(
-        vm.joinByLink('https://timetribe.app/tribe/FULLHOUSE').result,
-        TribeResult.tribeFull,
-      );
-      expect(
-        vm.joinByLink('https://timetribe.app/tribe/nic2026').result,
-        TribeResult.alreadyMember,
-      );
-
-      final ok = vm.joinByLink('https://timetribe.app/tribe/gamedev26');
-      expect(ok.result, TribeResult.success);
-      expect(vm.myRoleIn(ok.tribe!.id), TribeRole.member);
-      // Báo cho các thành viên cũ
-      expect(vm.outbox.where((n) => n.type == 'tribe_join').length, 3);
-    });
-
-    test('bổ nhiệm phó nhóm tối đa 3 người', () {
-      final vm = TribeViewModel();
-      expect(vm.appointVice('t-nic', 'u-linh'), TribeResult.success);
-      expect(vm.appointVice('t-nic', 'u-hana'), TribeResult.success);
-      expect(vm.appointVice('t-nic', 'u-david'), TribeResult.viceLimit);
-      expect(vm.dismissVice('t-nic', 'u-linh'), TribeResult.success);
-      expect(vm.tribeById('t-nic')!.roleOf('u-linh'), TribeRole.member);
-      expect(
-        vm.outbox
-            .where((n) => n.userId == 'u-linh' && n.type == 'tribe_role')
-            .length,
-        2,
-      );
-    });
-
-    test('chuyển quyền trưởng nhóm: trưởng cũ thành phó (khi còn chỗ)', () {
-      final vm = TribeViewModel();
-      expect(vm.transferLeader('t-nic', 'u-linh'), TribeResult.success);
-      final t = vm.tribeById('t-nic')!;
-      expect(t.roleOf('u-linh'), TribeRole.leader);
-      expect(t.roleOf('u-me'), TribeRole.viceLeader);
-    });
-
-    test('trưởng nhóm phải bổ nhiệm người mới trước khi rời', () {
-      final vm = TribeViewModel();
-      expect(vm.leaveTribe('t-nic'), TribeResult.needNewLeader);
-      vm.transferLeader('t-nic', 'u-minh');
-      expect(vm.leaveTribe('t-nic'), TribeResult.success);
-      expect(vm.tribeById('t-nic'), isNull);
-    });
-
-    test('phó nhóm không được mời phó nhóm khác rời nhóm', () {
-      final vm = TribeViewModel();
-      // Trong Team Marketing mình là phó nhóm
-      expect(vm.kickMember('t-marketing', 'u-hana'), TribeResult.notAllowed);
-      expect(vm.kickMember('t-marketing', 'u-khoa'), TribeResult.success);
-      expect(vm.renameTribe('t-marketing', 'X'), TribeResult.notAllowed);
-    });
-
-    test('thành viên không được tạo hoạt động; phản hồi báo về trưởng/phó', () {
-      final vm = TribeViewModel();
-      final now = DateTime.now().toUtc();
-      expect(
-        vm.createBlock(
-          tribeId: 't-badminton',
-          task: 'x',
-          startUtc: now,
-          endUtc: now.add(const Duration(hours: 1)),
-          colorCode: '#000000',
-        ),
-        TribeResult.notAllowed,
-      );
-
-      vm.respond('tb-bad-1', AttendanceStatus.accepted);
-      final notified = vm.outbox
-          .where((n) => n.referenceType == 'tribe_block_response')
-          .map((n) => n.userId)
-          .toSet();
-      expect(notified, {'u-mai', 'u-minh'}); // trưởng + phó nhóm
-      expect(
-        vm.blockById('tb-bad-1')!.statusOf('u-me'),
-        AttendanceStatus.accepted,
-      );
-    });
-
-    test('tạo hoạt động: mình tự tham gia, người khác chờ xác nhận', () {
-      final vm = TribeViewModel();
-      final start = DateTime.now().toUtc().add(const Duration(days: 3));
-      vm.createBlock(
-        tribeId: 't-nic',
-        task: 'Demo',
-        startUtc: start,
-        endUtc: start.add(const Duration(hours: 1)),
-        colorCode: '#3A86FF',
-      );
-      final b = vm.blocksOf('t-nic').firstWhere((b) => b.task == 'Demo');
-      expect(b.statusOf('u-me'), AttendanceStatus.accepted);
-      expect(b.userIdsWith(AttendanceStatus.pending).length, 5);
-      expect(vm.outbox.where((n) => n.referenceId == b.id).length, 5);
-      expect(b.remind, 60);
-      expect(b.repeating, 'none');
-    });
-
+  group('TribeViewModel gọi API', () {
     test(
-      'lịch bận chỉ tính hoạt động nhóm khác mà người đó ĐÃ nhận tham gia',
-      () {
-        final vm = TribeViewModel();
-        final mkt = vm.blockById('tb-mkt-1')!; // Mai đã từ chối, Minh đã nhận
-        final window = TimeRange(mkt.startUtc, mkt.endUtc);
-        final busy = vm.busyByMember(
-          vm.tribeById('t-badminton')!,
-          window,
-          myPersonalBlocks: const [],
-        );
-        bool coversBlock(String id) => (busy[id] ?? []).any(
-          (r) => r.start == mkt.startUtc && r.end == mkt.endUtc,
-        );
-        expect(coversBlock('u-minh'), isTrue);
-        expect(coversBlock('u-mai'), isFalse);
+      'tải nhóm và hoạt động: đếm hoạt động đang chờ mình trả lời',
+      () async {
+        final (vm, _) = await loadedVm();
+        expect(vm.tribes.length, 3);
+        expect(vm.myRoleIn('t-nic'), TribeRole.leader);
+        expect(vm.pendingCountForMe('t-badminton'), 1);
+        expect(vm.pendingCountForMe('t-nic'), 0);
+        expect(vm.nextBlockOf('t-nic')!.task, 'Họp chốt tiến độ');
       },
     );
 
-    test('lịch của thành viên ở Tokyo được quy đổi đúng sang giờ Việt Nam', () {
-      final vm = TribeViewModel();
-      // Thứ Tư 04/11/2026: Hana bận 9:00–18:00 giờ Tokyo = 7:00–16:00 giờ VN
-      final day = TimeRange(
-        AppTime.toUtc(DateTime(2026, 11, 4)),
-        AppTime.toUtc(DateTime(2026, 11, 5)),
+    test('tạo nhóm: tên rỗng báo lỗi ngay, không gọi server', () async {
+      final (vm, server) = await loadedVm();
+      expect((await vm.createTribe('   ')).result, TribeResult.emptyName);
+      expect(server.calls.where((c) => c == 'POST /tribes'), isEmpty);
+
+      server.on(
+        'POST',
+        '/tribes',
+        (req) => tribeJson('t-new', 'Nhóm mới', 'ABCD2345', [
+          memberJson('t-new', 'u-me', 'Tuyết Nga', 'leader'),
+        ]),
+      );
+      final res = await vm.createTribe('  Nhóm mới  ');
+      expect(res.result, TribeResult.success);
+      expect(server.lastBody['/tribes'], {'name': 'Nhóm mới'});
+      expect(vm.myRoleIn('t-new'), TribeRole.leader);
+    });
+
+    test('tối đa 5 nhóm thì không gọi server tạo thêm', () async {
+      final server = fakeServer();
+      server.on(
+        'GET',
+        '/tribes',
+        (_) => [
+          for (int i = 0; i < 5; i++)
+            tribeJson('t$i', 'Nhóm $i', 'CODE$i', [
+              memberJson('t$i', 'u-me', 'Tuyết Nga', 'leader'),
+            ]),
+        ],
+      );
+      final vm = TribeViewModel(api: server.client());
+      await vm.load();
+      expect(vm.canCreateOrJoin, isFalse);
+      expect((await vm.createTribe('Nhóm 6')).result, TribeResult.tribeLimit);
+    });
+
+    test('tham gia bằng mã: đổi đúng mã lỗi của server', () async {
+      final (vm, server) = await loadedVm();
+      expect((await vm.joinByCode('')).result, TribeResult.invalidCode);
+
+      server.on(
+        'POST',
+        '/tribes/join',
+        (_) => throw const FakeError(409, 'tribe_full'),
+      );
+      expect((await vm.joinByCode('FULLHOUSE')).result, TribeResult.tribeFull);
+
+      server.on(
+        'POST',
+        '/tribes/join',
+        (_) =>
+            throw const FakeError(409, 'already_member', {'tribe_id': 't-nic'}),
+      );
+      final already = await vm.joinByCode('nic2026');
+      expect(already.result, TribeResult.alreadyMember);
+      expect(already.tribe!.name, 'Đồ án NIC');
+
+      server.on(
+        'POST',
+        '/tribes/join',
+        (_) => throw const FakeError(404, 'not_found'),
+      );
+      expect((await vm.joinByCode('KHONGCO')).result, TribeResult.notFound);
+    });
+
+    test('trưởng nhóm rời nhóm khi chưa chọn người kế nhiệm', () async {
+      final (vm, server) = await loadedVm();
+      server.on(
+        'POST',
+        '/tribes/*/leave',
+        (_) => throw const FakeError(409, 'need_new_leader'),
+      );
+      expect(await vm.leaveTribe('t-nic'), TribeResult.needNewLeader);
+      expect(vm.tribeById('t-nic'), isNotNull);
+
+      server.on('POST', '/tribes/*/leave', (_) => {'action': 'left'});
+      expect(
+        await vm.leaveTribe('t-nic', newLeaderId: 'u-minh'),
+        TribeResult.success,
+      );
+      expect(server.lastBody['/tribes/t-nic/leave'], {
+        'new_leader_id': 'u-minh',
+      });
+      expect(vm.tribeById('t-nic'), isNull);
+    });
+
+    test('trả lời hoạt động: từ chối thì ẩn khỏi lịch cá nhân', () async {
+      final (vm, server) = await loadedVm();
+      final day = AppTime.fromUtc(vm.blockById('b-bad')!.startUtc);
+      expect(
+        vm.tribeBlocksForMe(day).map((b) => b.block.id),
+        contains('b-bad'),
+      );
+
+      server.on('PUT', '/tribe-blocks/*/attendance', (req) {
+        final b = blockJson(
+          'b-bad',
+          't-badminton',
+          'Đánh cầu tối',
+          tomorrow.add(const Duration(hours: 11)),
+          tomorrow.add(const Duration(hours: 12)),
+          {'u-mai': 'accepted', 'u-me': 'declined'},
+          createdBy: 'u-mai',
+        );
+        return b;
+      });
+      expect(
+        await vm.respond('b-bad', AttendanceStatus.declined),
+        TribeResult.success,
+      );
+      expect(server.lastBody['/tribe-blocks/b-bad/attendance'], {
+        'status': 'declined',
+      });
+      expect(
+        vm.tribeBlocksForMe(day).map((b) => b.block.id),
+        isNot(contains('b-bad')),
+      );
+    });
+
+    test('giờ bận: người khác lấy từ server, mình lấy lịch trên máy', () async {
+      final (vm, server) = await loadedVm();
+      // Hana ở Tokyo bận 9h-10h giờ Tokyo ngày mai = 0h-1h UTC
+      server.on(
+        'GET',
+        '/tribes/*/busy',
+        (_) => {
+          'members': [
+            {
+              'user_id': 'u-hana',
+              'busy': [
+                {
+                  'start': tomorrow.toIso8601String(),
+                  'end': tomorrow
+                      .add(const Duration(hours: 1))
+                      .toIso8601String(),
+                },
+              ],
+            },
+          ],
+        },
+      );
+      final localDay = AppTime.fromUtc(tomorrow.add(const Duration(hours: 12)));
+      await vm.ensureBusyLoaded('t-nic', localDay);
+      // Lịch cá nhân của mình 9h-10h giờ Việt Nam = 2h-3h UTC
+      final personal = TimeblockModel(
+        id: 'p1',
+        userId: 'u-me',
+        task: 'Học',
+        date: DateTime(localDay.year, localDay.month, localDay.day),
+        startTime: const TimeOfDay(hour: 9, minute: 0),
+        endTime: const TimeOfDay(hour: 10, minute: 0),
+        colorCode: '#3A86FF',
       );
       final busy = vm.busyByMember(
         vm.tribeById('t-nic')!,
-        day,
-        myPersonalBlocks: const [],
+        TribeViewModel.dayWindow(localDay),
+        myPersonalBlocks: [personal],
       );
-      final hana = busy['u-hana']!.first;
-      expect(AppTime.fromUtc(hana.start).hour, 7);
-      expect(AppTime.fromUtc(hana.end).hour, 16);
+      expect(busy['u-hana']!.single.start, tomorrow);
+      final mine = busy['u-me']!;
+      // Hoạt động Marketing mình đã nhận (8h-9h UTC) cũng tính là bận
+      expect(mine.length, 2);
+      expect(mine.first.start.hour, 2);
+      expect(busy['u-linh'], isEmpty);
     });
   });
 
   group('Giao diện', () {
-    Widget app(Widget child, TribeViewModel vm) => MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: vm),
-        ChangeNotifierProvider(create: (_) => TimeblockViewModel()),
-      ],
-      child: localizedApp(child),
-    );
+    Widget app(Widget child, TribeViewModel vm, FakeServer server) =>
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: vm),
+            ChangeNotifierProvider(
+              create: (_) => TimeblockViewModel(api: server.client()),
+            ),
+          ],
+          child: localizedApp(child),
+        );
 
-    testWidgets('danh sách nhóm hiện avatar +n và menu theo chức vụ', (
-      tester,
-    ) async {
-      final vm = TribeViewModel();
-      await tester.pumpWidget(app(const TribeListScreen(), vm));
-      await tester.pump(const Duration(seconds: 1));
+    testWidgets('danh sách nhóm hiện avatar +n và số nhóm', (tester) async {
+      final (vm, server) = await tester.runAsync(loadedVm) ?? (null, null);
+      await tester.pumpWidget(app(const TribeListScreen(), vm!, server!));
+      await tester.pump();
       expect(find.text('Đồ án NIC'), findsOneWidget);
-      expect(
-        find.text('+5'),
-        findsOneWidget,
-      ); // Marketing: 8 người -> 3 avatar +5
+      expect(find.text('+5'), findsOneWidget); // Marketing 8 người: 3 avatar +5
       expect(find.text('3/5'), findsOneWidget);
     });
 
-    testWidgets('trang chi tiết dựng được, thành viên không thấy nút tạo', (
+    testWidgets('trang chi tiết: thành viên thường không thấy nút tạo', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(1080, 2340);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
+      final (vm, server) = await tester.runAsync(loadedVm) ?? (null, null);
+      server!.on('GET', '/tribes/*/busy', (_) => {'members': []});
 
-      final vm = TribeViewModel();
       await tester.pumpWidget(
-        app(const TribeDetailScreen(tribeId: 't-nic'), vm),
+        app(const TribeDetailScreen(tribeId: 't-nic'), vm!, server),
       );
-      await tester.pump(const Duration(seconds: 1));
-      expect(
-        find.byType(FloatingActionButton),
-        findsOneWidget,
-      ); // mình là trưởng nhóm
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(FloatingActionButton), findsOneWidget); // trưởng nhóm
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(
-        app(const TribeDetailScreen(tribeId: 't-badminton'), vm),
+        app(const TribeDetailScreen(tribeId: 't-badminton'), vm, server),
       );
-      await tester.pump(const Duration(seconds: 1));
-      expect(
-        find.byType(FloatingActionButton),
-        findsNothing,
-      ); // mình là thành viên
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(FloatingActionButton), findsNothing); // thành viên
 
-      // Mở danh sách thành viên: thành viên thường không thấy menu quản lý
       await tester.tap(find.byTooltip('Thành viên'));
       await tester.pumpAndSettle();
       expect(find.text('Rời nhóm'), findsOneWidget);
       expect(find.byIcon(Icons.more_vert), findsNothing);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('nhập mã nhóm đã tham gia: báo rõ + nút Mở nhóm', (
+      tester,
+    ) async {
+      final (vm, server) = await tester.runAsync(loadedVm) ?? (null, null);
+      server!
+        ..on(
+          'POST',
+          '/tribes/join',
+          (_) => throw const FakeError(409, 'already_member', {
+            'tribe_id': 't-nic',
+          }),
+        )
+        ..on('GET', '/tribes/*/busy', (_) => {'members': []});
+      await tester.pumpWidget(
+        app(
+          Scaffold(
+            body: Builder(
+              builder: (context) => Center(
+                child: ElevatedButton(
+                  onPressed: () => showJoinTribeDialog(context),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+          vm!,
+          server,
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'nic2026');
+      await tester.runAsync(() async {
+        await tester.tap(find.text('Vào nhóm'));
+        await Future.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Đồ án NIC'), findsWidgets);
+      expect(find.text('Mở nhóm'), findsOneWidget);
+
+      await tester.tap(find.text('Mở nhóm'));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.takeException(), isNull);
+      expect(find.byType(TribeDetailScreen), findsOneWidget);
+    });
+
+    testWidgets('đổi ngôn ngữ: danh sách nhóm hiện tiếng Anh và tiếng Pháp', (
+      tester,
+    ) async {
+      final (vm, server) = await tester.runAsync(loadedVm) ?? (null, null);
+      for (final (locale, text) in [
+        (const Locale('en'), 'Your tribes'.toUpperCase()),
+        (const Locale('fr'), 'Vos tribus'.toUpperCase()),
+      ]) {
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider.value(value: vm!),
+              ChangeNotifierProvider(
+                create: (_) => TimeblockViewModel(api: server!.client()),
+              ),
+            ],
+            child: localizedApp(
+              const Scaffold(body: TribeListScreen()),
+              locale: locale,
+            ),
+          ),
+        );
+        await tester.pump();
+        expect(find.text(text), findsOneWidget);
+      }
+    });
   });
 
-  group('Đợt cập nhật giao diện & đa ngôn ngữ', () {
+  group('Linh tinh', () {
     test('OverlapLayout chia cột cho các khối trùng giờ', () {
       final slots = OverlapLayout.compute([
         (60, 120),
@@ -355,151 +526,71 @@ void main() {
       expect(slots[3].columns, 1);
     });
 
-    testWidgets(
-      'dán link nhóm đã tham gia: báo rõ + nút Mở nhóm, không màn hình đỏ',
-      (tester) async {
-        final vm = TribeViewModel();
-        await tester.pumpWidget(
-          MultiProvider(
-            providers: [
-              ChangeNotifierProvider.value(value: vm),
-              ChangeNotifierProvider(create: (_) => TimeblockViewModel()),
-            ],
-            child: localizedApp(
-              Scaffold(
-                body: Builder(
-                  builder: (context) => Center(
-                    child: ElevatedButton(
-                      onPressed: () => showJoinTribeDialog(context),
-                      child: const Text('open'),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-        await tester.tap(find.text('open'));
-        await tester.pumpAndSettle();
-        await tester.enterText(
-          find.byType(TextField),
-          'https://timetribe.app/tribe/NIC2026',
-        );
-        await tester.tap(find.text('Vào nhóm'));
-        await tester.pumpAndSettle();
-        expect(find.textContaining('Đồ án NIC'), findsWidgets);
-        expect(find.text('Mở nhóm'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-
-        await tester.tap(find.text('Mở nhóm'));
-        await tester.pump(const Duration(seconds: 1));
-        await tester.pump(const Duration(seconds: 1));
-        expect(tester.takeException(), isNull);
-        expect(find.byType(TribeDetailScreen), findsOneWidget);
-      },
-    );
-
-    test(
-      'lịch cá nhân hiện hoạt động nhóm đã nhận + đang chờ, ẩn hoạt động đã từ chối',
-      () {
-        final vm = TribeViewModel();
-        final mkt = vm.blockById('tb-mkt-1')!; // mình đã nhận
-        final day = AppTime.fromUtc(mkt.startUtc);
-        final ids = vm.tribeBlocksForMe(day).map((b) => b.block.id).toSet();
-        expect(ids, contains('tb-mkt-1'));
-        vm.respond('tb-mkt-1', AttendanceStatus.declined);
-        expect(
-          vm.tribeBlocksForMe(day).map((b) => b.block.id),
-          isNot(contains('tb-mkt-1')),
-        );
-      },
-    );
-
-    test('nhân bản: phát hiện ngày bị trùng khung giờ', () async {
-      final vm = TimeblockViewModel();
-      await Future.delayed(const Duration(milliseconds: 600)); // dữ liệu mẫu
-      final today = AppTime.today();
-      // Dữ liệu mẫu có "Họp team" 9:00–10:30 hôm nay
+    test('thông báo: đọc JSON server, giữ 30 ngày, lọc theo nhóm', () async {
+      final server = FakeServer();
+      final recent = DateTime.now().toUtc().subtract(const Duration(hours: 1));
+      final old = DateTime.now().toUtc().subtract(const Duration(days: 31));
+      server.on(
+        'GET',
+        '/notifications',
+        (_) => [
+          {
+            'id': 'a',
+            'user_id': 'u-me',
+            'title': 'tribeMemberJoined',
+            'content':
+                '{"actor":"An Lê","tribe":"Đồ án NIC","tribe_id":"t-nic"}',
+            'type': 'tribe_join',
+            'is_read': false,
+            'created_at': recent.toIso8601String(),
+            'kind': 'tribeMemberJoined',
+            'args': {
+              'actor': 'An Lê',
+              'tribe': 'Đồ án NIC',
+              'tribe_id': 't-nic',
+            },
+            'tribe_id': 't-nic',
+          },
+          {
+            'id': 'old',
+            'user_id': 'u-me',
+            'title': 'tribeMemberJoined',
+            'content': '{}',
+            'type': 'tribe_join',
+            'is_read': false,
+            'created_at': old.toIso8601String(),
+            'tribe_id': 't-nic',
+          },
+          {
+            'id': 'sys',
+            'user_id': null,
+            'title': 'Bảo trì hệ thống',
+            'content': 'Bảo trì từ 23:00',
+            'type': 'system_broadcast',
+            'is_read': false,
+            'created_at': recent.toIso8601String(),
+          },
+        ],
+      );
+      server.on('PATCH', '/notifications/*/read', (_) => null);
+      final n = NotificationViewModel(api: server.client());
+      await n.load();
+      expect(n.filteredNotifications.map((e) => e.id), ['a', 'sys']);
       expect(
-        vm.conflictsOn(
-          today,
-          const TimeOfDay(hour: 10, minute: 0),
-          const TimeOfDay(hour: 11, minute: 0),
-        ),
-        isTrue,
+        n.filteredNotifications.last.kind,
+        NotificationKind.systemBroadcast,
       );
-      expect(
-        vm.conflictsOn(
-          today,
-          const TimeOfDay(hour: 6, minute: 0),
-          const TimeOfDay(hour: 7, minute: 0),
-        ),
-        isFalse,
-      );
-    });
-
-    test('thông báo: chỉ giữ 30 ngày, lọc theo nhóm', () {
-      final n = NotificationViewModel(loadMock: false);
-      n.push(
-        AppNotification(
-          id: 'a',
-          kind: NotificationKind.tribeMemberJoined,
-          type: 'tribe_join',
-          tribeId: 't-nic',
-        ),
-      );
-      n.push(
-        AppNotification(
-          id: 'old',
-          kind: NotificationKind.tribeMemberJoined,
-          type: 'tribe_join',
-          tribeId: 't-nic',
-          createdAt: DateTime.now().subtract(const Duration(days: 31)),
-        ),
-      );
+      n.setFilter('t-nic');
       expect(n.filteredNotifications.map((e) => e.id), ['a']);
-      n.setFilter('t-badminton');
-      expect(n.filteredNotifications, isEmpty);
       n.setFilter(NotificationFilter.personal);
-      expect(n.filteredNotifications, isEmpty);
+      expect(n.filteredNotifications.map((e) => e.id), ['sys']);
+      expect(n.unreadCount, 2);
+      await n.markAsRead('a');
+      expect(n.unreadCount, 1);
+      expect(server.calls, contains('PATCH /notifications/a/read'));
+      // Thông báo chung chỉ đổi trên máy, không gọi server
+      await n.markAsRead('sys');
+      expect(server.calls.where((c) => c.contains('sys')), isEmpty);
     });
-
-    test('xoá tài khoản: tự chuyển quyền trưởng nhóm rồi rời mọi nhóm', () {
-      final vm = TribeViewModel();
-      vm.leaveAllForAccountDeletion();
-      expect(vm.tribes, isEmpty);
-      // Nhóm mình làm trưởng (Đồ án NIC) được chuyển cho phó nhóm Minh
-      expect(
-        vm.outbox.any(
-          (o) => o.userId == 'u-minh' && o.title == 'tribeRoleLeader',
-        ),
-        isTrue,
-      );
-    });
-
-    testWidgets(
-      'đổi ngôn ngữ: danh sách nhóm hiển thị tiếng Anh và tiếng Pháp',
-      (tester) async {
-        for (final (locale, text) in [
-          (const Locale('en'), 'Your tribes'.toUpperCase()),
-          (const Locale('fr'), 'Vos tribus'.toUpperCase()),
-        ]) {
-          await tester.pumpWidget(
-            MultiProvider(
-              providers: [
-                ChangeNotifierProvider(create: (_) => TribeViewModel()),
-                ChangeNotifierProvider(create: (_) => TimeblockViewModel()),
-              ],
-              child: localizedApp(
-                const Scaffold(body: TribeListScreen()),
-                locale: locale,
-              ),
-            ),
-          );
-          await tester.pump(const Duration(seconds: 1));
-          expect(find.text(text), findsOneWidget);
-        }
-      },
-    );
   });
 }

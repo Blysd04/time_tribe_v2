@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"timetribe-backend/internal/models"
 	"timetribe-backend/internal/services"
@@ -12,8 +13,9 @@ import (
 )
 
 const (
-	CtxUserID = "user_id"
-	CtxRole   = "role"
+	CtxUserID    = "user_id"
+	CtxRole      = "role"
+	CtxSessionID = "session_id"
 )
 
 // Auth kiểm tra header "Authorization: Bearer <access_token>".
@@ -49,12 +51,27 @@ func Auth(svc *services.Services) gin.HandlerFunc {
 			utils.Fail(c, utils.Unauthorized("token_revoked", "Mật khẩu đã thay đổi, vui lòng đăng nhập lại"))
 			return
 		}
+		// Phiên của token này phải còn trong user_tokens. Đã đăng xuất hoặc tài khoản vừa
+		// đăng nhập ở máy khác thì phiên bị xoá, máy này phải đăng nhập lại.
+		alive, err := svc.Store.UserTokens.CountDocuments(c.Request.Context(), bson.M{
+			"_id": claims.ID, "user_id": claims.Subject, "token_type": models.TokenRefresh,
+		})
+		if err != nil {
+			utils.Fail(c, err)
+			return
+		}
+		if claims.ID == "" || alive == 0 {
+			utils.Fail(c, utils.Unauthorized("session_ended", "Phiên đăng nhập đã kết thúc, có thể tài khoản vừa đăng nhập trên máy khác"))
+			return
+		}
 		c.Set(CtxUserID, claims.Subject)
 		c.Set(CtxRole, sec.Role)
+		c.Set(CtxSessionID, claims.ID)
 		c.Next()
 	}
 }
 
+// AdminOnly chặn các API admin nếu người gọi không có role admin.
 func AdminOnly() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.GetString(CtxRole) != models.RoleAdmin {
@@ -79,4 +96,8 @@ func CORS() gin.HandlerFunc {
 	}
 }
 
+// UserID lấy id người đang đăng nhập mà middleware Auth đã gắn vào request.
 func UserID(c *gin.Context) string { return c.GetString(CtxUserID) }
+
+// SessionID lấy id phiên đăng nhập hiện tại (dùng khi đăng xuất).
+func SessionID(c *gin.Context) string { return c.GetString(CtxSessionID) }

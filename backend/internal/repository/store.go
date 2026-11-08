@@ -27,6 +27,7 @@ type Store struct {
 	Notifications        *mongo.Collection
 }
 
+// NewStore lấy handle của 11 collection từ database.
 func NewStore(db *mongo.Database) *Store {
 	return &Store{
 		DB:                   db,
@@ -70,10 +71,13 @@ func FindMany[T any](ctx context.Context, coll *mongo.Collection, filter any, op
 	return out, nil
 }
 
+// ByID tạo filter tìm theo _id.
 func ByID(id string) bson.M { return bson.M{"_id": id} }
 
+// In tạo điều kiện $in để tìm theo nhiều giá trị.
 func In[T any](values []T) bson.M { return bson.M{"$in": values} }
 
+// IsDuplicateKey cho biết lỗi có phải do trùng giá trị ở index unique không.
 func IsDuplicateKey(err error) bool { return mongo.IsDuplicateKeyError(err) }
 
 // UsersByIDs lấy thông tin rút gọn của nhiều người cùng lúc, trả về map theo id.
@@ -92,10 +96,12 @@ func (s *Store) UsersByIDs(ctx context.Context, ids []string) (map[string]models
 	return out, nil
 }
 
+// UserByID tìm một người dùng theo id, không có thì trả nil.
 func (s *Store) UserByID(ctx context.Context, id string) (*models.User, error) {
 	return FindOne[models.User](ctx, s.Users, ByID(id))
 }
 
+// SecurityByUserID lấy dòng user_securities của một người.
 func (s *Store) SecurityByUserID(ctx context.Context, id string) (*models.UserSecurity, error) {
 	return FindOne[models.UserSecurity](ctx, s.UserSecurities, ByID(id))
 }

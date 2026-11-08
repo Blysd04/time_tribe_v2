@@ -20,6 +20,7 @@ func LoadLocation(tz string) *time.Location {
 	return loc
 }
 
+// IsValidTimezone kiểm tra tên múi giờ IANA có tồn tại không.
 func IsValidTimezone(tz string) bool {
 	if tz == "" || tz == "Local" {
 		return false
@@ -77,6 +78,7 @@ type TimeRange struct {
 	End   time.Time `json:"end"`
 }
 
+// Overlaps cho biết hai khoảng thời gian có giao nhau không.
 func (r TimeRange) Overlaps(o TimeRange) bool {
 	return r.Start.Before(o.End) && r.End.After(o.Start)
 }

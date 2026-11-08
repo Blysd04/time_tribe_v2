@@ -19,6 +19,7 @@ class PickerTile extends StatelessWidget {
     this.trailing,
   });
 
+  /// Dựng giao diện ô chọn ngày hoặc giờ.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -75,6 +76,7 @@ class FieldLabel extends StatelessWidget {
 
   const FieldLabel(this.text, {super.key, this.hint});
 
+  /// Dựng giao diện nhãn phía trên ô nhập.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -127,6 +129,7 @@ class ColorDotPicker extends StatelessWidget {
     this.size = 36,
   });
 
+  /// Dựng giao diện hàng chấm màu để chọn màu.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -164,7 +167,7 @@ class ColorDotPicker extends StatelessWidget {
   }
 }
 
-/// Dòng thông tin cố định (có khoá) — VD "Nhắc nhở: Trước 1 tiếng".
+/// Dòng thông tin cố định (có khoá), VD "Nhắc nhở: Trước 1 tiếng".
 class LockedInfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -177,6 +180,7 @@ class LockedInfoRow extends StatelessWidget {
     required this.value,
   });
 
+  /// Dựng giao diện dòng thông tin không cho sửa.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -224,6 +228,7 @@ class InfoBanner extends StatelessWidget {
     this.icon = Icons.info_outline,
   });
 
+  /// Dựng giao diện dải thông tin có màu.
   @override
   Widget build(BuildContext context) => Container(
     width: double.infinity,
@@ -263,6 +268,7 @@ class EmptyState extends StatelessWidget {
     this.actions = const [],
   });
 
+  /// Dựng giao diện màn hình trống (chưa có dữ liệu).
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -342,6 +348,7 @@ class AppFilterChip extends StatelessWidget {
     this.count = 0,
   });
 
+  /// Dựng giao diện chip lọc.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;

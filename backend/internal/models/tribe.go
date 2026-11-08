@@ -25,17 +25,14 @@ const (
 	AttendanceDeclined = "declined"
 )
 
-// Bảng tribes. invite_link lưu mã mời (ví dụ NIC2026), đường dẫn đầy đủ được dựng khi trả về.
-// background_color và background_image_url là hai cột có trong sheet ánh xạ.
+// Bảng tribes. invite_code là mã mời người dùng gõ để vào nhóm, ví dụ NIC2026 (viết hoa, không phân biệt hoa thường khi nhập).
 type Tribe struct {
-	ID                 string     `bson:"_id" json:"id"`
-	Name               string     `bson:"name" json:"name"`
-	CreatedBy          string     `bson:"created_by" json:"created_by"`
-	InviteLink         string     `bson:"invite_link" json:"invite_link"`
-	BackgroundColor    *string    `bson:"background_color" json:"background_color"`
-	BackgroundImageURL *string    `bson:"background_image_url" json:"background_image_url"`
-	CreatedAt          time.Time  `bson:"created_at" json:"created_at"`
-	DeletedAt          *time.Time `bson:"deleted_at" json:"deleted_at"`
+	ID         string     `bson:"_id" json:"id"`
+	Name       string     `bson:"name" json:"name"`
+	CreatedBy  string     `bson:"created_by" json:"created_by"`
+	InviteCode string     `bson:"invite_code" json:"invite_code"`
+	CreatedAt  time.Time  `bson:"created_at" json:"created_at"`
+	DeletedAt  *time.Time `bson:"deleted_at" json:"deleted_at"`
 }
 
 // Bảng tribe_attendees.

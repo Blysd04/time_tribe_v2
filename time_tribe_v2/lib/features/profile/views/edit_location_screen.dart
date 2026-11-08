@@ -14,6 +14,7 @@ import '../viewmodels/profile_viewmodel.dart';
 class EditLocationScreen extends StatefulWidget {
   const EditLocationScreen({super.key});
 
+  /// Tạo phần state giữ dữ liệu thay đổi của màn hình chọn khu vực và múi giờ.
   @override
   State<EditLocationScreen> createState() => _EditLocationScreenState();
 }
@@ -23,6 +24,7 @@ class _EditLocationScreenState extends State<EditLocationScreen> {
   String? _country;
   String? _city;
 
+  /// Chạy một lần lúc màn hình chọn khu vực và múi giờ vừa được tạo, chuẩn bị dữ liệu ban đầu.
   @override
   void initState() {
     super.initState();
@@ -38,6 +40,7 @@ class _EditLocationScreenState extends State<EditLocationScreen> {
     vm.refreshDeviceTimezone(); // Đọc lại múi giờ thiết bị mỗi lần mở
   }
 
+  /// Thành phố đang chọn trong danh sách, chưa chọn thì trả null.
   TimezoneCity? get _selected {
     if (_country == null || _city == null) return null;
     for (final c in kTimezoneLocations[_country!]!) {
@@ -46,11 +49,13 @@ class _EditLocationScreenState extends State<EditLocationScreen> {
     return null;
   }
 
+  /// Chữ GMT+07:00 tương ứng với một múi giờ IANA.
   String _offsetLabel(String timezoneId) {
     final offset = AppTime.offsetOf(timezoneId);
     return offset == null ? '' : AppTime.formatOffset(offset);
   }
 
+  /// Bấm Lưu: hỏi xác nhận rồi áp dụng múi giờ tự động hoặc thành phố đã chọn (có gửi lên server).
   Future<void> _save(ProfileViewModel vm) async {
     final l = context.l10n;
     if (!_isAuto && _selected == null) {
@@ -72,6 +77,7 @@ class _EditLocationScreenState extends State<EditLocationScreen> {
     AppSnack.show(context, l.saved);
   }
 
+  /// Dựng giao diện màn hình chọn khu vực và múi giờ.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;

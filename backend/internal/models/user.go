@@ -20,12 +20,14 @@ const (
 const DefaultTimezone = "Asia/Ho_Chi_Minh"
 
 // Bảng users: thông tin công khai của người dùng.
+// fcm_token là mã thiết bị nhận thông báo đẩy, app gửi lên khi đăng nhập Google, không có thì để null.
 type User struct {
 	ID        string    `bson:"_id" json:"id"`
 	Email     string    `bson:"email" json:"email"`
 	NickName  string    `bson:"nick_name" json:"nick_name"`
 	AvatarURL *string   `bson:"avatar_url" json:"avatar_url"`
 	Timezone  string    `bson:"timezone" json:"timezone"`
+	FCMToken  *string   `bson:"fcm_token" json:"fcm_token"`
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
 }
@@ -39,6 +41,7 @@ type AppUser struct {
 	Timezone  string  `json:"timezone"`
 }
 
+// Short lấy bản rút gọn của người dùng để hiện cho người khác xem (không có email, fcm_token).
 func (u *User) Short() AppUser {
 	return AppUser{ID: u.ID, NickName: u.NickName, AvatarURL: u.AvatarURL, Timezone: u.Timezone}
 }
@@ -67,16 +70,13 @@ type UserSecurity struct {
 }
 
 // Giá trị enum của user_tokens.token_type.
-// fcm là giá trị bổ sung để lưu mã thiết bị nhận thông báo đẩy của Firebase.
 const (
 	TokenRefresh       = "refresh"
 	TokenResetPassword = "reset_password"
-	TokenFCM           = "fcm"
 )
 
 // Bảng user_tokens.
-// Với refresh và reset_password, cột token lưu chuỗi băm SHA-256 chứ không lưu bản gốc,
-// lỡ lộ database thì cũng không dùng lại được. Riêng fcm phải lưu bản gốc để gửi thông báo.
+// Cột token lưu chuỗi băm SHA-256 chứ không lưu bản gốc, lỡ lộ database thì cũng không dùng lại được.
 type UserToken struct {
 	ID         string    `bson:"_id" json:"id"`
 	UserID     string    `bson:"user_id" json:"user_id"`

@@ -60,14 +60,14 @@ func EnsureIndexes(db *mongo.Database) error {
 		},
 		models.CollTemplates: {
 			{Keys: bson.D{{Key: "user_id", Value: 1}}},
-			{Keys: bson.D{{Key: "share_token", Value: 1}}, Options: uniqueIfString("share_token")},
+			{Keys: bson.D{{Key: "share_code", Value: 1}}, Options: uniqueIfString("share_code")},
 			{Keys: bson.D{{Key: "original_template_id", Value: 1}}},
 		},
 		models.CollTemplateBlocks: {
 			{Keys: bson.D{{Key: "template_id", Value: 1}, {Key: "day_index", Value: 1}}},
 		},
 		models.CollTribes: {
-			{Keys: bson.D{{Key: "invite_link", Value: 1}}, Options: unique()},
+			{Keys: bson.D{{Key: "invite_code", Value: 1}}, Options: unique()},
 		},
 		models.CollTribeAttendees: {
 			{Keys: bson.D{{Key: "tribe_id", Value: 1}, {Key: "user_id", Value: 1}}, Options: unique()},

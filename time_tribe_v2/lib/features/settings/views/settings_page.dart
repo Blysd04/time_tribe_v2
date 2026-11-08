@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/session/app_reset.dart';
 import '../../../core/l10n/locale_provider.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/app_card.dart';
@@ -13,6 +14,7 @@ import 'delete_account_screen.dart';
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
+  /// Mở bảng chọn ngôn ngữ Việt / Anh / Pháp.
   void _pickLanguage(BuildContext context) {
     final l = context.l10n;
     final provider = context.read<LocaleProvider>();
@@ -60,6 +62,8 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  /// AU-06: đăng xuất. Server xoá phiên và fcm_token, máy xoá sạch dữ liệu của tài khoản
+  /// để người khác đăng nhập trên máy này không thấy dữ liệu cũ.
   Future<void> _logout(BuildContext context) async {
     final l = context.l10n;
     final ok = await AppDialogs.confirm(
@@ -69,7 +73,9 @@ class SettingsPage extends StatelessWidget {
       confirmLabel: l.logout,
     );
     if (!ok || !context.mounted) return;
-    context.read<AuthViewModel>().logout();
+    await context.read<AuthViewModel>().logout();
+    if (!context.mounted) return;
+    AppData.clearAll(context);
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -77,6 +83,7 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  /// Dựng giao diện tab Cài đặt.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;

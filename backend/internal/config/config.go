@@ -26,8 +26,6 @@ type Config struct {
 	FirebaseCredsFile string
 	CloudinaryURL     string
 
-	// Đường dẫn công khai dùng để dựng link chia sẻ lịch mẫu / link mời nhóm
-	ShareBaseURL string
 	// Link mở trang đặt lại mật khẩu (gắn ?token=...)
 	ResetPasswordURL string
 
@@ -41,6 +39,7 @@ type Config struct {
 	EnableReminder bool
 }
 
+// Load đọc file .env (nếu có) rồi lấy từng biến môi trường, thiếu biến nào thì dùng giá trị mặc định.
 func Load() *Config {
 	// Không có file .env thì vẫn chạy được bằng biến môi trường của hệ thống
 	if err := godotenv.Load(); err != nil {
@@ -60,7 +59,6 @@ func Load() *Config {
 		ResetTokenTTL:     minutes("RESET_TOKEN_TTL_MINUTES", 30),
 		FirebaseCredsFile: get("FIREBASE_CREDENTIALS", "serviceAccountKey.json"),
 		CloudinaryURL:     get("CLOUDINARY_URL", ""),
-		ShareBaseURL:      get("SHARE_BASE_URL", "https://timetribe.app"),
 		ResetPasswordURL:  get("RESET_PASSWORD_URL", "https://timetribe.app/reset-password"),
 		SMTPHost:          get("SMTP_HOST", ""),
 		SMTPPort:          get("SMTP_PORT", "587"),
@@ -72,8 +70,10 @@ func Load() *Config {
 	return cfg
 }
 
+// IsDev cho biết đang chạy môi trường dev (khác production) hay không.
 func (c *Config) IsDev() bool { return c.AppEnv != "production" }
 
+// get đọc một biến môi trường, rỗng thì trả giá trị mặc định.
 func get(key, fallback string) string {
 	if v, ok := os.LookupEnv(key); ok && v != "" {
 		return v
@@ -81,14 +81,17 @@ func get(key, fallback string) string {
 	return fallback
 }
 
+// minutes đọc biến môi trường dạng số phút.
 func minutes(key string, fallback int) time.Duration {
 	return time.Duration(intOr(key, fallback)) * time.Minute
 }
 
+// days đọc biến môi trường dạng số ngày.
 func days(key string, fallback int) time.Duration {
 	return time.Duration(intOr(key, fallback)) * 24 * time.Hour
 }
 
+// intOr đọc biến môi trường dạng số nguyên dương, sai định dạng thì trả mặc định.
 func intOr(key string, fallback int) int {
 	v, err := strconv.Atoi(os.Getenv(key))
 	if err != nil || v <= 0 {

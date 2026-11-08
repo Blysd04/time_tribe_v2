@@ -26,10 +26,12 @@ type AuthService struct {
 	jwt      *JWTManager
 	firebase *FirebaseService
 	mailer   *Mailer
+	notifier *NotificationService
 }
 
-func NewAuthService(cfg *config.Config, store *repository.Store, jwt *JWTManager, fb *FirebaseService, mailer *Mailer) *AuthService {
-	return &AuthService{cfg: cfg, store: store, jwt: jwt, firebase: fb, mailer: mailer}
+// NewAuthService tạo service đăng nhập, đăng ký, đổi mật khẩu.
+func NewAuthService(cfg *config.Config, store *repository.Store, jwt *JWTManager, fb *FirebaseService, mailer *Mailer, n *NotificationService) *AuthService {
+	return &AuthService{cfg: cfg, store: store, jwt: jwt, firebase: fb, mailer: mailer, notifier: n}
 }
 
 // AuthResult là dữ liệu trả về sau khi đăng nhập thành công.
@@ -49,6 +51,7 @@ type MeResponse struct {
 	HasPassword  bool   `json:"has_password"`
 }
 
+// buildMe ghép users và user_securities thành dữ liệu trả về cho app.
 func buildMe(u *models.User, sec *models.UserSecurity) *MeResponse {
 	return &MeResponse{User: *u, Role: sec.Role, AuthProvider: sec.AuthProvider, HasPassword: sec.PasswordHash != nil}
 }
@@ -157,6 +160,7 @@ type LoginInput struct {
 	Identifier string `json:"identifier"` // email hoặc nick_name
 	Password   string `json:"password"`
 	RememberMe bool   `json:"remember_me"`
+	FCMToken   string `json:"fcm_token"` // mã nhận thông báo đẩy của máy, không có thì để trống
 	DeviceInfo string `json:"device_info"`
 }
 
@@ -202,7 +206,30 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*AuthResult, er
 	if bcrypt.CompareHashAndPassword([]byte(*sec.PasswordHash), []byte(in.Password)) != nil {
 		return nil, wrong
 	}
-	return s.issueTokens(ctx, user, sec, in.RememberMe, in.DeviceInfo)
+	return s.startSession(ctx, user, sec, in.RememberMe, in.DeviceInfo, in.FCMToken)
+}
+
+// startSession dùng chung cho đăng nhập thường và đăng nhập Google.
+// Mỗi tài khoản chỉ được đăng nhập trên một máy, nên trước khi cấp token mới thì xoá hết
+// các phiên cũ, máy cũ sẽ bị đăng xuất ở request kế tiếp.
+// fcm_token cũng ghi đè theo máy mới, máy mới không gửi thì để null để máy cũ thôi nhận thông báo.
+func (s *AuthService) startSession(ctx context.Context, user *models.User, sec *models.UserSecurity, remember bool, device, fcmToken string) (*AuthResult, error) {
+	if _, err := s.store.UserTokens.DeleteMany(ctx, bson.M{"user_id": user.ID, "token_type": models.TokenRefresh}); err != nil {
+		return nil, err
+	}
+	fcmToken = strings.TrimSpace(fcmToken)
+	if fcmToken != "" {
+		if err := s.notifier.SaveFCMToken(ctx, user.ID, fcmToken); err != nil {
+			return nil, err
+		}
+		user.FCMToken = &fcmToken
+	} else {
+		if err := s.notifier.ClearFCMToken(ctx, user.ID); err != nil {
+			return nil, err
+		}
+		user.FCMToken = nil
+	}
+	return s.issueTokens(ctx, user, sec, remember, device)
 }
 
 // checkAccountState chặn tài khoản bị khoá hoặc đã xoá.
@@ -220,12 +247,9 @@ func checkAccountState(sec *models.UserSecurity) error {
 	return nil
 }
 
-// issueTokens tạo access token (JWT) và refresh token (lưu bản băm vào user_tokens).
+// issueTokens tạo một phiên mới: lưu refresh token (bản băm) vào user_tokens,
+// rồi tạo access token có gắn id của phiên đó.
 func (s *AuthService) issueTokens(ctx context.Context, user *models.User, sec *models.UserSecurity, remember bool, device string) (*AuthResult, error) {
-	access, err := s.jwt.Issue(user.ID, sec.Role)
-	if err != nil {
-		return nil, err
-	}
 	refresh := utils.RandomToken(32)
 	ttl := s.cfg.RefreshTokenTTL
 	if remember {
@@ -240,6 +264,10 @@ func (s *AuthService) issueTokens(ctx context.Context, user *models.User, sec *m
 	if _, err := s.store.UserTokens.InsertOne(ctx, tok); err != nil {
 		return nil, err
 	}
+	access, err := s.jwt.Issue(user.ID, sec.Role, tok.ID)
+	if err != nil {
+		return nil, err
+	}
 	return &AuthResult{
 		AccessToken: access, RefreshToken: refresh, TokenType: "Bearer",
 		ExpiresIn: int(s.jwt.TTL().Seconds()), User: buildMe(user, sec),
@@ -248,6 +276,7 @@ func (s *AuthService) issueTokens(ctx context.Context, user *models.User, sec *m
 
 type GoogleLoginInput struct {
 	IDToken    string `json:"id_token"`
+	FCMToken   string `json:"fcm_token"` // mã nhận thông báo đẩy của máy, không có thì để trống
 	DeviceInfo string `json:"device_info"`
 	Timezone   string `json:"timezone"`
 }
@@ -323,9 +352,10 @@ func (s *AuthService) GoogleLogin(ctx context.Context, in GoogleLoginInput) (*Au
 	if err := checkAccountState(sec); err != nil {
 		return nil, err
 	}
-	return s.issueTokens(ctx, user, sec, true, in.DeviceInfo)
+	return s.startSession(ctx, user, sec, true, in.DeviceInfo, in.FCMToken)
 }
 
+// createGoogleUser tạo tài khoản mới cho người đăng nhập Google lần đầu, tên trùng thì thêm vài số phía sau.
 func (s *AuthService) createGoogleUser(ctx context.Context, email, name, picture, googleID, tz string) (*models.User, *models.UserSecurity, error) {
 	base := strings.TrimSpace(name)
 	if base == "" {
@@ -367,8 +397,9 @@ func (s *AuthService) createGoogleUser(ctx context.Context, email, name, picture
 	return user, sec, nil
 }
 
-// Refresh đổi refresh token cũ lấy cặp token mới (token cũ bị xoá luôn).
-func (s *AuthService) Refresh(ctx context.Context, refreshToken, device string) (*AuthResult, error) {
+// Refresh đổi refresh token cũ lấy cặp token mới. Vẫn giữ nguyên phiên (id dòng user_tokens),
+// chỉ thay chuỗi refresh token, nên máy đang dùng không bị coi là đăng nhập ở máy khác.
+func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (*AuthResult, error) {
 	invalid := utils.Unauthorized("invalid_refresh_token", "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại")
 	if refreshToken == "" {
 		return nil, invalid
@@ -382,8 +413,6 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken, device string) 
 	if tok == nil || tok.ExpiresAt.Before(time.Now()) {
 		return nil, invalid
 	}
-	_, _ = s.store.UserTokens.DeleteOne(ctx, repository.ByID(tok.ID))
-
 	user, err := s.store.UserByID(ctx, tok.UserID)
 	if err != nil || user == nil {
 		return nil, invalid
@@ -395,28 +424,29 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken, device string) 
 	if err := checkAccountState(sec); err != nil {
 		return nil, err
 	}
-	// Giữ nguyên thời hạn "ghi nhớ đăng nhập" nếu token cũ là loại dài hạn
-	remember := tok.ExpiresAt.Sub(tok.CreatedAt) > s.cfg.RefreshTokenTTL
-	if device == "" && tok.DeviceInfo != nil {
-		device = *tok.DeviceInfo
+	newRefresh := utils.RandomToken(32)
+	if _, err := s.store.UserTokens.UpdateOne(ctx, repository.ByID(tok.ID), bson.M{"$set": bson.M{"token": utils.HashToken(newRefresh)}}); err != nil {
+		return nil, err
 	}
-	return s.issueTokens(ctx, user, sec, remember, device)
+	access, err := s.jwt.Issue(user.ID, sec.Role, tok.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &AuthResult{
+		AccessToken: access, RefreshToken: newRefresh, TokenType: "Bearer",
+		ExpiresIn: int(s.jwt.TTL().Seconds()), User: buildMe(user, sec),
+	}, nil
 }
 
-// Logout (AU-06): xoá refresh token của thiết bị hiện tại, kèm mã FCM nếu app gửi lên.
-func (s *AuthService) Logout(ctx context.Context, userID, refreshToken, fcmToken string) error {
-	if refreshToken != "" {
-		_, err := s.store.UserTokens.DeleteOne(ctx, bson.M{
-			"user_id": userID, "token": utils.HashToken(refreshToken), "token_type": models.TokenRefresh,
-		})
-		if err != nil {
-			return err
-		}
+// Logout (AU-06): xoá phiên đăng nhập hiện tại và đặt fcm_token về null
+// để máy đã đăng xuất không nhận thông báo của tài khoản này nữa.
+// Máy đó đăng nhập tài khoản khác ngay sau đó vẫn được, fcm_token sẽ gắn sang tài khoản mới.
+func (s *AuthService) Logout(ctx context.Context, userID, sessionID string) error {
+	_, err := s.store.UserTokens.DeleteOne(ctx, bson.M{"_id": sessionID, "user_id": userID, "token_type": models.TokenRefresh})
+	if err != nil {
+		return err
 	}
-	if fcmToken != "" {
-		_, _ = s.store.UserTokens.DeleteOne(ctx, bson.M{"user_id": userID, "token": fcmToken, "token_type": models.TokenFCM})
-	}
-	return nil
+	return s.notifier.ClearFCMToken(ctx, userID)
 }
 
 // ForgotPassword (AU-04 bước 1-3): tạo token khôi phục và gửi email.
@@ -530,6 +560,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID string, in Chan
 	return err
 }
 
+// validateNewPassword kiểm tra mật khẩu mới đủ dài và khớp với ô xác nhận.
 func validateNewPassword(pw, confirm string) error {
 	fields := map[string]string{}
 	if len(pw) < minPasswordLength {

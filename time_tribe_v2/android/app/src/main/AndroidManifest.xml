@@ -1,5 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Gọi API backend -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Android 13 trở lên phải xin quyền mới hiện được thông báo đẩy -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
+        android:usesCleartextTraffic="true"
         android:label="TimeTribe"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">

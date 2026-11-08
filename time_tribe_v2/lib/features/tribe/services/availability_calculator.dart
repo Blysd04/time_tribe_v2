@@ -1,4 +1,4 @@
-/// Khoảng thời gian tuyệt đối (UTC) — dùng để so lịch giữa các múi giờ.
+/// Khoảng thời gian tuyệt đối (UTC), dùng để so lịch giữa các múi giờ.
 class TimeRange {
   final DateTime start;
   final DateTime end;
@@ -7,9 +7,13 @@ class TimeRange {
     : start = start.toUtc(),
       end = end.toUtc();
 
+  /// Độ dài của khoảng thời gian.
   Duration get duration => end.difference(start);
+
+  /// Khoảng thời gian rỗng (kết thúc không sau bắt đầu).
   bool get isEmpty => !end.isAfter(start);
 
+  /// Hai khoảng thời gian có giao nhau không.
   bool overlaps(TimeRange other) =>
       start.isBefore(other.end) && end.isAfter(other.start);
 
@@ -20,6 +24,7 @@ class TimeRange {
     return e.isAfter(s) ? TimeRange(s, e) : null;
   }
 
+  /// In ra cho dễ đọc khi debug.
   @override
   String toString() => 'TimeRange($start → $end)';
 }
@@ -31,6 +36,7 @@ class AvailabilitySegment {
 
   AvailabilitySegment(this.range, this.busyUserIds);
 
+  /// Đoạn này có ai bận không, không ai bận là cả nhóm rảnh.
   bool get isEveryoneFree => busyUserIds.isEmpty;
 }
 
@@ -96,7 +102,7 @@ class AvailabilityCalculator {
     return result;
   }
 
-  /// Các khoảng mà TẤT CẢ thành viên đều rảnh, dài tối thiểu [minDuration].
+  /// Các khoảng mà tất cả thành viên đều rảnh, dài tối thiểu [minDuration].
   static List<TimeRange> commonFreeSlots(
     TimeRange window,
     Map<String, List<TimeRange>> busyByUser, {
@@ -110,7 +116,7 @@ class AvailabilityCalculator {
 
   /// Tỉ lệ thành viên "bận" trong ngày (0..1).
   /// Một người được tính là bận nếu lịch của họ chiếm từ [threshold]
-  /// thời gian của [window] trở lên (mặc định 40% khung 7h–22h ≈ 6 tiếng).
+  /// thời gian của [window] trở lên (mặc định 40% khung 7h-22h ≈ 6 tiếng).
   static double busyMemberShare(
     TimeRange window,
     List<String> memberIds,
@@ -152,6 +158,7 @@ class AvailabilityCalculator {
     return DayLoad.neutral;
   }
 
+  /// Tổng số phút bận trong cửa sổ, các khoảng chồng nhau chỉ tính một lần.
   static int _busyMinutes(TimeRange window, List<TimeRange> ranges) {
     // Gộp các khoảng chồng nhau để không đếm trùng
     final parts =
@@ -173,6 +180,7 @@ class AvailabilityCalculator {
     return minutes;
   }
 
+  /// Hai tập người bận có giống nhau không.
   static bool _sameSet(Set<String> a, Set<String> b) =>
       a.length == b.length && a.containsAll(b);
 }

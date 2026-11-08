@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
+import '../../../core/l10n/api_errors.dart';
 import '../../../core/l10n/l10n.dart';
+import '../../../core/session/session.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/app_time.dart';
 import '../../../core/utils/formatters.dart';
@@ -27,6 +28,7 @@ class AddEditTimeblockScreen extends StatefulWidget {
     this.initialStart,
   });
 
+  /// Tạo phần state giữ dữ liệu thay đổi của màn hình thêm/sửa hoạt động cá nhân.
   @override
   State<AddEditTimeblockScreen> createState() => _AddEditTimeblockScreenState();
 }
@@ -43,9 +45,12 @@ class _AddEditTimeblockScreenState extends State<AddEditTimeblockScreen> {
   late String _color;
   late int _remind;
   Set<DateTime> _duplicateDates = {};
+  bool _saving = false;
 
+  /// Đang sửa hoạt động có sẵn (true) hay tạo mới (false).
   bool get _isEditing => widget.timeblock != null;
 
+  /// Chạy một lần lúc màn hình thêm/sửa hoạt động cá nhân vừa được tạo, chuẩn bị dữ liệu ban đầu.
   @override
   void initState() {
     super.initState();
@@ -65,6 +70,7 @@ class _AddEditTimeblockScreenState extends State<AddEditTimeblockScreen> {
     _remind = remindOptions.contains(b?.remind) ? b!.remind : 15;
   }
 
+  /// Dọn controller, listener khi màn hình thêm/sửa hoạt động cá nhân bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     _taskController.dispose();
@@ -72,8 +78,10 @@ class _AddEditTimeblockScreenState extends State<AddEditTimeblockScreen> {
     super.dispose();
   }
 
+  /// Đổi giờ thành số phút tính từ 0 giờ cho dễ so sánh.
   int _m(TimeOfDay t) => t.hour * 60 + t.minute;
 
+  /// Chọn giờ bắt đầu hoặc kết thúc, kết thúc phải sau bắt đầu ít nhất 5 phút.
   Future<void> _pickTime(bool isStart) async {
     final l = context.l10n;
     final picked = await showTimePicker(
@@ -101,6 +109,7 @@ class _AddEditTimeblockScreenState extends State<AddEditTimeblockScreen> {
     });
   }
 
+  /// Chọn ngày thực hiện, không cho chọn ngày đã qua.
   Future<void> _pickDate() async {
     final vm = context.read<TimeblockViewModel>();
     final today = AppTime.today();
@@ -120,6 +129,7 @@ class _AddEditTimeblockScreenState extends State<AddEditTimeblockScreen> {
     }
   }
 
+  /// Mở bảng chọn các ngày muốn nhân bản, khoá ngày gốc và ngày đã có lịch trùng giờ.
   Future<void> _pickDuplicateDates() async {
     final vm = context.read<TimeblockViewModel>();
     final result = await showDuplicateDatesSheet(
@@ -136,9 +146,11 @@ class _AddEditTimeblockScreenState extends State<AddEditTimeblockScreen> {
     if (result != null) setState(() => _duplicateDates = result);
   }
 
-  void _save() {
+  /// Kiểm tra form rồi gửi lên server. Các ngày nhân bản bị trùng giờ hoặc đã qua
+  /// sẽ được server bỏ qua, số bản nhân bản thành công hiện trong snackbar.
+  Future<void> _save() async {
     final l = context.l10n;
-    if (!_formKey.currentState!.validate()) return;
+    if (_saving || !_formKey.currentState!.validate()) return;
     if (_date.isBefore(AppTime.today())) {
       AppSnack.show(context, l.errorPastDate, type: AppSnackType.error);
       return;
@@ -147,8 +159,8 @@ class _AddEditTimeblockScreenState extends State<AddEditTimeblockScreen> {
     if (_color.isEmpty) _color = vm.userColors.first;
 
     final block = TimeblockModel(
-      id: widget.timeblock?.id ?? const Uuid().v4(),
-      userId: widget.timeblock?.userId ?? 'current-user-id',
+      id: widget.timeblock?.id ?? '',
+      userId: widget.timeblock?.userId ?? Session.currentUserId,
       task: _taskController.text.trim(),
       description: _descController.text.trim(),
       date: _date,
@@ -161,35 +173,27 @@ class _AddEditTimeblockScreenState extends State<AddEditTimeblockScreen> {
       AppSnack.show(context, l.errorOverlap, type: AppSnackType.error);
       return;
     }
-    _isEditing ? vm.updateTimeblock(block) : vm.addTimeblock(block);
 
-    // Nhân bản sang các ngày đã chọn (bỏ qua ngày vừa bị trùng)
-    final copies = <TimeblockModel>[
-      for (final d in _duplicateDates.toList()..sort())
-        if (!vm.conflictsOn(d, _start, _end))
-          TimeblockModel(
-            id: const Uuid().v4(),
-            userId: block.userId,
-            parentBlockId: block.id, // liên kết về lịch gốc
-            task: block.task,
-            description: block.description,
-            date: d,
-            startTime: _start,
-            endTime: _end,
-            colorCode: _color,
-            remind: _remind,
-          ),
-    ];
-    if (copies.isNotEmpty) vm.addTimeblocks(copies);
-    // TODO(backend): POST /timeblocks (+ /timeblocks/batch cho các bản nhân)
-
+    setState(() => _saving = true);
+    final res = await vm.saveTimeblock(
+      block,
+      isEditing: _isEditing,
+      duplicateDates: _duplicateDates.toList()..sort(),
+    );
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (!res.ok) {
+      AppSnack.show(context, l.apiError(res.error), type: AppSnackType.error);
+      return;
+    }
     Navigator.pop(context);
     AppSnack.show(
       context,
-      copies.isEmpty ? l.saved : l.savedWithCopies(copies.length),
+      res.copies == 0 ? l.saved : l.savedWithCopies(res.copies),
     );
   }
 
+  /// PT-04: hỏi xác nhận rồi xoá hoạt động trên server.
   Future<void> _delete() async {
     final l = context.l10n;
     final ok = await AppDialogs.confirm(
@@ -200,11 +204,19 @@ class _AddEditTimeblockScreenState extends State<AddEditTimeblockScreen> {
       destructive: true,
     );
     if (!ok || !mounted) return;
-    context.read<TimeblockViewModel>().deleteTimeblock(widget.timeblock!.id);
+    final deleted = await context.read<TimeblockViewModel>().deleteTimeblock(
+      widget.timeblock!.id,
+    );
+    if (!mounted) return;
+    if (!deleted) {
+      AppSnack.show(context, l.errorServer, type: AppSnackType.error);
+      return;
+    }
     Navigator.pop(context);
     AppSnack.show(context, l.activityDeleted);
   }
 
+  /// PT-05: nhấn giữ một ô màu để đổi sang màu khác, không cho trùng màu đã có.
   void _editColorSlot(int index, String currentHex, TimeblockViewModel vm) {
     final l = context.l10n;
     showDialog(
@@ -235,9 +247,11 @@ class _AddEditTimeblockScreenState extends State<AddEditTimeblockScreen> {
     );
   }
 
+  /// Chữ hiển thị cho mốc nhắc: "Đúng giờ" hoặc "Trước X phút".
   String _remindLabel(int m) =>
       m == 0 ? context.l10n.remindOnTime : context.l10n.remindBefore(m);
 
+  /// Dựng giao diện màn hình thêm/sửa hoạt động cá nhân.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -259,7 +273,7 @@ class _AddEditTimeblockScreenState extends State<AddEditTimeblockScreen> {
               icon: const Icon(Icons.delete_outline, color: AppColors.danger),
               onPressed: _delete,
             ),
-          TextButton(onPressed: _save, child: Text(l.save)),
+          TextButton(onPressed: _saving ? null : _save, child: Text(l.save)),
           const SizedBox(width: 4),
         ],
       ),

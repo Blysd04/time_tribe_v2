@@ -12,6 +12,7 @@ class TribeAvatar extends StatelessWidget {
 
   const TribeAvatar({super.key, required this.tribe, this.size = 52});
 
+  /// Dựng giao diện ảnh đại diện của nhóm.
   @override
   Widget build(BuildContext context) {
     final c = tribe.color;
@@ -44,6 +45,7 @@ class RoleBadge extends StatelessWidget {
   final TribeRole role;
   const RoleBadge({super.key, required this.role});
 
+  /// Dựng giao diện nhãn chức vụ.
   @override
   Widget build(BuildContext context) {
     if (role == TribeRole.member) return const SizedBox.shrink();

@@ -14,8 +14,10 @@ import (
 
 var hexColor = regexp.MustCompile(`^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$`)
 
+// IsHexColor kiểm tra mã màu dạng #RRGGBB hoặc #AARRGGBB.
 func IsHexColor(s string) bool { return hexColor.MatchString(s) }
 
+// IsEmail kiểm tra chuỗi có đúng dạng email không.
 func IsEmail(s string) bool {
 	addr, err := mail.ParseAddress(s)
 	return err == nil && addr.Address == s && strings.Contains(s, ".")
@@ -36,6 +38,7 @@ func TrimPtr(s *string) *string {
 	return &v
 }
 
+// Ptr lấy con trỏ của một giá trị (Go không cho viết &"abc" trực tiếp).
 func Ptr[T any](v T) *T { return &v }
 
 // RandomToken sinh chuỗi ngẫu nhiên dạng hex (n byte ngẫu nhiên).
@@ -56,6 +59,7 @@ func RandomCode(n int, alphabet string) string {
 	return string(out)
 }
 
+// HashToken băm SHA-256 chuỗi token để lưu vào database thay cho bản gốc.
 func HashToken(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
@@ -79,6 +83,7 @@ func LastPathSegment(link string) string {
 	return ""
 }
 
+// ContainsInt kiểm tra số v có trong danh sách không.
 func ContainsInt(list []int, v int) bool {
 	for _, x := range list {
 		if x == v {

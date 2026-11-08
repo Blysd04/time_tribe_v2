@@ -447,11 +447,11 @@
   "createTemplate": "Tạo lịch mẫu",
   "createTemplateHint": "Bắt đầu từ một tuần trống",
   "importTemplate": "Nhập bằng liên kết",
-  "importTemplateHint": "Dán link chia sẻ từ bạn bè",
+  "importTemplateHint": "Nhập mã chia sẻ từ bạn bè",
   "importAction": "Nhập",
   "templateImported": "Đã thêm lịch mẫu!",
   "errorLinkEmpty": "Bạn chưa dán link vào",
-  "errorTemplateNotFound": "Không tìm thấy lịch mẫu nào với link này",
+  "errorTemplateNotFound": "Không tìm thấy lịch mẫu nào với mã này",
   "errorTemplateDuplicate": "Lịch mẫu này đã có trong kho rồi",
   "errorTemplateLimit": "Kho đã đầy (tối đa {max} mẫu)",
   "@errorTemplateLimit": {
@@ -521,7 +521,7 @@
   },
   "templateDeleted": "Đã xoá lịch mẫu",
   "shareTemplate": "Chia sẻ lịch mẫu",
-  "shareTemplateDescription": "Ai có link này đều có thể xem và chép lịch mẫu này về tài khoản của họ.",
+  "shareTemplateDescription": "Gửi mã này cho bạn bè, họ nhập mã ở mục Nhập lịch mẫu để chép về tài khoản của họ.",
   "addActivity": "Thêm hoạt động",
   "dayOfWeek": "Thứ trong tuần",
   "yourTribes": "Nhóm của bạn",
@@ -913,5 +913,60 @@
   },
   "errorNeedNewLeader": "Bạn cần bổ nhiệm trưởng nhóm mới trước khi rời",
   "errorNotAllowed": "Bạn không có quyền thực hiện thao tác này",
-  "errorItemGone": "Dữ liệu này không còn tồn tại"
+  "errorItemGone": "Dữ liệu này không còn tồn tại",
+  "errorNameLength": "Tên hiển thị phải từ 2 đến 100 ký tự",
+  "errorPasswordTooShort": "Mật khẩu tối thiểu 6 ký tự",
+  "errorEmailTaken": "Email này đã được sử dụng",
+  "errorNameTaken": "Tên hiển thị này đã có người dùng",
+  "errorAccountBanned": "Tài khoản của bạn đang bị khoá",
+  "errorAccountDeleted": "Tài khoản này đã bị xoá",
+  "errorGoogleAccount": "Tài khoản này đăng nhập bằng Google, hãy chọn Đăng nhập với Google",
+  "errorGoogleFailed": "Đăng nhập Google không thành công, vui lòng thử lại",
+  "errorGoogleUnsupported": "Thiết bị này chưa hỗ trợ đăng nhập Google",
+  "errorNetwork": "Không kết nối được máy chủ, vui lòng kiểm tra mạng",
+  "errorServer": "Có lỗi xảy ra, vui lòng thử lại",
+  "forgotPasswordTitle": "Quên mật khẩu",
+  "forgotPasswordMessage": "Nhập email đã đăng ký, chúng tôi sẽ gửi đường dẫn đặt lại mật khẩu.",
+  "forgotPasswordSent": "Nếu email có trong hệ thống, đường dẫn đặt lại mật khẩu đã được gửi",
+  "sendLabel": "Gửi",
+  "sessionEnded": "Phiên đăng nhập đã kết thúc, có thể tài khoản vừa đăng nhập trên máy khác",
+  "changeAvatar": "Đổi ảnh đại diện",
+  "pickFromGallery": "Chọn ảnh từ thư viện",
+  "takePhoto": "Chụp ảnh",
+  "avatarUpdated": "Đã cập nhật ảnh đại diện",
+  "errorBlockEnded": "Hoạt động này đã kết thúc",
+  "pullToRefresh": "Kéo xuống để tải lại",
+  "importTemplateCodeHint": "Nhập mã chia sẻ bạn bè gửi cho bạn, ví dụ GYM4DAY",
+  "errorCodeEmpty": "Bạn chưa nhập mã",
+  "codeCopied": "Đã sao chép mã!",
+  "nTitleReminder": "Sắp tới giờ: {task}",
+  "@nTitleReminder": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyPersonalReminder": "\"{task}\" bắt đầu lúc {time}.",
+  "@nBodyPersonalReminder": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyTribeReminder": "Hoạt động của nhóm {tribe} bắt đầu lúc {time}.",
+  "@nBodyTribeReminder": {
+    "placeholders": {
+      "tribe": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  }
 }

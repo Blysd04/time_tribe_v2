@@ -33,9 +33,9 @@ type TribeBlockDTO struct {
 	Counts         map[string]int  `json:"counts,omitempty"`
 	Attendance     []AttendanceDTO `json:"attendance,omitempty"`
 	TribeName      string          `json:"tribe_name,omitempty"`
-	TribeColor     *string         `json:"tribe_color,omitempty"`
 }
 
+// blockDTO thêm giờ UTC đầy đủ, giờ theo múi giờ người xem và danh sách điểm danh vào hoạt động nhóm.
 func (s *TribeService) blockDTO(b *models.TribeBlock, members []models.TribeAttendee, rows map[string]models.TribeBlockAttendance,
 	myStatus string, loc *time.Location) TribeBlockDTO {
 	r := utils.UTCRange(b.Date, b.StartTime, b.EndTime)
@@ -204,6 +204,7 @@ func (s *TribeService) loadBlock(ctx context.Context, me, blockID string) (*mode
 	return b, tribe, att, nil
 }
 
+// GetBlock lấy chi tiết một hoạt động nhóm kèm ai tham gia, ai từ chối, ai đang chờ.
 func (s *TribeService) GetBlock(ctx context.Context, me, blockID string) (*TribeBlockDTO, error) {
 	b, tribe, _, err := s.loadBlock(ctx, me, blockID)
 	if err != nil {
@@ -217,7 +218,7 @@ func (s *TribeService) GetBlock(ctx context.Context, me, blockID string) (*Tribe
 	if err != nil {
 		return nil, err
 	}
-	list[0].TribeName, list[0].TribeColor = tribe.Name, tribe.BackgroundColor
+	list[0].TribeName = tribe.Name
 	return &list[0], nil
 }
 
@@ -235,6 +236,7 @@ type TribeBlockInput struct {
 	Remind      *int    `json:"remind"`
 }
 
+// hasTime cho biết người dùng có gửi giờ mới lên không (khi sửa hoạt động).
 func (in *TribeBlockInput) hasTime() bool {
 	return in.StartUTC != "" || in.Date != "" || in.StartTime != ""
 }
@@ -274,6 +276,7 @@ func (in *TribeBlockInput) parseRange() (string, string, string, utils.TimeRange
 	return r.Start.Format(utils.DateLayout), r.Start.Format(utils.ClockLayout), r.End.Format(utils.ClockLayout), r, nil
 }
 
+// validateTaskText kiểm tra tên hoạt động 2-100 ký tự và ghi chú tối đa 300 ký tự.
 func validateTaskText(task string, desc *string) (string, *string, error) {
 	task = strings.TrimSpace(task)
 	if utils.Len(task) < 2 || utils.Len(task) > 100 {
@@ -311,9 +314,6 @@ func (s *TribeService) CreateBlock(ctx context.Context, me, tribeID string, in T
 		return nil, utils.BadRequest("past_time", "Không thể tạo hoạt động trong quá khứ")
 	}
 	color := "#3A86FF"
-	if tribe.BackgroundColor != nil {
-		color = *tribe.BackgroundColor
-	}
 	if in.ColorCode != nil && *in.ColorCode != "" {
 		if !utils.IsHexColor(*in.ColorCode) {
 			return nil, utils.BadRequest("invalid_color", "Mã màu phải có dạng #RRGGBB")
@@ -456,6 +456,7 @@ func (s *TribeService) DeleteBlock(ctx context.Context, me, blockID string) erro
 	return nil
 }
 
+// upsertAttendance cập nhật trạng thái tham gia, chưa có dòng điểm danh thì tạo mới.
 func (s *TribeService) upsertAttendance(ctx context.Context, blockID, userID, status string) error {
 	now := time.Now().UTC()
 	res, err := s.store.TribeBlockAttendance.UpdateOne(ctx,
@@ -607,6 +608,7 @@ func (s *TribeService) busyByMember(ctx context.Context, tribe *models.Tribe, me
 	return out, nil
 }
 
+// busyMembers trả id những thành viên đang bận trong khoảng thời gian r.
 func (s *TribeService) busyMembers(ctx context.Context, tribe *models.Tribe, members []models.TribeAttendee, r utils.TimeRange) ([]string, error) {
 	list, err := s.busyByMember(ctx, tribe, members, r)
 	if err != nil {
@@ -698,6 +700,32 @@ func (s *TribeService) Availability(ctx context.Context, me, tribeID, date strin
 	}, nil
 }
 
+// Busy trả khoảng bận (UTC) của từng thành viên trong khoảng ngày from..to tính theo giờ người xem.
+// App tải một lần cho cả tháng rồi tự tô màu từng ngày, khỏi phải gọi availability cho từng ngày.
+func (s *TribeService) Busy(ctx context.Context, me, tribeID, from, to string) (map[string]any, error) {
+	tribe, _, err := s.membership(ctx, tribeID, me)
+	if err != nil {
+		return nil, err
+	}
+	if from == "" || to == "" {
+		return nil, utils.BadRequest("invalid_date", "Cần truyền from và to dạng YYYY-MM-DD")
+	}
+	w, err := windowFromQuery("", from, to, s.userLoc(ctx, me))
+	if err != nil {
+		return nil, err
+	}
+	members, err := s.attendeesOf(ctx, tribe.ID)
+	if err != nil {
+		return nil, err
+	}
+	busy, err := s.busyByMember(ctx, tribe, members, w)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{"window": w, "members": busy}, nil
+}
+
+// sameSet so hai danh sách id có cùng các phần tử không (không quan tâm thứ tự).
 func sameSet(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
@@ -750,7 +778,7 @@ func (s *TribeService) BlocksForUser(ctx context.Context, me string, w utils.Tim
 		}
 		dto := s.blockDTO(b, nil, nil, status[b.ID], loc)
 		t := byID[b.TribeID]
-		dto.TribeName, dto.TribeColor = t.Name, t.BackgroundColor
+		dto.TribeName = t.Name
 		out = append(out, dto)
 	}
 	return out, nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"strings"
 	"time"
 
 	"firebase.google.com/go/v4/messaging"
@@ -21,6 +22,7 @@ type NotificationService struct {
 	firebase *FirebaseService
 }
 
+// NewNotificationService tạo service thông báo.
 func NewNotificationService(store *repository.Store, fb *FirebaseService) *NotificationService {
 	return &NotificationService{store: store, firebase: fb}
 }
@@ -87,7 +89,7 @@ func (s *NotificationService) Notify(ctx context.Context, in NotifyInput) {
 	go s.pushToUsers(recipients, title, body, data)
 }
 
-// pushToUsers lấy mã FCM của các thiết bị rồi gửi, mã nào đã chết thì xoá khỏi user_tokens.
+// pushToUsers lấy users.fcm_token của người nhận rồi gửi, mã nào đã chết thì đặt lại null.
 func (s *NotificationService) pushToUsers(userIDs []string, title, body string, data map[string]string) {
 	if !s.firebase.PushEnabled() {
 		return
@@ -95,21 +97,19 @@ func (s *NotificationService) pushToUsers(userIDs []string, title, body string, 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	tokens, err := repository.FindMany[models.UserToken](ctx, s.store.UserTokens, bson.M{
-		"user_id":    repository.In(userIDs),
-		"token_type": models.TokenFCM,
-		"expires_at": bson.M{"$gt": time.Now()},
+	users, err := repository.FindMany[models.User](ctx, s.store.Users, bson.M{
+		"_id": repository.In(userIDs), "fcm_token": bson.M{"$type": "string"},
 	})
-	if err != nil || len(tokens) == 0 {
+	if err != nil || len(users) == 0 {
 		return
 	}
 	// Mỗi lần gửi tối đa 500 thiết bị theo giới hạn của FCM
-	for start := 0; start < len(tokens); start += 500 {
-		end := min(start+500, len(tokens))
-		batch := tokens[start:end]
+	for start := 0; start < len(users); start += 500 {
+		end := min(start+500, len(users))
+		batch := users[start:end]
 		regs := make([]string, len(batch))
-		for i, t := range batch {
-			regs[i] = t.Token
+		for i, u := range batch {
+			regs[i] = *u.FCMToken
 		}
 		res, err := s.firebase.Messaging.SendEachForMulticast(ctx, &messaging.MulticastMessage{
 			Tokens:       regs,
@@ -126,10 +126,44 @@ func (s *NotificationService) pushToUsers(userIDs []string, title, body string, 
 				continue
 			}
 			if messaging.IsRegistrationTokenNotRegistered(r.Error) || messaging.IsInvalidArgument(r.Error) {
-				_, _ = s.store.UserTokens.DeleteOne(ctx, bson.M{"_id": batch[i].ID})
+				_ = s.ClearFCMToken(ctx, batch[i].ID)
 			}
 		}
 	}
+}
+
+// SaveFCMToken ghi mã thiết bị vào users.fcm_token và đăng ký topic thông báo chung.
+// Mã rỗng thì bỏ qua, giữ nguyên giá trị đang có (người mới thì vẫn là null).
+// Một máy chỉ nhận thông báo cho một tài khoản, nên mã này đang gắn với ai khác thì gỡ ra.
+func (s *NotificationService) SaveFCMToken(ctx context.Context, userID, token string) error {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return nil
+	}
+	if _, err := s.store.Users.UpdateMany(ctx,
+		bson.M{"fcm_token": token, "_id": bson.M{"$ne": userID}},
+		bson.M{"$set": bson.M{"fcm_token": nil}}); err != nil {
+		return err
+	}
+	if _, err := s.store.Users.UpdateOne(ctx, repository.ByID(userID), bson.M{"$set": bson.M{"fcm_token": token}}); err != nil {
+		return err
+	}
+	if s.firebase.PushEnabled() {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if _, err := s.firebase.Messaging.SubscribeToTopic(ctx, []string{token}, TopicAllUsers); err != nil {
+				log.Printf("đăng ký topic %s lỗi: %v", TopicAllUsers, err)
+			}
+		}()
+	}
+	return nil
+}
+
+// ClearFCMToken đặt users.fcm_token về null (đăng xuất, xoá tài khoản, mã hết hiệu lực).
+func (s *NotificationService) ClearFCMToken(ctx context.Context, userID string) error {
+	_, err := s.store.Users.UpdateOne(ctx, repository.ByID(userID), bson.M{"$set": bson.M{"fcm_token": nil}})
+	return err
 }
 
 // NotificationDTO là bản ghi notifications kèm vài trường tiện cho app:
@@ -141,6 +175,7 @@ type NotificationDTO struct {
 	TribeID *string           `json:"tribe_id"`
 }
 
+// toNotificationDTO tách content (JSON) thành args và lấy tribe_id ra cho app dễ dùng.
 func toNotificationDTO(n models.Notification) NotificationDTO {
 	dto := NotificationDTO{Notification: n, Kind: n.Title, Args: map[string]string{}}
 	if err := json.Unmarshal([]byte(n.Content), &dto.Args); err != nil {
@@ -207,6 +242,7 @@ func (s *NotificationService) UnreadSummary(ctx context.Context, userID string) 
 	return map[string]any{"total": len(rows), "personal": personal, "by_tribe": byTribe}, nil
 }
 
+// MarkRead (NOTI-02) đánh dấu một thông báo của mình là đã đọc.
 func (s *NotificationService) MarkRead(ctx context.Context, userID, id string) error {
 	res, err := s.store.Notifications.UpdateOne(ctx,
 		bson.M{"_id": id, "user_id": userID},
@@ -220,6 +256,7 @@ func (s *NotificationService) MarkRead(ctx context.Context, userID, id string) e
 	return nil
 }
 
+// MarkAllRead (NOTI-02) đánh dấu mọi thông báo của mình là đã đọc, trả về số dòng đã đổi.
 func (s *NotificationService) MarkAllRead(ctx context.Context, userID string) (int64, error) {
 	res, err := s.store.Notifications.UpdateMany(ctx,
 		bson.M{"user_id": userID, "is_read": false},

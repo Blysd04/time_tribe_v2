@@ -7,7 +7,7 @@ import '../../../../core/utils/app_time.dart';
 /// Lý do một ngày không chọn được để nhân bản.
 enum DuplicateBlockReason { past, sameDay, conflict }
 
-/// Lịch tháng cho phép chọn NHIỀU ngày để nhân bản một lịch cá nhân.
+/// Lịch tháng cho phép chọn nhiều ngày để nhân bản một lịch cá nhân.
 /// - Chỉ chọn được từ hôm nay trở đi.
 /// - Ngày đang có lịch trùng khung giờ (hoặc chính ngày gốc) bị khoá.
 Future<Set<DateTime>?> showDuplicateDatesSheet(
@@ -32,6 +32,7 @@ class _DuplicateDatesSheet extends StatefulWidget {
     required this.blockedReason,
   });
 
+  /// Tạo phần state giữ dữ liệu thay đổi của bảng chọn ngày nhân bản.
   @override
   State<_DuplicateDatesSheet> createState() => _DuplicateDatesSheetState();
 }
@@ -41,14 +42,17 @@ class _DuplicateDatesSheetState extends State<_DuplicateDatesSheet> {
   late DateTime _month;
   final DateTime _today = AppTime.today();
 
+  /// Chạy một lần lúc bảng chọn ngày nhân bản vừa được tạo, chuẩn bị dữ liệu ban đầu.
   @override
   void initState() {
     super.initState();
     _month = DateTime(_today.year, _today.month);
   }
 
+  /// Bỏ phần giờ phút, chỉ giữ ngày để so sánh.
   DateTime _key(DateTime d) => DateTime(d.year, d.month, d.day);
 
+  /// Dựng giao diện bảng chọn ngày nhân bản.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -174,6 +178,7 @@ class _DuplicateDatesSheetState extends State<_DuplicateDatesSheet> {
     );
   }
 
+  /// Một dòng chú thích màu ở cuối bảng.
   Widget _legend(ColorScheme cs, Color c, String text) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
@@ -193,6 +198,7 @@ class _DuplicateDatesSheetState extends State<_DuplicateDatesSheet> {
     ],
   );
 
+  /// Ô một ngày trên lịch tháng: đã chọn, bị khoá hoặc chọn được.
   Widget _dayCell(DateTime day, ColorScheme cs) {
     final reason = day.isBefore(_today)
         ? DuplicateBlockReason.past

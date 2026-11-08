@@ -9,6 +9,7 @@ import (
 	"timetribe-backend/internal/utils"
 )
 
+// ListNotifications xử lý GET /notifications.
 func (h *Handler) ListNotifications(c *gin.Context) {
 	res, err := h.svc.Notifications.List(c.Request.Context(), middleware.UserID(c), c.Query("filter"))
 	if err != nil {
@@ -18,6 +19,7 @@ func (h *Handler) ListNotifications(c *gin.Context) {
 	utils.OK(c, "", res)
 }
 
+// UnreadCount xử lý GET /notifications/unread-count.
 func (h *Handler) UnreadCount(c *gin.Context) {
 	res, err := h.svc.Notifications.UnreadSummary(c.Request.Context(), middleware.UserID(c))
 	if err != nil {
@@ -27,6 +29,7 @@ func (h *Handler) UnreadCount(c *gin.Context) {
 	utils.OK(c, "", res)
 }
 
+// MarkRead xử lý PATCH /notifications/:id/read.
 func (h *Handler) MarkRead(c *gin.Context) {
 	if err := h.svc.Notifications.MarkRead(c.Request.Context(), middleware.UserID(c), c.Param("id")); err != nil {
 		utils.Fail(c, err)
@@ -35,6 +38,7 @@ func (h *Handler) MarkRead(c *gin.Context) {
 	utils.OK(c, "Đã đánh dấu đã đọc", nil)
 }
 
+// MarkAllRead xử lý PATCH /notifications/read-all.
 func (h *Handler) MarkAllRead(c *gin.Context) {
 	n, err := h.svc.Notifications.MarkAllRead(c.Request.Context(), middleware.UserID(c))
 	if err != nil {
@@ -44,6 +48,7 @@ func (h *Handler) MarkAllRead(c *gin.Context) {
 	utils.OK(c, "Đã đánh dấu đọc tất cả", gin.H{"updated": n})
 }
 
+// Broadcast xử lý POST /admin/notifications/broadcast (chỉ admin).
 func (h *Handler) Broadcast(c *gin.Context) {
 	var in struct {
 		Title   string `json:"title"`
@@ -65,6 +70,7 @@ func (h *Handler) Broadcast(c *gin.Context) {
 	utils.Created(c, "Đã gửi thông báo cho toàn bộ người dùng", n)
 }
 
+// BanUser xử lý PATCH /admin/users/:id/ban (chỉ admin), không cho tự khoá chính mình.
 func (h *Handler) BanUser(c *gin.Context) {
 	var in struct {
 		IsBanned  bool    `json:"is_banned"`

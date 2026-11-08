@@ -16,6 +16,7 @@ class UserAvatar extends StatelessWidget {
     this.borderColor,
   });
 
+  /// Dựng giao diện ảnh đại diện tròn.
   @override
   Widget build(BuildContext context) {
     final color = AppColors.seeded(user.id);
@@ -68,6 +69,7 @@ class AvatarStack extends StatelessWidget {
     this.size = 28,
   });
 
+  /// Dựng giao diện dãy avatar chồng lên nhau.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;

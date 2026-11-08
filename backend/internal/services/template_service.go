@@ -16,7 +16,8 @@ import (
 	"timetribe-backend/internal/utils"
 )
 
-const shareAlphabet = "abcdefghijkmnpqrstuvwxyz23456789"
+// Bỏ các ký tự dễ nhìn nhầm như O/0, I/1 để người dùng gõ mã cho dễ
+const shareAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 type TemplateService struct {
 	cfg        *config.Config
@@ -24,6 +25,7 @@ type TemplateService struct {
 	timeblocks *TimeblockService
 }
 
+// NewTemplateService tạo service lịch mẫu.
 func NewTemplateService(cfg *config.Config, store *repository.Store, tb *TimeblockService) *TemplateService {
 	return &TemplateService{cfg: cfg, store: store, timeblocks: tb}
 }
@@ -34,7 +36,6 @@ type TemplateDTO struct {
 	Blocks     []models.TemplateBlock `json:"blocks"`
 	BlockCount int                    `json:"block_count"`
 	ActiveDays []int                  `json:"active_days"`
-	ShareLink  *string                `json:"share_link"`
 }
 
 type TemplateBlockInput struct {
@@ -52,13 +53,7 @@ type TemplateInput struct {
 	Blocks       *[]TemplateBlockInput `json:"blocks"`
 }
 
-func (s *TemplateService) shareLink(token *string) *string {
-	if token == nil {
-		return nil
-	}
-	return utils.Ptr(strings.TrimRight(s.cfg.ShareBaseURL, "/") + "/t/" + *token)
-}
-
+// toDTO sắp các khối theo thứ và giờ, đếm số khối và các thứ có hoạt động.
 func (s *TemplateService) toDTO(t models.Template, blocks []models.TemplateBlock) TemplateDTO {
 	sort.SliceStable(blocks, func(i, j int) bool {
 		if blocks[i].DayIndex != blocks[j].DayIndex {
@@ -74,9 +69,10 @@ func (s *TemplateService) toDTO(t models.Template, blocks []models.TemplateBlock
 			days = append(days, b.DayIndex)
 		}
 	}
-	return TemplateDTO{Template: t, Blocks: blocks, BlockCount: len(blocks), ActiveDays: days, ShareLink: s.shareLink(t.ShareToken)}
+	return TemplateDTO{Template: t, Blocks: blocks, BlockCount: len(blocks), ActiveDays: days}
 }
 
+// blocksOf lấy khối của nhiều lịch mẫu, trả map theo id lịch mẫu.
 func (s *TemplateService) blocksOf(ctx context.Context, ids ...string) (map[string][]models.TemplateBlock, error) {
 	list, err := repository.FindMany[models.TemplateBlock](ctx, s.store.TemplateBlocks, bson.M{"template_id": repository.In(ids)})
 	if err != nil {
@@ -115,6 +111,7 @@ func (s *TemplateService) List(ctx context.Context, userID string) (map[string]a
 	return map[string]any{"templates": out, "count": len(out), "max": models.MaxTemplates}, nil
 }
 
+// own lấy một lịch mẫu và kiểm tra đúng là của mình.
 func (s *TemplateService) own(ctx context.Context, userID, id string) (*models.Template, error) {
 	t, err := repository.FindOne[models.Template](ctx, s.store.Templates, bson.M{"_id": id, "user_id": userID})
 	if err != nil {
@@ -126,6 +123,7 @@ func (s *TemplateService) own(ctx context.Context, userID, id string) (*models.T
 	return t, nil
 }
 
+// Get lấy chi tiết một lịch mẫu của mình kèm các khối.
 func (s *TemplateService) Get(ctx context.Context, userID, id string) (*TemplateDTO, error) {
 	t, err := s.own(ctx, userID, id)
 	if err != nil {
@@ -134,6 +132,7 @@ func (s *TemplateService) Get(ctx context.Context, userID, id string) (*Template
 	return s.load(ctx, t)
 }
 
+// load lấy các khối của một lịch mẫu rồi dựng dữ liệu trả về.
 func (s *TemplateService) load(ctx context.Context, t *models.Template) (*TemplateDTO, error) {
 	blocks, err := s.blocksOf(ctx, t.ID)
 	if err != nil {
@@ -147,6 +146,7 @@ func (s *TemplateService) load(ctx context.Context, t *models.Template) (*Templa
 	return &dto, nil
 }
 
+// validateTemplateName kiểm tra tên lịch mẫu không rỗng và không quá 255 ký tự.
 func validateTemplateName(raw string) (string, error) {
 	name := strings.TrimSpace(raw)
 	if name == "" {
@@ -211,6 +211,7 @@ func validateBlocks(templateID string, in []TemplateBlockInput) ([]models.Templa
 	return out, nil
 }
 
+// insertBlocks lưu nhiều khối của lịch mẫu một lần.
 func (s *TemplateService) insertBlocks(ctx context.Context, blocks []models.TemplateBlock) error {
 	if len(blocks) == 0 {
 		return nil
@@ -223,6 +224,7 @@ func (s *TemplateService) insertBlocks(ctx context.Context, blocks []models.Temp
 	return err
 }
 
+// checkLimit chặn khi kho đã đủ 10 lịch mẫu.
 func (s *TemplateService) checkLimit(ctx context.Context, userID string) error {
 	n, err := s.store.Templates.CountDocuments(ctx, bson.M{"user_id": userID})
 	if err != nil {
@@ -310,18 +312,18 @@ func (s *TemplateService) Delete(ctx context.Context, userID, id string) error {
 	return err
 }
 
-// Share (TP-08): lấy share_token có sẵn hoặc tạo mới.
+// Share (TP-08): lấy share_code có sẵn hoặc tạo mới.
 func (s *TemplateService) Share(ctx context.Context, userID, id string) (map[string]string, error) {
 	t, err := s.own(ctx, userID, id)
 	if err != nil {
 		return nil, err
 	}
-	if t.ShareToken == nil {
+	if t.ShareCode == nil {
 		for attempt := 0; ; attempt++ {
-			token := utils.RandomCode(10, shareAlphabet)
-			_, err := s.store.Templates.UpdateOne(ctx, repository.ByID(t.ID), bson.M{"$set": bson.M{"share_token": token}})
+			code := utils.RandomCode(8, shareAlphabet)
+			_, err := s.store.Templates.UpdateOne(ctx, repository.ByID(t.ID), bson.M{"$set": bson.M{"share_code": code}})
 			if err == nil {
-				t.ShareToken = &token
+				t.ShareCode = &code
 				break
 			}
 			if !repository.IsDuplicateKey(err) || attempt >= 5 {
@@ -329,17 +331,21 @@ func (s *TemplateService) Share(ctx context.Context, userID, id string) (map[str
 			}
 		}
 	}
-	return map[string]string{"share_token": *t.ShareToken, "share_link": *s.shareLink(t.ShareToken)}, nil
+	return map[string]string{"share_code": *t.ShareCode}, nil
 }
 
-// GetShared xem trước lịch mẫu được chia sẻ (bất kỳ ai có link đều xem được).
-func (s *TemplateService) GetShared(ctx context.Context, token string) (map[string]any, error) {
-	t, err := repository.FindOne[models.Template](ctx, s.store.Templates, bson.M{"share_token": token})
+// GetShared xem trước lịch mẫu được chia sẻ (ai có mã cũng xem được).
+func (s *TemplateService) GetShared(ctx context.Context, rawCode string) (map[string]any, error) {
+	code := NormalizeCode(rawCode)
+	if code == "" {
+		return nil, utils.BadRequest("invalid_code", "Vui lòng nhập mã chia sẻ")
+	}
+	t, err := repository.FindOne[models.Template](ctx, s.store.Templates, bson.M{"share_code": code})
 	if err != nil {
 		return nil, err
 	}
 	if t == nil {
-		return nil, utils.NotFound("not_found", "Không tìm thấy lịch mẫu từ đường dẫn này")
+		return nil, utils.NotFound("not_found", "Không tìm thấy lịch mẫu với mã này")
 	}
 	dto, err := s.load(ctx, t)
 	if err != nil {
@@ -352,22 +358,22 @@ func (s *TemplateService) GetShared(ctx context.Context, token string) (map[stri
 	return map[string]any{"template": dto, "owner_nick_name": owner}, nil
 }
 
-// Import (TP-03): chép lịch mẫu từ link chia sẻ về kho của mình, ghi nhớ original_template_id
+// Import (TP-03): chép lịch mẫu từ mã chia sẻ về kho của mình, ghi nhớ original_template_id
 // để lần sau nhập lại sẽ báo trùng.
-func (s *TemplateService) Import(ctx context.Context, userID, link string) (*TemplateDTO, error) {
+func (s *TemplateService) Import(ctx context.Context, userID, rawCode string) (*TemplateDTO, error) {
 	if err := s.checkLimit(ctx, userID); err != nil {
 		return nil, err
 	}
-	token := utils.LastPathSegment(link)
-	if token == "" {
-		return nil, utils.BadRequest("invalid_link", "Đường dẫn chia sẻ không hợp lệ")
+	code := NormalizeCode(rawCode)
+	if code == "" {
+		return nil, utils.BadRequest("invalid_code", "Vui lòng nhập mã chia sẻ")
 	}
-	src, err := repository.FindOne[models.Template](ctx, s.store.Templates, bson.M{"share_token": token})
+	src, err := repository.FindOne[models.Template](ctx, s.store.Templates, bson.M{"share_code": code})
 	if err != nil {
 		return nil, err
 	}
 	if src == nil {
-		return nil, utils.NotFound("not_found", "Không tìm thấy lịch mẫu từ đường dẫn này")
+		return nil, utils.NotFound("not_found", "Không tìm thấy lịch mẫu với mã này")
 	}
 	// Mẫu gốc mà bản chia sẻ này bắt nguồn từ đó (nếu nó cũng là bản đã nhập)
 	rootID := src.ID

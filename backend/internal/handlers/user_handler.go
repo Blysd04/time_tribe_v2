@@ -8,6 +8,7 @@ import (
 	"timetribe-backend/internal/utils"
 )
 
+// GetMe xử lý GET /users/me.
 func (h *Handler) GetMe(c *gin.Context) {
 	me, err := h.svc.Users.Me(c.Request.Context(), middleware.UserID(c))
 	if err != nil {
@@ -17,6 +18,7 @@ func (h *Handler) GetMe(c *gin.Context) {
 	utils.OK(c, "", me)
 }
 
+// UpdateMe xử lý PATCH /users/me: sửa tên, email, múi giờ.
 func (h *Handler) UpdateMe(c *gin.Context) {
 	var in services.UpdateMeInput
 	if !utils.BindJSON(c, &in) {
@@ -30,6 +32,7 @@ func (h *Handler) UpdateMe(c *gin.Context) {
 	utils.OK(c, "Đã lưu thông tin", me)
 }
 
+// UploadAvatar xử lý POST /users/me/avatar, ảnh gửi ở form-data tên avatar.
 func (h *Handler) UploadAvatar(c *gin.Context) {
 	fh, err := c.FormFile("avatar")
 	if err != nil {
@@ -44,6 +47,7 @@ func (h *Handler) UploadAvatar(c *gin.Context) {
 	utils.OK(c, "Đã cập nhật ảnh đại diện", me)
 }
 
+// DeletePlan xử lý GET /users/me/delete-preview: xem trước các nhóm sẽ bị chuyển quyền hoặc giải tán.
 func (h *Handler) DeletePlan(c *gin.Context) {
 	plans, err := h.svc.Users.DeletePlan(c.Request.Context(), middleware.UserID(c))
 	if err != nil {
@@ -53,6 +57,7 @@ func (h *Handler) DeletePlan(c *gin.Context) {
 	utils.OK(c, "", plans)
 }
 
+// DeleteMe xử lý DELETE /users/me: xoá tài khoản kèm lý do.
 func (h *Handler) DeleteMe(c *gin.Context) {
 	var in struct {
 		Reason string `json:"reason"`
@@ -68,31 +73,26 @@ func (h *Handler) DeleteMe(c *gin.Context) {
 	utils.OK(c, "Tài khoản đã được xoá", gin.H{"tribes": plans})
 }
 
-func (h *Handler) RegisterDevice(c *gin.Context) {
-	var in struct {
-		FCMToken   string `json:"fcm_token"`
-		DeviceInfo string `json:"device_info"`
-	}
-	if !utils.BindJSON(c, &in) {
-		return
-	}
-	if err := h.svc.Users.RegisterDevice(c.Request.Context(), middleware.UserID(c), in.FCMToken, in.DeviceInfo); err != nil {
-		utils.Fail(c, err)
-		return
-	}
-	utils.OK(c, "Đã đăng ký thiết bị nhận thông báo", nil)
-}
-
-func (h *Handler) UnregisterDevice(c *gin.Context) {
+// UpdateFCMToken xử lý PUT /users/me/fcm-token: app gửi mã FCM mới khi Firebase đổi mã.
+func (h *Handler) UpdateFCMToken(c *gin.Context) {
 	var in struct {
 		FCMToken string `json:"fcm_token"`
 	}
 	if !utils.BindJSON(c, &in) {
 		return
 	}
-	if err := h.svc.Users.UnregisterDevice(c.Request.Context(), middleware.UserID(c), in.FCMToken); err != nil {
+	if err := h.svc.Users.UpdateFCMToken(c.Request.Context(), middleware.UserID(c), in.FCMToken); err != nil {
 		utils.Fail(c, err)
 		return
 	}
-	utils.OK(c, "Đã huỷ nhận thông báo trên thiết bị", nil)
+	utils.OK(c, "Đã cập nhật fcm_token", nil)
+}
+
+// ClearFCMToken xử lý DELETE /users/me/fcm-token.
+func (h *Handler) ClearFCMToken(c *gin.Context) {
+	if err := h.svc.Users.ClearFCMToken(c.Request.Context(), middleware.UserID(c)); err != nil {
+		utils.Fail(c, err)
+		return
+	}
+	utils.OK(c, "Đã xoá fcm_token", nil)
 }

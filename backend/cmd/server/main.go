@@ -21,6 +21,7 @@ import (
 	"timetribe-backend/internal/services"
 )
 
+// main đọc cấu hình, kết nối MongoDB, tạo index, bật bộ nhắc lịch rồi chạy HTTP server. Bấm Ctrl+C thì tắt server nhẹ nhàng.
 func main() {
 	cfg := config.Load()
 	if !cfg.IsDev() {

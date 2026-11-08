@@ -12,10 +12,11 @@ import 'template_detail_screen.dart';
 import 'template_dialogs.dart';
 import 'widgets/apply_template_dialog.dart';
 
-/// Kho lịch mẫu — cùng bố cục với danh sách Tribe.
+/// Kho lịch mẫu, cùng bố cục với danh sách Tribe.
 class TemplateScreen extends StatelessWidget {
   const TemplateScreen({super.key});
 
+  /// Dựng giao diện danh sách lịch mẫu.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -71,6 +72,7 @@ class _TemplateCard extends StatelessWidget {
   final TemplateModel template;
   const _TemplateCard({required this.template});
 
+  /// Mở hộp thoại áp dụng mẫu, áp dụng xong thì báo số hoạt động đã thêm.
   Future<void> _apply(BuildContext context) async {
     final l = context.l10n;
     final result = await showDialog(
@@ -91,6 +93,7 @@ class _TemplateCard extends StatelessWidget {
     }
   }
 
+  /// Dựng giao diện thẻ một lịch mẫu.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -207,10 +210,17 @@ class _TemplateCard extends StatelessWidget {
                         destructive: true,
                       );
                       if (ok && context.mounted) {
-                        context.read<TemplateViewModel>().deleteTemplate(
-                          template.id,
-                        );
-                        AppSnack.show(context, l.templateDeleted);
+                        final deleted = await context
+                            .read<TemplateViewModel>()
+                            .deleteTemplate(template.id);
+                        if (!context.mounted) return;
+                        deleted
+                            ? AppSnack.show(context, l.templateDeleted)
+                            : AppSnack.show(
+                                context,
+                                l.errorServer,
+                                type: AppSnackType.error,
+                              );
                       }
                   }
                 },

@@ -26,6 +26,7 @@ class _TribeBlockSheet extends StatelessWidget {
   final String blockId;
   const _TribeBlockSheet({required this.blockId});
 
+  /// Dựng giao diện bảng chi tiết hoạt động nhóm.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;

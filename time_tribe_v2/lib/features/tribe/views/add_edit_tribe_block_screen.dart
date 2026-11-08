@@ -36,6 +36,7 @@ class AddEditTribeBlockScreen extends StatefulWidget {
     this.initialEndUtc,
   });
 
+  /// Tạo phần state giữ dữ liệu thay đổi của màn hình thêm/sửa hoạt động nhóm.
   @override
   State<AddEditTribeBlockScreen> createState() =>
       _AddEditTribeBlockScreenState();
@@ -48,24 +49,21 @@ class _AddEditTribeBlockScreenState extends State<AddEditTribeBlockScreen> {
   late DateTime _date;
   late TimeOfDay _start;
   late TimeOfDay _end;
+  bool _saving = false;
   late String _color;
   bool _showMemberTimes = false;
 
+  /// Đang sửa hoạt động có sẵn (true) hay tạo mới (false).
   bool get _isEditing => widget.block != null;
 
+  /// Chạy một lần lúc màn hình thêm/sửa hoạt động nhóm vừa được tạo, chuẩn bị dữ liệu ban đầu.
   @override
   void initState() {
     super.initState();
     final b = widget.block;
     _title = TextEditingController(text: b?.task ?? '');
     _desc = TextEditingController(text: b?.description ?? '');
-    _color =
-        b?.colorCode ??
-        (context
-                .read<TribeViewModel>()
-                .tribeById(widget.tribeId)
-                ?.backgroundColor ??
-            AppColors.palette.first);
+    _color = b?.colorCode ?? AppColors.palette.first;
 
     final startUtc = b?.startUtc ?? widget.initialStartUtc;
     final endUtc = b?.endUtc ?? widget.initialEndUtc;
@@ -86,8 +84,15 @@ class _AddEditTribeBlockScreenState extends State<AddEditTribeBlockScreen> {
       _start = TimeOfDay(hour: nextHour, minute: 0);
       _end = TimeOfDay(hour: nextHour + 1, minute: 0);
     }
+    // Tải giờ bận của thành viên để gợi ý giờ rảnh và cảnh báo ai đang bận
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<TribeViewModel>().ensureBusyLoaded(widget.tribeId, _date);
+      }
+    });
   }
 
+  /// Dọn controller, listener khi màn hình thêm/sửa hoạt động nhóm bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     _title.dispose();
@@ -95,18 +100,24 @@ class _AddEditTribeBlockScreenState extends State<AddEditTribeBlockScreen> {
     super.dispose();
   }
 
+  /// Hai mốc thời gian có cùng một ngày không.
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
+  /// Giờ bắt đầu đang chọn, đổi ra UTC để gửi lên server.
   DateTime get _startUtc => AppTime.toUtc(
     DateTime(_date.year, _date.month, _date.day, _start.hour, _start.minute),
   );
+
+  /// Giờ kết thúc đang chọn, đổi ra UTC để gửi lên server.
   DateTime get _endUtc => AppTime.toUtc(
     DateTime(_date.year, _date.month, _date.day, _end.hour, _end.minute),
   );
 
+  /// Đổi giờ thành số phút tính từ 0 giờ.
   int _minutes(TimeOfDay t) => t.hour * 60 + t.minute;
 
+  /// Chọn ngày diễn ra hoạt động rồi tải giờ bận của thành viên ngày đó.
   Future<void> _pickDate() async {
     final today = AppTime.today();
     final picked = await showDatePicker(
@@ -116,9 +127,13 @@ class _AddEditTribeBlockScreenState extends State<AddEditTribeBlockScreen> {
       lastDate: DateTime(today.year + 2),
       currentDate: today,
     );
-    if (picked != null) setState(() => _date = picked);
+    if (picked != null && mounted) {
+      setState(() => _date = picked);
+      context.read<TribeViewModel>().ensureBusyLoaded(widget.tribeId, picked);
+    }
   }
 
+  /// Chọn giờ bắt đầu hoặc kết thúc.
   Future<void> _pickTime(bool isStart) async {
     final picked = await showTimePicker(
       context: context,
@@ -139,9 +154,10 @@ class _AddEditTribeBlockScreenState extends State<AddEditTribeBlockScreen> {
     });
   }
 
+  /// Kiểm tra giờ, hỏi lại kèm cảnh báo trùng giờ hoặc có người bận, rồi gửi lên server.
   Future<void> _save(TribeViewModel vm, TribeModel tribe, int busyCount) async {
     final l = context.l10n;
-    if (!_formKey.currentState!.validate()) return;
+    if (_saving || !_formKey.currentState!.validate()) return;
     String? error;
     if (_minutes(_end) <= _minutes(_start)) {
       error = l.errorEndBeforeStart;
@@ -178,8 +194,9 @@ class _AddEditTribeBlockScreenState extends State<AddEditTribeBlockScreen> {
     );
     if (!ok || !mounted) return;
 
+    setState(() => _saving = true);
     final result = _isEditing
-        ? vm.updateBlock(
+        ? await vm.updateBlock(
             widget.block!.copyWith(
               task: _title.text.trim(),
               description: _desc.text.trim(),
@@ -188,7 +205,7 @@ class _AddEditTribeBlockScreenState extends State<AddEditTribeBlockScreen> {
               colorCode: _color,
             ),
           )
-        : vm.createBlock(
+        : await vm.createBlock(
             tribeId: tribe.id,
             task: _title.text,
             description: _desc.text,
@@ -197,6 +214,7 @@ class _AddEditTribeBlockScreenState extends State<AddEditTribeBlockScreen> {
             colorCode: _color,
           );
     if (!mounted) return;
+    setState(() => _saving = false);
     if (result != TribeResult.success) {
       AppSnack.show(context, l.tribeResult(result), type: AppSnackType.error);
       return;
@@ -205,6 +223,7 @@ class _AddEditTribeBlockScreenState extends State<AddEditTribeBlockScreen> {
     AppSnack.show(context, l.savedAndNotified(tribe.members.length - 1));
   }
 
+  /// COM-10: huỷ hoạt động nhóm.
   Future<void> _delete(TribeViewModel vm) async {
     final l = context.l10n;
     final ok = await AppDialogs.confirm(
@@ -215,13 +234,15 @@ class _AddEditTribeBlockScreenState extends State<AddEditTribeBlockScreen> {
       destructive: true,
     );
     if (!ok || !mounted) return;
-    final res = vm.deleteBlock(widget.block!.id);
-    Navigator.pop(context);
+    final res = await vm.deleteBlock(widget.block!.id);
+    if (!mounted) return;
+    if (res == TribeResult.success) Navigator.pop(context);
     res == TribeResult.success
         ? AppSnack.show(context, l.activityDeleted)
         : AppSnack.show(context, l.tribeResult(res), type: AppSnackType.error);
   }
 
+  /// Dựng giao diện màn hình thêm/sửa hoạt động nhóm.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -451,6 +472,7 @@ class _AvailabilityCard extends StatelessWidget {
     required this.onToggle,
   });
 
+  /// Dựng giao diện thẻ gợi ý giờ mọi người đều rảnh.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -621,6 +643,7 @@ class _AttendanceList extends StatelessWidget {
     required this.color,
   });
 
+  /// Dựng giao diện danh sách ai tham gia, ai không.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;

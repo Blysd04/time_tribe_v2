@@ -25,6 +25,7 @@ class AppColors {
     '#6C757D',
   ];
 
+  /// Đổi mã màu "#RRGGBB" thành Color.
   static Color fromHex(String hex) =>
       Color(int.parse(hex.replaceAll('#', '0xFF')));
 
@@ -87,6 +88,7 @@ class AppTheme {
     statusBar: darkStatusBar,
   );
 
+  /// Tạo bộ theme dùng chung cho cả chế độ sáng và tối, chỉ khác màu nền và màu chữ.
   static ThemeData _build({
     required Brightness brightness,
     required Color scaffold,

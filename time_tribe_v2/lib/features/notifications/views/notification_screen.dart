@@ -15,6 +15,7 @@ import 'notification_text.dart';
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
 
+  /// Dựng giao diện tab Thông báo.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -90,16 +91,27 @@ class NotificationScreen extends StatelessWidget {
           Expanded(
             child: vm.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : items.isEmpty
-                ? EmptyState(
-                    icon: Icons.notifications_none_outlined,
-                    title: l.noNotifications,
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                    itemCount: items.length,
-                    itemBuilder: (context, i) =>
-                        _NotificationCard(item: items[i]),
+                // Kéo xuống để tải lại thông báo
+                : RefreshIndicator(
+                    onRefresh: vm.load,
+                    child: items.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              const SizedBox(height: 80),
+                              EmptyState(
+                                icon: Icons.notifications_none_outlined,
+                                title: l.noNotifications,
+                              ),
+                            ],
+                          )
+                        : ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                            itemCount: items.length,
+                            itemBuilder: (context, i) =>
+                                _NotificationCard(item: items[i]),
+                          ),
                   ),
           ),
         ],
@@ -112,13 +124,17 @@ class _NotificationCard extends StatelessWidget {
   final AppNotification item;
   const _NotificationCard({required this.item});
 
+  /// Icon theo loại thông báo.
   IconData get _icon => switch (item.type) {
     'group_schedule' => Icons.event_available_outlined,
     'tribe_join' => Icons.group_add_outlined,
     'tribe_role' => Icons.workspace_premium_outlined,
+    'reminder' => Icons.alarm_outlined,
+    'system_broadcast' => Icons.campaign_outlined,
     _ => Icons.notifications_active_outlined,
   };
 
+  /// "Vừa xong", "5 phút trước", "2 giờ trước", "3 ngày trước".
   String _timeAgo(AppLocalizations l) {
     final diff = DateTime.now().difference(item.createdAt);
     if (diff.inMinutes < 1) return l.justNow;
@@ -127,6 +143,7 @@ class _NotificationCard extends StatelessWidget {
     return l.daysAgo(diff.inDays);
   }
 
+  /// Dựng giao diện thẻ một thông báo.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;

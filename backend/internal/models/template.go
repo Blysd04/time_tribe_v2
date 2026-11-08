@@ -4,13 +4,13 @@ import "time"
 
 const MaxTemplates = 10
 
-// Bảng templates.
+// Bảng templates. share_code là mã chia sẻ lịch mẫu, ví dụ GYM4DAY, chưa chia sẻ thì để null.
 type Template struct {
 	ID                 string    `bson:"_id" json:"id"`
 	UserID             string    `bson:"user_id" json:"user_id"`
 	OriginalTemplateID *string   `bson:"original_template_id" json:"original_template_id"`
 	TemplateName       string    `bson:"template_name" json:"template_name"`
-	ShareToken         *string   `bson:"share_token,omitempty" json:"share_token"`
+	ShareCode          *string   `bson:"share_code,omitempty" json:"share_code"`
 	DateModified       time.Time `bson:"date_modified" json:"date_modified"`
 	CreatedAt          time.Time `bson:"created_at" json:"created_at"`
 }

@@ -674,7 +674,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importTemplate => 'Import from link';
 
   @override
-  String get importTemplateHint => 'Paste a link a friend shared';
+  String get importTemplateHint => 'Enter a code a friend shared';
 
   @override
   String get importAction => 'Import';
@@ -686,7 +686,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorLinkEmpty => 'Please paste a link';
 
   @override
-  String get errorTemplateNotFound => 'No template found for this link';
+  String get errorTemplateNotFound => 'No template found for this code';
 
   @override
   String get errorTemplateDuplicate => 'You already have this template';
@@ -785,7 +785,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shareTemplateDescription =>
-      'Anyone with this link can view and copy this template.';
+      'Send this code to a friend, they can enter it in Import template to copy it to their account.';
 
   @override
   String get addActivity => 'Add activity';
@@ -1245,4 +1245,101 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorItemGone => 'This item no longer exists';
+
+  @override
+  String get errorNameLength => 'Display name must be 2 to 100 characters';
+
+  @override
+  String get errorPasswordTooShort => 'Password must be at least 6 characters';
+
+  @override
+  String get errorEmailTaken => 'This email is already in use';
+
+  @override
+  String get errorNameTaken => 'This display name is already taken';
+
+  @override
+  String get errorAccountBanned => 'Your account has been locked';
+
+  @override
+  String get errorAccountDeleted => 'This account has been deleted';
+
+  @override
+  String get errorGoogleAccount =>
+      'This account uses Google sign-in, please choose Continue with Google';
+
+  @override
+  String get errorGoogleFailed => 'Google sign-in failed, please try again';
+
+  @override
+  String get errorGoogleUnsupported =>
+      'Google sign-in is not available on this device';
+
+  @override
+  String get errorNetwork =>
+      'Cannot reach the server, please check your connection';
+
+  @override
+  String get errorServer => 'Something went wrong, please try again';
+
+  @override
+  String get forgotPasswordTitle => 'Forgot password';
+
+  @override
+  String get forgotPasswordMessage =>
+      'Enter your account email and we will send you a link to reset your password.';
+
+  @override
+  String get forgotPasswordSent =>
+      'If the email exists, a reset link has been sent';
+
+  @override
+  String get sendLabel => 'Send';
+
+  @override
+  String get sessionEnded =>
+      'Your session has ended, the account may have signed in on another device';
+
+  @override
+  String get changeAvatar => 'Change profile photo';
+
+  @override
+  String get pickFromGallery => 'Choose from gallery';
+
+  @override
+  String get takePhoto => 'Take a photo';
+
+  @override
+  String get avatarUpdated => 'Profile photo updated';
+
+  @override
+  String get errorBlockEnded => 'This activity has already ended';
+
+  @override
+  String get pullToRefresh => 'Pull down to refresh';
+
+  @override
+  String get importTemplateCodeHint =>
+      'Enter the share code a friend sent you, for example GYM4DAY';
+
+  @override
+  String get errorCodeEmpty => 'Please enter a code';
+
+  @override
+  String get codeCopied => 'Code copied!';
+
+  @override
+  String nTitleReminder(String task) {
+    return 'Coming up: $task';
+  }
+
+  @override
+  String nBodyPersonalReminder(String task, String time) {
+    return '\"$task\" starts at $time.';
+  }
+
+  @override
+  String nBodyTribeReminder(String tribe, String time) {
+    return 'An activity of $tribe starts at $time.';
+  }
 }

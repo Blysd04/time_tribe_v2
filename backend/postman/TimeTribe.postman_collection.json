@@ -74,7 +74,11 @@
       "value": ""
     },
     {
-      "key": "shareToken",
+      "key": "shareCode",
+      "value": ""
+    },
+    {
+      "key": "oldAccessToken",
       "value": ""
     },
     {
@@ -289,10 +293,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -309,6 +313,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
@@ -320,7 +325,7 @@
           ]
         },
         {
-          "name": "AU-02 Đăng nhập bằng nick_name",
+          "name": "AU-02 Đăng nhập lại bằng nick_name (giả lập máy thứ hai)",
           "request": {
             "method": "POST",
             "header": [
@@ -339,10 +344,10 @@
                 "login"
               ]
             },
-            "description": "identifier nhận cả email lẫn nick_name.",
+            "description": "identifier nhận cả email lẫn nick_name. Đăng nhập lần nữa thì phiên của lần đăng nhập trước bị xoá.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"Tuyết Nga\",\n  \"password\": \"123456\",\n  \"remember_me\": false\n}",
+              "raw": "{\n  \"identifier\": \"Tuyết Nga\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -359,10 +364,52 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
-                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }"
+                  "if (res.success && res.data) { const v = res.data.refresh_token; if (v) pm.collectionVariables.set('refreshToken', v); }",
+                  "if (res.success && res.data) { const v = res.data.user.id; if (v) pm.collectionVariables.set('myUserId', v); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Token của máy trước bị từ chối (một tài khoản một máy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Dùng token của lần đăng nhập trước (oldAccessToken), server trả 401 session_ended.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{oldAccessToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "pm.test('lỗi session_ended', () => pm.expect(res.error && res.error.code).to.eql('session_ended'));"
                 ]
               }
             }
@@ -529,10 +576,10 @@
                 "google"
               ]
             },
-            "description": "Dán Firebase ID token vào biến firebaseIdToken (xem API_TESTING.md mục Google để lấy token).",
+            "description": "Dán Firebase ID token vào biến firebaseIdToken (xem API_TESTING.md mục Google để lấy token). fcm_token có thì lưu vào users.fcm_token, để trống thì là null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id_token\": \"{{firebaseIdToken}}\",\n  \"device_info\": \"Postman\",\n  \"timezone\": \"Asia/Ho_Chi_Minh\"\n}",
+              "raw": "{\n  \"id_token\": \"{{firebaseIdToken}}\",\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\",\n  \"timezone\": \"Asia/Ho_Chi_Minh\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -710,10 +757,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng phuc.lam@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng phuc.lam@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"phuc.lam@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"phuc.lam@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -730,6 +777,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
@@ -927,10 +975,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng phuc.lam@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng phuc.lam@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"phuc.lam@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"phuc.lam@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -947,6 +995,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
@@ -961,12 +1010,7 @@
           "name": "AU-06 Đăng xuất",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
               "host": [
@@ -977,16 +1021,7 @@
                 "logout"
               ]
             },
-            "description": "Xoá refresh token của thiết bị này (và mã FCM nếu gửi kèm). Sau đó gọi Làm mới token sẽ báo invalid_refresh_token.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\",\n  \"fcm_token\": \"\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Không cần body. Server xoá phiên của access token đang dùng và đặt users.fcm_token về null."
           },
           "event": [
             {
@@ -1026,10 +1061,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1046,6 +1081,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
@@ -1288,9 +1324,9 @@
           }
         },
         {
-          "name": "Đăng ký thiết bị nhận thông báo (FCM)",
+          "name": "Cập nhật fcm_token",
           "request": {
-            "method": "POST",
+            "method": "PUT",
             "header": [
               {
                 "key": "Content-Type",
@@ -1298,50 +1334,17 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/users/me/devices",
+              "raw": "{{baseUrl}}/users/me/fcm-token",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "users",
                 "me",
-                "devices"
+                "fcm-token"
               ]
             },
-            "description": "fcm_token lấy từ FirebaseMessaging.instance.getToken() trên app.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Pixel 7 - Android 14\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "Huỷ thiết bị nhận thông báo",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/users/me/devices",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "users",
-                "me",
-                "devices"
-              ]
-            },
-            "description": "",
+            "description": "Dùng khi Firebase cấp mã mới (onTokenRefresh). Bình thường fcm_token được lưu lúc đăng nhập Google.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"fcm_token\": \"{{fcmToken}}\"\n}",
@@ -1351,6 +1354,25 @@
                 }
               }
             }
+          }
+        },
+        {
+          "name": "Xoá fcm_token",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/fcm-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "fcm-token"
+              ]
+            },
+            "description": "Đặt users.fcm_token về null, máy này thôi nhận thông báo đẩy."
           }
         },
         {
@@ -1490,10 +1512,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1510,6 +1532,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
@@ -1848,10 +1871,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1868,6 +1891,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
@@ -2037,7 +2061,7 @@
                 "share"
               ]
             },
-            "description": "Trả share_token và share_link https://timetribe.app/t/<token>."
+            "description": "Trả share_code (8 ký tự), lần sau gọi lại vẫn ra mã cũ."
           },
           "event": [
             {
@@ -2047,7 +2071,7 @@
                 "exec": [
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
-                  "if (res.success && res.data) { const v = res.data.share_token; if (v) pm.collectionVariables.set('shareToken', v); }"
+                  "if (res.success && res.data) { const v = res.data.share_code; if (v) pm.collectionVariables.set('shareCode', v); }"
                 ]
               }
             }
@@ -2059,21 +2083,21 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/templates/shared/study-week",
+              "raw": "{{baseUrl}}/templates/shared/STUDYWEEK",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "templates",
                 "shared",
-                "study-week"
+                "STUDYWEEK"
               ]
             },
-            "description": "study-week là mẫu của Linh có sẵn trong seed."
+            "description": "STUDYWEEK là mã chia sẻ mẫu của Linh có sẵn trong seed, gõ chữ thường cũng được."
           }
         },
         {
-          "name": "TP-03 Nhập lịch mẫu từ link",
+          "name": "TP-03 Nhập lịch mẫu bằng mã",
           "request": {
             "method": "POST",
             "header": [
@@ -2092,10 +2116,10 @@
                 "import"
               ]
             },
-            "description": "Chạy lần 2 trả 409 duplicate.",
+            "description": "Không phân biệt hoa thường. Chạy lần 2 trả 409 duplicate.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"link\": \"https://timetribe.app/t/study-week\"\n}",
+              "raw": "{\n  \"share_code\": \"studyweek\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2124,10 +2148,10 @@
                 "import"
               ]
             },
-            "description": "gym4day là mẫu của Nga.",
+            "description": "GYM4DAY là mẫu của Nga.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"link\": \"https://timetribe.app/t/gym4day\"\n}",
+              "raw": "{\n  \"share_code\": \"GYM4DAY\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2290,10 +2314,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2310,6 +2334,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
@@ -2356,7 +2381,7 @@
           }
         },
         {
-          "name": "COM-18 Lấy link mời",
+          "name": "COM-18 Lấy mã mời",
           "request": {
             "method": "GET",
             "header": [],
@@ -2371,11 +2396,11 @@
                 "invite"
               ]
             },
-            "description": ""
+            "description": "Trả invite_code để app hiện và tạo mã QR."
           }
         },
         {
-          "name": "COM-11 Tham gia nhóm GAMEDEV26",
+          "name": "COM-11 Tham gia nhóm bằng mã",
           "request": {
             "method": "POST",
             "header": [
@@ -2394,10 +2419,10 @@
                 "join"
               ]
             },
-            "description": "",
+            "description": "Mã mời không phân biệt hoa thường.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"invite_link\": \"https://timetribe.app/tribe/GAMEDEV26\"\n}",
+              "raw": "{\n  \"invite_code\": \"gamedev26\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2429,7 +2454,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"invite_link\": \"FULLHOUSE\"\n}",
+              "raw": "{\n  \"invite_code\": \"FULLHOUSE\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2473,7 +2498,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"invite_link\": \"NIC2026\"\n}",
+              "raw": "{\n  \"invite_code\": \"NIC2026\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2516,7 +2541,7 @@
             "description": "Lúc này Nga đang ở 4 nhóm nên tạo được thêm 1. Quá 5 nhóm trả tribe_limit.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Nhóm đọc sách\",\n  \"background_color\": \"#0FA3B1\"\n}",
+              "raw": "{\n  \"name\": \"Nhóm đọc sách\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2567,73 +2592,6 @@
                   "language": "json"
                 }
               }
-            }
-          }
-        },
-        {
-          "name": "COM-04 Đổi màu nhóm (JSON)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/appearance",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tribes",
-                "{{tribeNic}}",
-                "appearance"
-              ]
-            },
-            "description": "",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"background_color\": \"#FF7F50\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "COM-04 Đổi ảnh nền nhóm (form-data)",
-          "request": {
-            "method": "PATCH",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/appearance",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "tribes",
-                "{{tribeNic}}",
-                "appearance"
-              ]
-            },
-            "description": "form-data: background_image (File), background_color (Text, tuỳ chọn), remove_image=true để bỏ ảnh.",
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "background_image",
-                  "type": "file",
-                  "src": []
-                },
-                {
-                  "key": "background_color",
-                  "value": "#3A86FF",
-                  "type": "text"
-                }
-              ]
             }
           }
         },
@@ -2957,10 +2915,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2977,6 +2935,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
@@ -3035,6 +2994,35 @@
               ]
             },
             "description": "members[].busy là khoảng bận UTC (không lộ nội dung lịch riêng), free_windows là các khoảng >= 30 phút cả nhóm rảnh."
+          }
+        },
+        {
+          "name": "Giờ bận của thành viên theo khoảng ngày",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tribes/{{tribeNic}}/busy?from={{today}}&to={{in7days}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tribes",
+                "{{tribeNic}}",
+                "busy"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{today}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{in7days}}"
+                }
+              ]
+            },
+            "description": "App dùng API này để tô màu cả dải ngày trên trang nhóm. Tối đa 62 ngày một lần."
           }
         },
         {
@@ -3154,10 +3142,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng minh.tran@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng minh.tran@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"minh.tran@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"minh.tran@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3174,6 +3162,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
@@ -3237,10 +3226,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng an.le@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng an.le@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"an.le@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"an.le@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3257,6 +3246,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
@@ -3365,10 +3355,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3385,6 +3375,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
@@ -3593,10 +3584,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng tuyetnga@timetribe.app. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"tuyetnga@timetribe.app\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3613,6 +3604,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",
@@ -3785,10 +3777,10 @@
                 "login"
               ]
             },
-            "description": "Đăng nhập bằng admin@timetribe.com. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn.",
+            "description": "Đăng nhập bằng admin@timetribe.com. Script tự lưu accessToken và refreshToken vào biến collection, các request sau dùng luôn. fcm_token để trống thì server lưu null.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"admin@timetribe.com\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"device_info\": \"Postman\"\n}",
+              "raw": "{\n  \"identifier\": \"admin@timetribe.com\",\n  \"password\": \"123456\",\n  \"remember_me\": true,\n  \"fcm_token\": \"{{fcmToken}}\",\n  \"device_info\": \"Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3805,6 +3797,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.collectionVariables.set('oldAccessToken', pm.collectionVariables.get('accessToken'));",
                   "const res = pm.response.json();",
                   "pm.test('success', () => pm.expect(res.success).to.eql(true));",
                   "if (res.success && res.data) { const v = res.data.access_token; if (v) pm.collectionVariables.set('accessToken', v); }",

@@ -83,5 +83,9 @@ go build -o bin/timetribe ./cmd/server
 - Bộ nhắc lịch (`ENABLE_REMINDER=true`) quét mỗi phút, tới mốc "nhắc trước X phút" thì tạo
   thông báo loại `reminder` và gửi FCM.
 - Refresh token và token đặt lại mật khẩu chỉ lưu bản băm SHA-256 trong `user_tokens`.
+- Mỗi tài khoản chỉ đăng nhập trên một máy: đăng nhập mới thì phiên cũ bị xoá, máy cũ nhận 401 `session_ended`.
+  Access token mang id phiên trong claim `jti`.
+- `fcm_token` nằm ở bảng `users`, app gửi kèm khi đăng nhập (thường hoặc Google), không gửi thì để null.
+- Nhóm dùng `invite_code`, lịch mẫu dùng `share_code`, đều là mã 8 ký tự viết hoa, nhập không phân biệt hoa thường.
 - Đổi hoặc đặt lại mật khẩu thì mọi access token cấp trước đó đều bị từ chối.
 - `.env` và `serviceAccountKey.json` đã nằm trong `.gitignore`, đừng commit hai file này.

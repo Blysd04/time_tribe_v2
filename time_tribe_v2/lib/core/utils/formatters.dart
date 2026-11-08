@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 class Fmt {
   Fmt._();
 
+  /// Mã ngôn ngữ đang dùng để định dạng ngày giờ cho đúng.
   static String _locale(BuildContext context) =>
       Localizations.localeOf(context).languageCode;
 
@@ -12,12 +13,15 @@ class Fmt {
   static String time(BuildContext context, DateTime dt) =>
       DateFormat.jm(_locale(context)).format(dt);
 
+  /// Định dạng một TimeOfDay thành chữ, ví dụ 08:30.
   static String tod(BuildContext context, TimeOfDay t) =>
       time(context, DateTime(2000, 1, 1, t.hour, t.minute));
 
+  /// Định dạng khoảng giờ của hai DateTime, ví dụ 08:00 - 09:30.
   static String range(BuildContext context, DateTime start, DateTime end) =>
       '${time(context, start)} – ${time(context, end)}';
 
+  /// Định dạng khoảng giờ của hai TimeOfDay.
   static String todRange(
     BuildContext context,
     TimeOfDay start,

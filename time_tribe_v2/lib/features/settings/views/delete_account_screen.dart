@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/l10n/l10n.dart';
+import '../../../core/session/app_reset.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_dialogs.dart';
 import '../../../core/widgets/form_widgets.dart';
 import '../../auth/viewmodels/auth_viewmodel.dart';
 import '../../auth/views/login_screen.dart';
-import '../../notifications/viewmodels/notification_viewmodel.dart';
+import '../../auth/views/widgets/auth_texts.dart';
 import '../../tribe/models/tribe_model.dart';
 import '../../tribe/viewmodels/tribe_viewmodel.dart';
 
@@ -20,6 +20,7 @@ enum _Reason { notUsing, otherApp, privacy, other }
 class DeleteAccountScreen extends StatefulWidget {
   const DeleteAccountScreen({super.key});
 
+  /// Tạo phần state giữ dữ liệu thay đổi của màn hình xoá tài khoản.
   @override
   State<DeleteAccountScreen> createState() => _DeleteAccountScreenState();
 }
@@ -29,12 +30,14 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   _Reason? _reason;
   bool _understood = false;
 
+  /// Dọn controller, listener khi màn hình xoá tài khoản bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     _otherController.dispose();
     super.dispose();
   }
 
+  /// Câu chữ của từng lý do xoá tài khoản.
   String _label(AppLocalizations l, _Reason r) => switch (r) {
     _Reason.notUsing => l.reasonNotUsing,
     _Reason.otherApp => l.reasonOtherApp,
@@ -42,11 +45,13 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     _Reason.other => l.reasonOther,
   };
 
+  /// Đã chọn lý do và tích "Tôi đã hiểu" chưa, đủ thì mới bật nút xoá.
   bool get _canSubmit =>
       _reason != null &&
       _understood &&
       (_reason != _Reason.other || _otherController.text.trim().isNotEmpty);
 
+  /// AU-07: hỏi lại lần cuối rồi xoá tài khoản, xong thì về màn hình đăng nhập.
   Future<void> _submit() async {
     final l = context.l10n;
     final ok = await AppDialogs.confirm(
@@ -62,23 +67,21 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         ? _otherController.text.trim()
         : _reason!.name;
     final auth = context.read<AuthViewModel>();
-    final tribes = context.read<TribeViewModel>();
-    final notifications = context.read<NotificationViewModel>();
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
-    await auth.deleteAccount(reason);
-    tribes.leaveAllForAccountDeletion();
-    notifications.clear();
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      // Giữ lại cài đặt ngôn ngữ / giao diện của máy, xoá dữ liệu cá nhân
-      for (final key in prefs.getKeys().where(
-        (k) => k.startsWith('profile.'),
-      )) {
-        await prefs.remove(key);
-      }
-    } catch (_) {}
+    // Server tự chuyển quyền trưởng nhóm hoặc giải tán nhóm, rồi ghi delete_at, delete_reason
+    final deleted = await auth.deleteAccount(reason);
+    if (!mounted) return;
+    if (!deleted) {
+      AppSnack.show(
+        context,
+        l.authError(auth.generalError) ?? l.errorServer,
+        type: AppSnackType.error,
+      );
+      return;
+    }
+    AppData.clearAll(context);
 
     navigator.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -92,6 +95,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     );
   }
 
+  /// Dựng giao diện màn hình xoá tài khoản.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;

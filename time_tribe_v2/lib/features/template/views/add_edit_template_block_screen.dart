@@ -27,6 +27,7 @@ class AddEditTemplateBlockScreen extends StatefulWidget {
     required this.dayIndex,
   });
 
+  /// Tạo phần state giữ dữ liệu thay đổi của màn hình thêm/sửa hoạt động trong lịch mẫu.
   @override
   State<AddEditTemplateBlockScreen> createState() =>
       _AddEditTemplateBlockScreenState();
@@ -45,6 +46,7 @@ class _AddEditTemplateBlockScreenState
   late String _color;
   late int _remind;
 
+  /// Chạy một lần lúc màn hình thêm/sửa hoạt động trong lịch mẫu vừa được tạo, chuẩn bị dữ liệu ban đầu.
   @override
   void initState() {
     super.initState();
@@ -64,6 +66,7 @@ class _AddEditTemplateBlockScreenState
     _day = b?.dayIndex ?? widget.dayIndex ?? 1;
   }
 
+  /// Dọn controller, listener khi màn hình thêm/sửa hoạt động trong lịch mẫu bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     _taskController.dispose();
@@ -71,8 +74,10 @@ class _AddEditTemplateBlockScreenState
     super.dispose();
   }
 
+  /// Đổi giờ thành số phút tính từ 0 giờ.
   int _m(TimeOfDay t) => t.hour * 60 + t.minute;
 
+  /// Chọn giờ bắt đầu hoặc kết thúc cho hoạt động trong mẫu.
   Future<void> _pickTime(bool isStart) async {
     final picked = await showTimePicker(
       context: context,
@@ -92,6 +97,7 @@ class _AddEditTemplateBlockScreenState
     setState(() => isStart ? _start = picked : _end = picked);
   }
 
+  /// Kiểm tra form rồi trả hoạt động về màn hình lịch mẫu (chưa gọi server, bấm Lưu mẫu mới gửi).
   void _save() {
     if (!_formKey.currentState!.validate()) return;
     Navigator.pop(
@@ -110,6 +116,7 @@ class _AddEditTemplateBlockScreenState
     );
   }
 
+  /// Hỏi xác nhận rồi báo màn hình lịch mẫu bỏ hoạt động này.
   Future<void> _delete() async {
     final l = context.l10n;
     final ok = await AppDialogs.confirm(
@@ -122,6 +129,7 @@ class _AddEditTemplateBlockScreenState
     if (ok && mounted) Navigator.pop(context, 'delete');
   }
 
+  /// Dựng giao diện màn hình thêm/sửa hoạt động trong lịch mẫu.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "580239912545",
+    "project_id": "time-tribe",
+    "storage_bucket": "time-tribe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:580239912545:android:745112d8875899b5d64420",
+        "android_client_info": {
+          "package_name": "com.example.time_tribe_v2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "580239912545-1mm1db31j934q3mmf430p65rqufktueu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMGNLPOK8EegPmDx2DvnwyCsJNXWAy2x0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "580239912545-1mm1db31j934q3mmf430p65rqufktueu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

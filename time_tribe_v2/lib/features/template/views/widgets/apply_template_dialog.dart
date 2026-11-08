@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
+import '../../../../core/l10n/api_errors.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/app_time.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_dialogs.dart';
 import '../../../../core/widgets/form_widgets.dart';
-import '../../../timeblock/models/timeblock_model.dart';
 import '../../../timeblock/viewmodels/timeblock_viewmodel.dart';
 import '../../models/template_model.dart';
+import '../../viewmodels/template_viewmodel.dart';
 
 /// Chép lịch mẫu vào lịch cá nhân trong N tuần tới.
 /// Trả về `{'added': n, 'overwritten': m}` khi áp dụng xong.
@@ -19,6 +18,7 @@ class ApplyTemplateDialog extends StatefulWidget {
 
   const ApplyTemplateDialog({super.key, required this.template});
 
+  /// Tạo phần state giữ dữ liệu thay đổi của hộp thoại áp dụng lịch mẫu.
   @override
   State<ApplyTemplateDialog> createState() => _ApplyTemplateDialogState();
 }
@@ -30,6 +30,8 @@ class _ApplyTemplateDialogState extends State<ApplyTemplateDialog> {
   int _weeks = 1;
   bool _applying = false;
 
+  /// Bấm Áp dụng: gọi server, nếu bị trùng giờ thì hỏi có thay thế không rồi gọi lại.
+  /// Xong thì tải lại lịch cá nhân và đóng hộp thoại đúng một lần.
   Future<void> _apply() async {
     final l = context.l10n;
     if (_applying) return;
@@ -43,62 +45,27 @@ class _ApplyTemplateDialogState extends State<ApplyTemplateDialog> {
     }
     setState(() => _applying = true);
 
-    final vm = context.read<TimeblockViewModel>();
-    final today = AppTime.today();
+    final templates = context.read<TemplateViewModel>();
+    final timeblocks = context.read<TimeblockViewModel>();
+    final days = List.of(_selectedDays)..sort();
 
-    // 1. Tạo đủ danh sách block mới (chưa đụng tới Navigator)
-    final toAdd = <TimeblockModel>[];
-    for (final day in _selectedDays) {
-      var offset = day - today.weekday;
-      if (offset < 0) offset += 7;
-      for (int w = 0; w < _weeks; w++) {
-        final date = DateTime(
-          today.year,
-          today.month,
-          today.day + offset + w * 7,
-        );
-        for (final tb in widget.template.blocks.where(
-          (b) => b.dayIndex == day,
-        )) {
-          toAdd.add(
-            TimeblockModel(
-              id: const Uuid().v4(),
-              userId: widget.template.userId,
-              task: tb.title,
-              description: tb.description ?? '',
-              date: date,
-              startTime: tb.startTime,
-              endTime: tb.endTime,
-              colorCode: tb.colorCode,
-              remind: tb.remind,
-            ),
-          );
-        }
-      }
-    }
+    var res = await templates.applyTemplate(
+      widget.template.id,
+      days: days,
+      weeks: _weeks,
+      replace: false,
+    );
+    if (!mounted) return;
 
-    // 2. Kiểm tra trùng lịch 1 lần cho toàn bộ
-    final conflicts = <String, TimeblockModel>{};
-    final conflictDates = <DateTime>{};
-    for (final b in toAdd) {
-      final c = vm.getConflictingBlocks(b);
-      if (c.isNotEmpty) {
-        for (final x in c) {
-          conflicts[x.id] = x;
-        }
-        conflictDates.add(DateTime(b.date.year, b.date.month, b.date.day));
-      }
-    }
-
-    // 3. Trùng -> hỏi xác nhận xoá đè
-    if (conflicts.isNotEmpty) {
-      final dates = (conflictDates.toList()..sort())
+    // Trùng giờ -> hỏi xác nhận xoá đè
+    if (res.hasConflict) {
+      final dates = res.conflictDates
           .map((d) => Fmt.date(context, d))
           .join(', ');
       final ok = await AppDialogs.confirm(
         context,
         title: l.conflictTitle,
-        message: l.conflictMessage(conflicts.length, dates),
+        message: l.conflictMessage(res.conflictCount, dates),
         confirmLabel: l.replaceAndAdd,
         destructive: true,
       );
@@ -107,18 +74,29 @@ class _ApplyTemplateDialogState extends State<ApplyTemplateDialog> {
         setState(() => _applying = false);
         return;
       }
-      vm.deleteTimeblocks(conflicts.keys.toList());
+      res = await templates.applyTemplate(
+        widget.template.id,
+        days: days,
+        weeks: _weeks,
+        replace: true,
+      );
+      if (!mounted) return;
     }
 
-    // 4. Thêm và đóng hộp thoại ĐÚNG 1 LẦN
-    vm.addTimeblocks(toAdd);
+    if (res.error != null) {
+      setState(() => _applying = false);
+      AppSnack.show(context, l.apiError(res.error), type: AppSnackType.error);
+      return;
+    }
+    await timeblocks.reload();
     if (mounted) {
       Navigator.of(
         context,
-      ).pop({'added': toAdd.length, 'overwritten': conflicts.length});
+      ).pop({'added': res.added, 'overwritten': res.overwritten});
     }
   }
 
+  /// Dựng giao diện hộp thoại áp dụng lịch mẫu.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;

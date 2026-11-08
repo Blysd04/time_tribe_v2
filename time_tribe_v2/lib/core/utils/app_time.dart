@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Nguồn thời gian DUY NHẤT của toàn app.
+/// Nguồn thời gian duy nhất của toàn app.
 ///
 /// - Chế độ tự động: lấy trực tiếp đồng hồ + múi giờ của thiết bị
 ///   (`DateTime.now()`), không phụ thuộc dữ liệu database hay giao diện.
@@ -32,6 +32,7 @@ class AppTime {
     _tzDataLoaded = true;
   }
 
+  /// Đang để múi giờ tự động theo thiết bị hay không.
   static bool get isAuto => _isAuto || _manualLocation == null;
 
   /// Múi giờ IANA đang áp dụng thủ công (null nếu đang theo thiết bị).
@@ -59,6 +60,7 @@ class AppTime {
   /// (VD: khi múi giờ của thiết bị vừa thay đổi lúc app chạy nền).
   static void notifyChanged() => changes.value++;
 
+  /// Tìm múi giờ theo tên IANA (ví dụ Asia/Tokyo), không có thì trả null.
   static tz.Location? findLocation(String ianaId) {
     ensureInitialized();
     try {
@@ -85,7 +87,7 @@ class AppTime {
   }
 
   // ---------------------------------------------------------------------------
-  // QUY ĐỔI GIỮA CÁC MÚI GIỜ (dùng cho lịch nhóm có thành viên ở nhiều nơi)
+  // Quy đổi giữa các múi giờ (dùng cho lịch nhóm có thành viên ở nhiều nơi)
   // ---------------------------------------------------------------------------
 
   /// Đổi "giờ treo tường" sang mốc UTC.

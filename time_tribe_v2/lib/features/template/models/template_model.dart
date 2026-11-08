@@ -23,8 +23,10 @@ class TemplateBlockModel {
     this.remind = 15,
   });
 
+  /// Đổi mã màu "#RRGGBB" thành Color để vẽ.
   Color get flutterColor => Color(int.parse(colorCode.replaceAll('#', '0xFF')));
 
+  /// Đọc một dòng template_blocks từ JSON backend.
   factory TemplateBlockModel.fromJson(Map<String, dynamic> json) {
     return TemplateBlockModel(
       id: json['id'] ?? '',
@@ -39,10 +41,9 @@ class TemplateBlockModel {
     );
   }
 
+  /// Body của một khối khi gửi lên server (server tự sinh id mới).
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'template_id': templateId,
       'day_index': dayIndex,
       'title': title,
       'description': description,
@@ -53,12 +54,14 @@ class TemplateBlockModel {
     };
   }
 
+  /// "HH:mm:ss" -> TimeOfDay.
   static TimeOfDay _parseTime(String? timeString) {
     if (timeString == null) return const TimeOfDay(hour: 0, minute: 0);
     final parts = timeString.split(':');
     return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
   }
 
+  /// TimeOfDay -> "HH:mm:00".
   static String _formatTime(TimeOfDay time) {
     return "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:00";
   }
@@ -69,7 +72,9 @@ class TemplateModel {
   final String userId;
   final String? originalTemplateId;
   final String templateName;
-  final String? shareToken;
+
+  /// Mã chia sẻ (share_code), null là chưa chia sẻ.
+  final String? shareCode;
   final DateTime dateModified;
   final DateTime createdAt;
   final List<TemplateBlockModel> blocks;
@@ -79,13 +84,14 @@ class TemplateModel {
     required this.userId,
     this.originalTemplateId,
     required this.templateName,
-    this.shareToken,
+    this.shareCode,
     DateTime? dateModified,
     DateTime? createdAt,
     required this.blocks,
   }) : dateModified = dateModified ?? DateTime.now(),
        createdAt = createdAt ?? DateTime.now();
 
+  /// Đọc lịch mẫu kèm danh sách khối (blocks) từ JSON backend.
   factory TemplateModel.fromJson(Map<String, dynamic> json) {
     var blockList = json['blocks'] as List? ?? [];
     List<TemplateBlockModel> parsedBlocks = blockList
@@ -97,7 +103,7 @@ class TemplateModel {
       userId: json['user_id'] ?? '',
       originalTemplateId: json['original_template_id'],
       templateName: json['template_name'] ?? '',
-      shareToken: json['share_token'],
+      shareCode: json['share_code'],
       dateModified: json['date_modified'] != null
           ? DateTime.parse(json['date_modified'])
           : DateTime.now(),
@@ -108,15 +114,10 @@ class TemplateModel {
     );
   }
 
+  /// Body gửi lên khi tạo hoặc sửa: tên và toàn bộ danh sách khối.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'user_id': userId,
-      'original_template_id': originalTemplateId,
       'template_name': templateName,
-      'share_token': shareToken,
-      'date_modified': dateModified.toIso8601String(),
-      'created_at': createdAt.toIso8601String(),
       'blocks': blocks.map((b) => b.toJson()).toList(),
     };
   }

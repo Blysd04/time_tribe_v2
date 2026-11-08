@@ -1,8 +1,9 @@
 import '../../../core/l10n/l10n.dart';
 import '../models/app_notification.dart';
 
-/// Dựng tiêu đề & nội dung thông báo theo ngôn ngữ đang chọn.
+/// Dựng tiêu đề và nội dung thông báo theo ngôn ngữ đang chọn.
 extension NotificationTextX on AppLocalizations {
+  /// Tiêu đề thông báo theo ngôn ngữ đang chọn.
   String notificationTitle(AppNotification n) {
     final a = n.args;
     return switch (n.kind) {
@@ -23,9 +24,13 @@ extension NotificationTextX on AppLocalizations {
       NotificationKind.tribeRoleViceRemoved ||
       NotificationKind.tribeRoleLeader => nTitleRoleChanged,
       NotificationKind.personalBlockAdded => nTitlePersonalAdded,
+      NotificationKind.personalReminder ||
+      NotificationKind.tribeReminder => nTitleReminder(a['task'] ?? ''),
+      NotificationKind.systemBroadcast => n.rawTitle,
     };
   }
 
+  /// Nội dung thông báo theo ngôn ngữ đang chọn.
   String notificationBody(AppNotification n) {
     final a = n.args;
     final actor = a['actor'] ?? '';
@@ -64,6 +69,15 @@ extension NotificationTextX on AppLocalizations {
         task,
         a['time'] ?? '',
       ),
+      NotificationKind.personalReminder => nBodyPersonalReminder(
+        task,
+        a['time'] ?? '',
+      ),
+      NotificationKind.tribeReminder => nBodyTribeReminder(
+        tribe,
+        a['time'] ?? '',
+      ),
+      NotificationKind.systemBroadcast => n.rawContent,
     };
   }
 }

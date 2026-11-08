@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Thẻ hoạt động trên lưới thời gian — dùng chung cho cá nhân, nhóm, lịch mẫu.
+/// Thẻ hoạt động trên lưới thời gian, dùng chung cho cá nhân, nhóm, lịch mẫu.
 ///
 /// - [outlined]: viền nét, nền nhạt (VD hoạt động nhóm đang chờ xác nhận).
 /// - [dimmed]: mờ đi (đã qua / không tham gia).
@@ -33,6 +33,7 @@ class TimeblockCard extends StatelessWidget {
     this.onTap,
   });
 
+  /// Dựng giao diện thẻ hoạt động trên lưới giờ.
   @override
   Widget build(BuildContext context) {
     final fg = outlined ? color : Colors.white;
@@ -169,6 +170,7 @@ class CardBadge extends StatelessWidget {
     this.inverted = false,
   });
 
+  /// Dựng giao diện nhãn nhỏ trên thẻ hoạt động.
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),

@@ -2,7 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/api/api_client.dart';
+import '../../../core/session/session.dart';
 import '../../../core/utils/app_time.dart';
+import '../models/user_model.dart';
+
+/// Lỗi khi sửa hồ sơ, giao diện đổi ra câu chữ theo ngôn ngữ.
+enum ProfileError {
+  emailInvalid,
+  emailTaken,
+  nameLength,
+  nameTaken,
+  network,
+  server,
+}
 
 class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
   static const _kAutoKey = 'profile.timezone.auto';
@@ -10,8 +23,10 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
   static const _kCityKey = 'profile.timezone.city';
   static const _kCountryKey = 'profile.timezone.country';
 
-  String _name = "Van Dang Tuyet Nga";
-  String _email = "admin@timetribe.com";
+  String _name = '';
+  String _email = '';
+  String? _avatarUrl;
+  bool _uploadingAvatar = false;
 
   bool _isAutoTimezone = true;
 
@@ -25,9 +40,11 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
   /// Múi giờ IANA đọc từ cài đặt của thiết bị.
   String? _deviceTimezoneId;
 
-  ProfileViewModel() {
+  ProfileViewModel({ApiClient? api}) : _api = api ?? ApiClient.instance {
     WidgetsBinding.instance.addObserver(this);
   }
+
+  final ApiClient _api;
 
   /// Đọc cấu hình đã lưu + múi giờ thiết bị. Gọi trước `runApp`.
   Future<void> init() async {
@@ -44,12 +61,31 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
     _applyToAppTime();
   }
 
+  /// Tên hiển thị của người đang đăng nhập.
   String get name => _name;
+
+  /// Email của người đang đăng nhập.
   String get email => _email;
+
+  /// Link ảnh đại diện trên Cloudinary, chưa có ảnh thì null.
+  String? get avatarUrl => _avatarUrl;
+
+  /// Đang tải ảnh đại diện lên hay không.
+  bool get uploadingAvatar => _uploadingAvatar;
+
+  /// Đang để múi giờ tự động theo thiết bị hay không.
   bool get isAutoTimezone => _isAutoTimezone;
+
+  /// Múi giờ IANA người dùng tự chọn.
   String? get manualTimezoneId => _manualTimezoneId;
+
+  /// Thành phố người dùng tự chọn.
   String? get manualCity => _manualCity;
+
+  /// Mã quốc gia người dùng tự chọn.
   String? get manualCountry => _manualCountry;
+
+  /// Múi giờ IANA đọc từ cài đặt của thiết bị.
   String? get deviceTimezoneId => _deviceTimezoneId;
 
   /// Múi giờ IANA đang có hiệu lực -> giá trị gửi lên `users.timezone`.
@@ -86,6 +122,7 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  /// App quay lại từ nền thì đọc lại múi giờ thiết bị (người dùng có thể vừa đi sang nước khác).
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -93,19 +130,97 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  void updateAvatar() {
-    //gọi thư viện ImagePicker
-    debugPrint("Mở thư viện ảnh");
+  /// Gán hồ sơ lấy từ server (sau khi đăng nhập hoặc mở app).
+  /// Múi giờ đang dùng trên máy được gửi lên server nếu khác, để giờ nhắc lịch và
+  /// giờ hoạt động nhóm tính đúng theo nơi người dùng đang ở.
+  Future<void> loadFromSession() async {
+    final user = Session.currentUser;
+    if (user == null) return;
+    _applyUser(user);
+    if (user.timezone != timezone) await _syncTimezone();
   }
 
-  void updateName(String newName) {
-    _name = newName;
+  /// Gán thông tin hồ sơ mới nhận từ server rồi vẽ lại giao diện.
+  void _applyUser(UserModel user) {
+    _name = user.nickName;
+    _email = user.email;
+    _avatarUrl = user.avatarUrl;
+    Session.start(user);
     notifyListeners();
   }
 
-  void updateEmail(String newEmail) {
-    _email = newEmail;
+  /// Xoá hồ sơ khỏi bộ nhớ khi đăng xuất, múi giờ quay về theo thiết bị.
+  void clear() {
+    _name = '';
+    _email = '';
+    _avatarUrl = null;
+    _isAutoTimezone = true;
+    _manualTimezoneId = null;
+    _manualCity = null;
+    _manualCountry = null;
+    _applyToAppTime();
     notifyListeners();
+  }
+
+  /// Đổi lỗi server thành lỗi của màn hình hồ sơ.
+  ProfileError _errorFrom(ApiException e) {
+    final details = e.details is Map ? e.details as Map : const {};
+    if (details['email'] == 'already_taken') return ProfileError.emailTaken;
+    if (details['nick_name'] == 'already_taken') return ProfileError.nameTaken;
+    if (details['email'] == 'email_invalid') return ProfileError.emailInvalid;
+    if (details['nick_name'] != null) return ProfileError.nameLength;
+    return e.isNetwork ? ProfileError.network : ProfileError.server;
+  }
+
+  /// Gửi PATCH /users/me với các trường cần sửa, trả về lỗi nếu có (null là thành công).
+  Future<ProfileError?> _patch(Map<String, dynamic> body) async {
+    try {
+      final data = await _api.patch('/users/me', body);
+      _applyUser(UserModel.fromJson(data));
+      return null;
+    } on ApiException catch (e) {
+      return _errorFrom(e);
+    }
+  }
+
+  /// INFO-01: đổi tên hiển thị.
+  Future<ProfileError?> updateName(String newName) =>
+      _patch({'nick_name': newName.trim()});
+
+  /// INFO-01: đổi email.
+  Future<ProfileError?> updateEmail(String newEmail) =>
+      _patch({'email': newEmail.trim()});
+
+  /// INFO-02, INFO-03: tải ảnh đại diện lên server (server đẩy tiếp lên Cloudinary).
+  Future<ProfileError?> uploadAvatar(List<int> bytes, String filename) async {
+    _uploadingAvatar = true;
+    notifyListeners();
+    try {
+      final data = await _api.upload(
+        '/users/me/avatar',
+        'avatar',
+        bytes,
+        filename,
+      );
+      _applyUser(UserModel.fromJson(data));
+      return null;
+    } on ApiException catch (e) {
+      return e.isNetwork ? ProfileError.network : ProfileError.server;
+    } finally {
+      _uploadingAvatar = false;
+      notifyListeners();
+    }
+  }
+
+  /// INFO-04: gửi múi giờ đang dùng lên server. Lỗi mạng thì bỏ qua, lần mở app sau sẽ gửi lại.
+  Future<void> _syncTimezone() async {
+    if (Session.currentUserId.isEmpty) return;
+    try {
+      final data = await _api.patch('/users/me', {'timezone': timezone});
+      _applyUser(UserModel.fromJson(data));
+    } on ApiException {
+      // Bỏ qua
+    }
   }
 
   /// Bật chế độ tự động: lấy múi giờ thực từ cài đặt thiết bị.
@@ -115,7 +230,7 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
     _applyToAppTime();
     await _persist();
     notifyListeners();
-    // TODO(backend): PATCH /users/me { timezone: deviceTimezoneId }
+    await _syncTimezone();
   }
 
   /// Chọn thủ công 1 thành phố/múi giờ IANA.
@@ -132,10 +247,11 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
     _applyToAppTime();
     await _persist();
     notifyListeners();
-    // TODO(backend): PATCH /users/me { timezone: timezoneId }
+    await _syncTimezone();
     return true;
   }
 
+  /// Áp múi giờ đang chọn cho toàn app (AppTime), múi giờ sai thì quay về theo thiết bị.
   void _applyToAppTime() {
     if (_isAutoTimezone || _manualTimezoneId == null) {
       _isAutoTimezone = true;
@@ -146,6 +262,7 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  /// Lưu cài đặt múi giờ xuống máy để lần sau mở app vẫn còn.
   Future<void> _persist() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -162,6 +279,7 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  /// Dọn controller, listener khi hồ sơ bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);

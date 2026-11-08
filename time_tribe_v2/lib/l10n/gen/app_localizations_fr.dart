@@ -678,7 +678,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get importTemplate => 'Importer via un lien';
 
   @override
-  String get importTemplateHint => 'Collez un lien partagé par un ami';
+  String get importTemplateHint => 'Saisissez un code partagé par un ami';
 
   @override
   String get importAction => 'Importer';
@@ -690,7 +690,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get errorLinkEmpty => 'Collez un lien';
 
   @override
-  String get errorTemplateNotFound => 'Aucun modèle trouvé pour ce lien';
+  String get errorTemplateNotFound => 'Aucun modèle trouvé pour ce code';
 
   @override
   String get errorTemplateDuplicate => 'Vous avez déjà ce modèle';
@@ -789,7 +789,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get shareTemplateDescription =>
-      'Toute personne disposant du lien peut voir et copier ce modèle.';
+      'Envoyez ce code à un ami, il pourra le saisir dans Importer un modèle pour le copier.';
 
   @override
   String get addActivity => 'Ajouter une activité';
@@ -1248,4 +1248,104 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get errorItemGone => 'Cet élément n\'existe plus';
+
+  @override
+  String get errorNameLength =>
+      'Le nom doit contenir entre 2 et 100 caractères';
+
+  @override
+  String get errorPasswordTooShort =>
+      'Le mot de passe doit contenir au moins 6 caractères';
+
+  @override
+  String get errorEmailTaken => 'Cet e-mail est déjà utilisé';
+
+  @override
+  String get errorNameTaken => 'Ce nom est déjà pris';
+
+  @override
+  String get errorAccountBanned => 'Votre compte est bloqué';
+
+  @override
+  String get errorAccountDeleted => 'Ce compte a été supprimé';
+
+  @override
+  String get errorGoogleAccount =>
+      'Ce compte utilise Google, choisissez Se connecter avec Google';
+
+  @override
+  String get errorGoogleFailed =>
+      'La connexion Google a échoué, veuillez réessayer';
+
+  @override
+  String get errorGoogleUnsupported =>
+      'La connexion Google n\'est pas disponible sur cet appareil';
+
+  @override
+  String get errorNetwork =>
+      'Impossible de joindre le serveur, vérifiez votre connexion';
+
+  @override
+  String get errorServer => 'Une erreur s\'est produite, veuillez réessayer';
+
+  @override
+  String get forgotPasswordTitle => 'Mot de passe oublié';
+
+  @override
+  String get forgotPasswordMessage =>
+      'Saisissez l\'e-mail de votre compte, nous vous enverrons un lien de réinitialisation.';
+
+  @override
+  String get forgotPasswordSent =>
+      'Si l\'e-mail existe, un lien de réinitialisation a été envoyé';
+
+  @override
+  String get sendLabel => 'Envoyer';
+
+  @override
+  String get sessionEnded =>
+      'Votre session a pris fin, le compte s\'est peut-être connecté sur un autre appareil';
+
+  @override
+  String get changeAvatar => 'Changer la photo de profil';
+
+  @override
+  String get pickFromGallery => 'Choisir dans la galerie';
+
+  @override
+  String get takePhoto => 'Prendre une photo';
+
+  @override
+  String get avatarUpdated => 'Photo de profil mise à jour';
+
+  @override
+  String get errorBlockEnded => 'Cette activité est déjà terminée';
+
+  @override
+  String get pullToRefresh => 'Tirez pour actualiser';
+
+  @override
+  String get importTemplateCodeHint =>
+      'Saisissez le code de partage reçu, par exemple GYM4DAY';
+
+  @override
+  String get errorCodeEmpty => 'Veuillez saisir un code';
+
+  @override
+  String get codeCopied => 'Code copié !';
+
+  @override
+  String nTitleReminder(String task) {
+    return 'Bientôt : $task';
+  }
+
+  @override
+  String nBodyPersonalReminder(String task, String time) {
+    return '« $task » commence à $time.';
+  }
+
+  @override
+  String nBodyTribeReminder(String tribe, String time) {
+    return 'Une activité de $tribe commence à $time.';
+  }
 }

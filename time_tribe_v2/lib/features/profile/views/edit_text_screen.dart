@@ -5,6 +5,7 @@ import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_dialogs.dart';
 import '../viewmodels/profile_viewmodel.dart';
+import 'profile_screen.dart';
 
 enum EditField { name, email }
 
@@ -19,6 +20,7 @@ class EditTextScreen extends StatefulWidget {
     required this.initialValue,
   });
 
+  /// Tạo phần state giữ dữ liệu thay đổi của màn hình sửa tên hoặc email.
   @override
   State<EditTextScreen> createState() => _EditTextScreenState();
 }
@@ -28,15 +30,19 @@ class _EditTextScreenState extends State<EditTextScreen> {
     text: widget.initialValue,
   );
   String? _error;
+  bool _saving = false;
 
+  /// Màn hình này đang sửa email (true) hay tên hiển thị (false).
   bool get _isEmail => widget.field == EditField.email;
 
+  /// Dọn controller, listener khi màn hình sửa tên hoặc email bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
+  /// Kiểm tra dữ liệu, hỏi xác nhận rồi gửi lên server. Lỗi từ server hiện dưới ô nhập.
   Future<void> _save() async {
     final l = context.l10n;
     final value = _controller.text.trim();
@@ -60,11 +66,22 @@ class _EditTextScreenState extends State<EditTextScreen> {
     );
     if (!ok || !mounted) return;
     final vm = context.read<ProfileViewModel>();
-    _isEmail ? vm.updateEmail(value) : vm.updateName(value);
+    setState(() => _saving = true);
+    final err = _isEmail
+        ? await vm.updateEmail(value)
+        : await vm.updateName(value);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (err != null) {
+      // Lỗi trùng email/tên thì hiện ngay dưới ô nhập để người dùng sửa
+      setState(() => _error = l.profileError(err));
+      return;
+    }
     Navigator.pop(context);
     AppSnack.show(context, l.saved);
   }
 
+  /// Dựng giao diện màn hình sửa tên hoặc email.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -77,7 +94,7 @@ class _EditTextScreenState extends State<EditTextScreen> {
         ),
         title: Text(l.editField(label)),
         actions: [
-          TextButton(onPressed: _save, child: Text(l.save)),
+          TextButton(onPressed: _saving ? null : _save, child: Text(l.save)),
           const SizedBox(width: 4),
         ],
       ),

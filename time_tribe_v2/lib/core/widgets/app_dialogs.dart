@@ -7,10 +7,11 @@ import '../theme/app_theme.dart';
 
 enum AppSnackType { success, error, info }
 
-/// Thông báo nhanh ở cuối màn hình — dùng chung một kiểu cho toàn app.
+/// Thông báo nhanh ở cuối màn hình, dùng chung một kiểu cho toàn app.
 class AppSnack {
   AppSnack._();
 
+  /// Hiện snackbar ở cuối màn hình với màu theo loại: thành công, lỗi, thông tin.
   static void show(
     BuildContext context,
     String message, {
@@ -241,6 +242,7 @@ class InputOutcome<T> {
     : value = null,
       isError = false;
 
+  /// Kết quả là xong (đóng hộp thoại) hay còn thông báo cần hiện.
   bool get isDone => message == null;
 }
 
@@ -297,6 +299,7 @@ class _InputDialog<T> extends StatefulWidget {
     required this.onSubmit,
   });
 
+  /// Tạo phần state giữ dữ liệu thay đổi của hộp thoại có một ô nhập.
   @override
   State<_InputDialog<T>> createState() => _InputDialogState<T>();
 }
@@ -308,12 +311,14 @@ class _InputDialogState<T> extends State<_InputDialog<T>> {
   InputOutcome<T>? _feedback;
   bool _busy = false;
 
+  /// Dọn controller, listener khi hộp thoại có một ô nhập bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
+  /// Bấm nút xác nhận: gọi hàm xử lý, xong thì đóng hộp thoại, lỗi thì hiện ngay dưới ô nhập.
   Future<void> _submit() async {
     if (_busy) return;
     setState(() => _busy = true);
@@ -329,6 +334,7 @@ class _InputDialogState<T> extends State<_InputDialog<T>> {
     });
   }
 
+  /// Dựng giao diện hộp thoại có một ô nhập.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;

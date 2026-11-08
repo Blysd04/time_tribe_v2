@@ -1183,7 +1183,7 @@ abstract class AppLocalizations {
   /// No description provided for @importTemplateHint.
   ///
   /// In vi, this message translates to:
-  /// **'Dán link chia sẻ từ bạn bè'**
+  /// **'Nhập mã chia sẻ từ bạn bè'**
   String get importTemplateHint;
 
   /// No description provided for @importAction.
@@ -1207,7 +1207,7 @@ abstract class AppLocalizations {
   /// No description provided for @errorTemplateNotFound.
   ///
   /// In vi, this message translates to:
-  /// **'Không tìm thấy lịch mẫu nào với link này'**
+  /// **'Không tìm thấy lịch mẫu nào với mã này'**
   String get errorTemplateNotFound;
 
   /// No description provided for @errorTemplateDuplicate.
@@ -1339,7 +1339,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareTemplateDescription.
   ///
   /// In vi, this message translates to:
-  /// **'Ai có link này đều có thể xem và chép lịch mẫu này về tài khoản của họ.'**
+  /// **'Gửi mã này cho bạn bè, họ nhập mã ở mục Nhập lịch mẫu để chép về tài khoản của họ.'**
   String get shareTemplateDescription;
 
   /// No description provided for @addActivity.
@@ -2043,6 +2043,174 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Dữ liệu này không còn tồn tại'**
   String get errorItemGone;
+
+  /// No description provided for @errorNameLength.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên hiển thị phải từ 2 đến 100 ký tự'**
+  String get errorNameLength;
+
+  /// No description provided for @errorPasswordTooShort.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu tối thiểu 6 ký tự'**
+  String get errorPasswordTooShort;
+
+  /// No description provided for @errorEmailTaken.
+  ///
+  /// In vi, this message translates to:
+  /// **'Email này đã được sử dụng'**
+  String get errorEmailTaken;
+
+  /// No description provided for @errorNameTaken.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên hiển thị này đã có người dùng'**
+  String get errorNameTaken;
+
+  /// No description provided for @errorAccountBanned.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tài khoản của bạn đang bị khoá'**
+  String get errorAccountBanned;
+
+  /// No description provided for @errorAccountDeleted.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tài khoản này đã bị xoá'**
+  String get errorAccountDeleted;
+
+  /// No description provided for @errorGoogleAccount.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tài khoản này đăng nhập bằng Google, hãy chọn Đăng nhập với Google'**
+  String get errorGoogleAccount;
+
+  /// No description provided for @errorGoogleFailed.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đăng nhập Google không thành công, vui lòng thử lại'**
+  String get errorGoogleFailed;
+
+  /// No description provided for @errorGoogleUnsupported.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thiết bị này chưa hỗ trợ đăng nhập Google'**
+  String get errorGoogleUnsupported;
+
+  /// No description provided for @errorNetwork.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không kết nối được máy chủ, vui lòng kiểm tra mạng'**
+  String get errorNetwork;
+
+  /// No description provided for @errorServer.
+  ///
+  /// In vi, this message translates to:
+  /// **'Có lỗi xảy ra, vui lòng thử lại'**
+  String get errorServer;
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quên mật khẩu'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập email đã đăng ký, chúng tôi sẽ gửi đường dẫn đặt lại mật khẩu.'**
+  String get forgotPasswordMessage;
+
+  /// No description provided for @forgotPasswordSent.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nếu email có trong hệ thống, đường dẫn đặt lại mật khẩu đã được gửi'**
+  String get forgotPasswordSent;
+
+  /// No description provided for @sendLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi'**
+  String get sendLabel;
+
+  /// No description provided for @sessionEnded.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phiên đăng nhập đã kết thúc, có thể tài khoản vừa đăng nhập trên máy khác'**
+  String get sessionEnded;
+
+  /// No description provided for @changeAvatar.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi ảnh đại diện'**
+  String get changeAvatar;
+
+  /// No description provided for @pickFromGallery.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn ảnh từ thư viện'**
+  String get pickFromGallery;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chụp ảnh'**
+  String get takePhoto;
+
+  /// No description provided for @avatarUpdated.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã cập nhật ảnh đại diện'**
+  String get avatarUpdated;
+
+  /// No description provided for @errorBlockEnded.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hoạt động này đã kết thúc'**
+  String get errorBlockEnded;
+
+  /// No description provided for @pullToRefresh.
+  ///
+  /// In vi, this message translates to:
+  /// **'Kéo xuống để tải lại'**
+  String get pullToRefresh;
+
+  /// No description provided for @importTemplateCodeHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập mã chia sẻ bạn bè gửi cho bạn, ví dụ GYM4DAY'**
+  String get importTemplateCodeHint;
+
+  /// No description provided for @errorCodeEmpty.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn chưa nhập mã'**
+  String get errorCodeEmpty;
+
+  /// No description provided for @codeCopied.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã sao chép mã!'**
+  String get codeCopied;
+
+  /// No description provided for @nTitleReminder.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sắp tới giờ: {task}'**
+  String nTitleReminder(String task);
+
+  /// No description provided for @nBodyPersonalReminder.
+  ///
+  /// In vi, this message translates to:
+  /// **'\"{task}\" bắt đầu lúc {time}.'**
+  String nBodyPersonalReminder(String task, String time);
+
+  /// No description provided for @nBodyTribeReminder.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hoạt động của nhóm {tribe} bắt đầu lúc {time}.'**
+  String nBodyTribeReminder(String tribe, String time);
 }
 
 class _AppLocalizationsDelegate

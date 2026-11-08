@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"mime/multipart"
 	"sort"
 	"strings"
 	"time"
@@ -16,20 +15,17 @@ import (
 	"timetribe-backend/internal/utils"
 )
 
-// Bảng màu mặc định khi tạo nhóm, giống AppColors.palette ở front-end.
-var tribePalette = []string{"#3A86FF", "#00B894", "#9B5DE5", "#FF007F", "#FFB703", "#FF7F50", "#0FA3B1", "#6C757D"}
-
 const inviteAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 type TribeService struct {
 	cfg      *config.Config
 	store    *repository.Store
 	notifier *NotificationService
-	uploader *Uploader
 }
 
-func NewTribeService(cfg *config.Config, store *repository.Store, n *NotificationService, up *Uploader) *TribeService {
-	return &TribeService{cfg: cfg, store: store, notifier: n, uploader: up}
+// NewTribeService tạo service nhóm.
+func NewTribeService(cfg *config.Config, store *repository.Store, n *NotificationService) *TribeService {
+	return &TribeService{cfg: cfg, store: store, notifier: n}
 }
 
 // ---------------------------------------------------------------------------
@@ -45,8 +41,6 @@ type MemberDTO struct {
 // TribeDTO là bảng tribes kèm thành viên và vài số liệu cho màn hình danh sách nhóm.
 type TribeDTO struct {
 	models.Tribe
-	InviteCode   string         `json:"invite_code"`
-	InviteURL    string         `json:"invite_url"`
 	MyRole       string         `json:"my_role"`
 	MemberCount  int            `json:"member_count"`
 	MaxMembers   int            `json:"max_members"`
@@ -59,8 +53,14 @@ type TribeDTO struct {
 // Hàm dùng chung
 // ---------------------------------------------------------------------------
 
-func (s *TribeService) inviteURL(code string) string {
-	return strings.TrimRight(s.cfg.ShareBaseURL, "/") + "/tribe/" + code
+// NormalizeCode chuẩn hoá mã người dùng nhập: bỏ khoảng trắng, viết hoa.
+// Lỡ dán nguyên một đường link thì lấy phần cuối của link làm mã.
+func NormalizeCode(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if strings.Contains(raw, "/") {
+		raw = utils.LastPathSegment(raw)
+	}
+	return strings.ToUpper(raw)
 }
 
 // membership trả về nhóm (chưa giải tán) và dòng tribe_attendees của người dùng trong nhóm đó.
@@ -98,6 +98,7 @@ func (s *TribeService) attendeesOf(ctx context.Context, tribeIDs ...string) ([]m
 	return list, nil
 }
 
+// userIDsOf lấy danh sách id người dùng từ danh sách thành viên.
 func userIDsOf(list []models.TribeAttendee) []string {
 	ids := make([]string, len(list))
 	for i, a := range list {
@@ -106,6 +107,7 @@ func userIDsOf(list []models.TribeAttendee) []string {
 	return ids
 }
 
+// without bỏ một vài id ra khỏi danh sách (thường là bỏ chính mình khi gửi thông báo).
 func without(ids []string, exclude ...string) []string {
 	out := make([]string, 0, len(ids))
 outer:
@@ -120,6 +122,7 @@ outer:
 	return out
 }
 
+// nickName lấy tên hiển thị của một người để ghi vào thông báo.
 func (s *TribeService) nickName(ctx context.Context, userID string) string {
 	u, err := s.store.UserByID(ctx, userID)
 	if err != nil || u == nil {
@@ -151,10 +154,10 @@ func (s *TribeService) notify(ctx context.Context, tribe *models.Tribe, recipien
 	s.notifier.Notify(ctx, in)
 }
 
+// buildDTO ghép nhóm với danh sách thành viên và chức vụ của người xem.
 func (s *TribeService) buildDTO(ctx context.Context, tribe *models.Tribe, members []models.TribeAttendee, users map[string]models.User, me string) TribeDTO {
 	dto := TribeDTO{
-		Tribe: *tribe, InviteCode: tribe.InviteLink, InviteURL: s.inviteURL(tribe.InviteLink),
-		MaxMembers: models.MaxMembersPerTribe, Members: []MemberDTO{},
+		Tribe: *tribe, MaxMembers: models.MaxMembersPerTribe, Members: []MemberDTO{},
 	}
 	for _, m := range members {
 		if m.TribeID != tribe.ID {
@@ -170,6 +173,7 @@ func (s *TribeService) buildDTO(ctx context.Context, tribe *models.Tribe, member
 	return dto
 }
 
+// countMyTribes đếm số nhóm mình đang tham gia (tối đa 5).
 func (s *TribeService) countMyTribes(ctx context.Context, userID string) (int64, error) {
 	return s.store.TribeAttendees.CountDocuments(ctx, bson.M{"user_id": userID})
 }
@@ -248,6 +252,7 @@ func (s *TribeService) List(ctx context.Context, me string) ([]TribeDTO, error) 
 	return out, nil
 }
 
+// userIDsOfTribes lấy danh sách id nhóm từ các dòng tribe_attendees.
 func userIDsOfTribes(list []models.TribeAttendee) []string {
 	ids := make([]string, len(list))
 	for i, a := range list {
@@ -265,6 +270,7 @@ func (s *TribeService) Get(ctx context.Context, tribeID, me string) (*TribeDTO, 
 	return s.detail(ctx, tribe, me)
 }
 
+// detail lấy chi tiết một nhóm kèm thành viên.
 func (s *TribeService) detail(ctx context.Context, tribe *models.Tribe, me string) (*TribeDTO, error) {
 	members, err := s.attendeesOf(ctx, tribe.ID)
 	if err != nil {
@@ -278,6 +284,7 @@ func (s *TribeService) detail(ctx context.Context, tribe *models.Tribe, me strin
 	return &dto, nil
 }
 
+// validateTribeName kiểm tra tên nhóm không rỗng và không quá 255 ký tự.
 func validateTribeName(raw string) (string, error) {
 	name := strings.TrimSpace(raw)
 	if name == "" {
@@ -289,8 +296,8 @@ func validateTribeName(raw string) (string, error) {
 	return name, nil
 }
 
-// Create (COM-03): tạo nhóm, sinh mã mời, người tạo là trưởng nhóm.
-func (s *TribeService) Create(ctx context.Context, me, rawName string, color *string) (*TribeDTO, error) {
+// Create (COM-03): tạo nhóm, sinh đường dẫn mời, người tạo là trưởng nhóm.
+func (s *TribeService) Create(ctx context.Context, me, rawName string) (*TribeDTO, error) {
 	name, err := validateTribeName(rawName)
 	if err != nil {
 		return nil, err
@@ -302,19 +309,11 @@ func (s *TribeService) Create(ctx context.Context, me, rawName string, color *st
 	if count >= models.MaxTribesPerUser {
 		return nil, utils.Conflict("tribe_limit", "Bạn đã tham gia tối đa 5 nhóm")
 	}
-	bg := tribePalette[int(count)%len(tribePalette)]
-	if color != nil && *color != "" {
-		if !utils.IsHexColor(*color) {
-			return nil, utils.BadRequest("invalid_color", "Mã màu phải có dạng #RRGGBB")
-		}
-		bg = strings.ToUpper(*color)
-	}
-
 	now := time.Now().UTC()
-	tribe := models.Tribe{ID: uuid.NewString(), Name: name, CreatedBy: me, BackgroundColor: &bg, CreatedAt: now}
+	tribe := models.Tribe{ID: uuid.NewString(), Name: name, CreatedBy: me, CreatedAt: now}
 	// Mã mời là unique, trùng thì sinh lại
 	for attempt := 0; ; attempt++ {
-		tribe.InviteLink = utils.RandomCode(8, inviteAlphabet)
+		tribe.InviteCode = utils.RandomCode(8, inviteAlphabet)
 		_, err = s.store.Tribes.InsertOne(ctx, tribe)
 		if err == nil {
 			break
@@ -331,13 +330,13 @@ func (s *TribeService) Create(ctx context.Context, me, rawName string, color *st
 	return s.detail(ctx, &tribe, me)
 }
 
-// Join (COM-11): vào nhóm bằng link mời hoặc mã mời.
-func (s *TribeService) Join(ctx context.Context, me, link string) (*TribeDTO, error) {
-	code := strings.ToUpper(utils.LastPathSegment(link))
+// Join (COM-11): vào nhóm bằng mã mời.
+func (s *TribeService) Join(ctx context.Context, me, rawCode string) (*TribeDTO, error) {
+	code := NormalizeCode(rawCode)
 	if code == "" {
-		return nil, utils.BadRequest("invalid_link", "Đường dẫn hoặc mã mời không hợp lệ")
+		return nil, utils.BadRequest("invalid_code", "Vui lòng nhập mã mời")
 	}
-	tribe, err := repository.FindOne[models.Tribe](ctx, s.store.Tribes, bson.M{"invite_link": code, "deleted_at": nil})
+	tribe, err := repository.FindOne[models.Tribe](ctx, s.store.Tribes, bson.M{"invite_code": code, "deleted_at": nil})
 	if err != nil {
 		return nil, err
 	}
@@ -382,6 +381,7 @@ func (s *TribeService) Join(ctx context.Context, me, link string) (*TribeDTO, er
 	return s.detail(ctx, tribe, me)
 }
 
+// addPendingForUpcoming tạo dòng điểm danh "đang chờ" cho người mới vào nhóm ở các hoạt động sắp tới.
 func (s *TribeService) addPendingForUpcoming(ctx context.Context, tribeID, userID string) error {
 	blocks, err := s.upcomingBlocks(ctx, tribeID)
 	if err != nil {
@@ -441,44 +441,6 @@ func (s *TribeService) Rename(ctx context.Context, me, tribeID, rawName string) 
 	tribe.Name = name
 	s.notify(ctx, tribe, without(userIDsOf(members), me), me, models.KindTribeRenamed, models.NotiTribeRole,
 		map[string]string{"old": old, "new": name}, tribe.ID, models.RefTribe)
-	return s.detail(ctx, tribe, me)
-}
-
-// UpdateAppearance (COM-04): trưởng hoặc phó nhóm đổi màu chủ đạo và ảnh nền.
-func (s *TribeService) UpdateAppearance(ctx context.Context, me, tribeID string, color *string, image *multipart.FileHeader, removeImage bool) (*TribeDTO, error) {
-	tribe, att, err := s.membership(ctx, tribeID, me)
-	if err != nil {
-		return nil, err
-	}
-	if att.Role == models.TribeRoleMember {
-		return nil, utils.ErrNotAllowed
-	}
-	set := bson.M{}
-	if color != nil && *color != "" {
-		if !utils.IsHexColor(*color) {
-			return nil, utils.BadRequest("invalid_color", "Mã màu phải có dạng #RRGGBB")
-		}
-		set["background_color"] = strings.ToUpper(*color)
-	}
-	if image != nil {
-		url, err := s.uploader.UploadImage(ctx, image, "timetribe/tribes", tribe.ID, false)
-		if err != nil {
-			return nil, err
-		}
-		set["background_image_url"] = url
-	} else if removeImage {
-		set["background_image_url"] = nil
-	}
-	if len(set) == 0 {
-		return nil, utils.BadRequest("validation_error", "Cần gửi background_color hoặc ảnh background_image")
-	}
-	if _, err := s.store.Tribes.UpdateOne(ctx, repository.ByID(tribe.ID), bson.M{"$set": set}); err != nil {
-		return nil, err
-	}
-	tribe, _, err = s.membership(ctx, tribeID, me)
-	if err != nil {
-		return nil, err
-	}
 	return s.detail(ctx, tribe, me)
 }
 
@@ -587,6 +549,7 @@ func (s *TribeService) Leave(ctx context.Context, me, tribeID, newLeaderID strin
 	return res, nil
 }
 
+// findMember tìm dòng thành viên của một người trong danh sách, không có thì trả nil.
 func findMember(members []models.TribeAttendee, userID string) *models.TribeAttendee {
 	for i := range members {
 		if members[i].UserID == userID {
@@ -596,6 +559,7 @@ func findMember(members []models.TribeAttendee, userID string) *models.TribeAtte
 	return nil
 }
 
+// countRole đếm số người có chức vụ role, bỏ qua người except.
 func countRole(members []models.TribeAttendee, role string, except string) int {
 	n := 0
 	for _, m := range members {
@@ -704,18 +668,19 @@ func (s *TribeService) transferLeader(ctx context.Context, tribe *models.Tribe, 
 	return nil
 }
 
+// setRole đổi chức vụ của một thành viên trong tribe_attendees.
 func (s *TribeService) setRole(ctx context.Context, tribeID, userID, role string) error {
 	_, err := s.store.TribeAttendees.UpdateOne(ctx, bson.M{"tribe_id": tribeID, "user_id": userID}, bson.M{"$set": bson.M{"role": role}})
 	return err
 }
 
-// Invite (COM-18): trả mã mời và đường dẫn để app tạo mã QR.
+// Invite (COM-18): trả mã mời để app hiện và tạo mã QR.
 func (s *TribeService) Invite(ctx context.Context, me, tribeID string) (map[string]string, error) {
 	tribe, _, err := s.membership(ctx, tribeID, me)
 	if err != nil {
 		return nil, err
 	}
-	return map[string]string{"invite_link": tribe.InviteLink, "invite_code": tribe.InviteLink, "invite_url": s.inviteURL(tribe.InviteLink)}, nil
+	return map[string]string{"invite_code": tribe.InviteCode}, nil
 }
 
 // ---------------------------------------------------------------------------
@@ -795,6 +760,7 @@ func (s *TribeService) LeaveAllForAccountDeletion(ctx context.Context, me string
 	return plans, nil
 }
 
+// userLoc lấy múi giờ của người dùng, lỗi thì dùng giờ Việt Nam.
 func (s *TribeService) userLoc(ctx context.Context, userID string) *time.Location {
 	u, err := s.store.UserByID(ctx, userID)
 	if err != nil || u == nil {

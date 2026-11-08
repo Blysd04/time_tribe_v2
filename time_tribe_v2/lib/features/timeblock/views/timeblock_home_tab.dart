@@ -21,6 +21,7 @@ import 'add_edit_timeblock_screen.dart';
 class TimeblockHomeTab extends StatefulWidget {
   const TimeblockHomeTab({super.key});
 
+  /// Tạo phần state giữ dữ liệu thay đổi của trang Lịch cá nhân.
   @override
   State<TimeblockHomeTab> createState() => _TimeblockHomeTabState();
 }
@@ -40,12 +41,14 @@ class _TimeblockHomeTabState extends State<TimeblockHomeTab> {
   bool _pendingScroll = true;
   DateTime? _lastDate;
 
+  /// Chạy một lần lúc trang Lịch cá nhân vừa được tạo, chuẩn bị dữ liệu ban đầu.
   @override
   void initState() {
     super.initState();
     AppTime.changes.addListener(_onTimezoneChanged);
   }
 
+  /// Dọn controller, listener khi trang Lịch cá nhân bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     AppTime.changes.removeListener(_onTimezoneChanged);
@@ -53,13 +56,16 @@ class _TimeblockHomeTabState extends State<TimeblockHomeTab> {
     super.dispose();
   }
 
+  /// Đổi múi giờ thì vẽ lại lưới giờ.
   void _onTimezoneChanged() {
     if (mounted) setState(() => _pendingScroll = true);
   }
 
+  /// Hai mốc thời gian có cùng một ngày không.
   bool _same(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
+  /// Gom hoạt động cá nhân và hoạt động nhóm của ngày đang chọn theo bộ lọc để vẽ lên lưới.
   List<_GridItem> _items(TimeblockViewModel vm, TribeViewModel tribeVm) {
     final day = vm.selectedDate;
     final dayStart = DateTime(day.year, day.month, day.day);
@@ -99,6 +105,7 @@ class _TimeblockHomeTabState extends State<TimeblockHomeTab> {
     TimeGrid.scrollToHour(_gridController, hour);
   }
 
+  /// Mở màn hình thêm hoạt động, chạm vào ô giờ nào thì điền sẵn giờ đó.
   void _openAdd(DateTime date, {int? hour}) {
     Navigator.push(
       context,
@@ -111,6 +118,7 @@ class _TimeblockHomeTabState extends State<TimeblockHomeTab> {
     );
   }
 
+  /// Dựng giao diện trang Lịch cá nhân.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -147,7 +155,10 @@ class _TimeblockHomeTabState extends State<TimeblockHomeTab> {
           subtitle: l.itemsTodaySubtitle(items.length, Fmt.date(context, now)),
           expanded: vm.isCalendarExpanded,
           onToggle: vm.toggleCalendar,
-          onSelected: vm.changeSelectedDate,
+          onSelected: (d) {
+            vm.changeSelectedDate(d);
+            tribeVm.ensureBlocksLoaded(d);
+          },
           firstDate: vm.accountCreatedAt,
           decorate: (d) {
             final count =
@@ -156,7 +167,7 @@ class _TimeblockHomeTabState extends State<TimeblockHomeTab> {
             return DayDecoration(badge: count);
           },
         ),
-        // BỘ LỌC: Tất cả / Cá nhân / Nhóm
+        // Bộ lọc: Tất cả / Cá nhân / Nhóm
         SizedBox(
           height: 44,
           child: ListView(
@@ -246,6 +257,7 @@ class _TimeblockHomeTabState extends State<TimeblockHomeTab> {
     );
   }
 
+  /// Thẻ một hoạt động cá nhân trên lưới, chạm vào để sửa (ngày đã qua thì không cho sửa).
   Widget _personalCard(TimeblockModel t, bool isPastDay) {
     return TimeblockCard(
       title: t.task,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/l10n/l10n.dart';
@@ -7,6 +8,7 @@ import '../../../core/session/session.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_avatar.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_dialogs.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import 'edit_location_screen.dart';
 import 'edit_text_screen.dart';
@@ -19,11 +21,66 @@ extension ProfileTextsX on AppLocalizations {
         : '${vm.manualCity}, ${countryName(vm.manualCountry ?? '')}';
     return '$place (${vm.timezoneOffset})';
   }
+
+  /// Câu báo lỗi khi sửa hồ sơ.
+  String profileError(ProfileError e) => switch (e) {
+    ProfileError.emailInvalid => errorEmailInvalid,
+    ProfileError.emailTaken => errorEmailTaken,
+    ProfileError.nameLength => errorNameLength,
+    ProfileError.nameTaken => errorNameTaken,
+    ProfileError.network => errorNetwork,
+    ProfileError.server => errorServer,
+  };
+}
+
+/// Bấm vào ảnh đại diện: chọn ảnh từ thư viện hoặc chụp ảnh mới rồi tải lên.
+Future<void> pickAndUploadAvatar(BuildContext context) async {
+  final l = context.l10n;
+  final vm = context.read<ProfileViewModel>();
+  ImageSource? source;
+  await showOptionsSheet(
+    context,
+    title: l.changeAvatar,
+    options: [
+      SheetOption(
+        icon: Icons.photo_library_outlined,
+        title: l.pickFromGallery,
+        onTap: () => source = ImageSource.gallery,
+      ),
+      SheetOption(
+        icon: Icons.photo_camera_outlined,
+        color: AppColors.success,
+        title: l.takePhoto,
+        onTap: () => source = ImageSource.camera,
+      ),
+    ],
+  );
+  if (source == null) return;
+  XFile? file;
+  try {
+    file = await ImagePicker().pickImage(
+      source: source!,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+  } catch (_) {
+    file = null;
+  }
+  if (file == null || !context.mounted) return;
+  final err = await vm.uploadAvatar(await file.readAsBytes(), file.name);
+  if (!context.mounted) return;
+  if (err == null) {
+    AppSnack.show(context, l.avatarUpdated);
+  } else {
+    AppSnack.show(context, l.profileError(err), type: AppSnackType.error);
+  }
 }
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  /// Dựng giao diện tab Hồ sơ.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -46,13 +103,16 @@ class ProfileScreen extends StatelessWidget {
             child: Column(
               children: [
                 GestureDetector(
-                  onTap: vm.updateAvatar,
+                  onTap: vm.uploadingAvatar
+                      ? null
+                      : () => pickAndUploadAvatar(context),
                   child: Stack(
                     children: [
                       UserAvatar(
                         user: AppUser(
                           id: Session.currentUserId,
                           nickName: vm.name,
+                          avatarUrl: vm.avatarUrl,
                         ),
                         size: 96,
                       ),
@@ -66,11 +126,20 @@ class ProfileScreen extends StatelessWidget {
                             shape: BoxShape.circle,
                             border: Border.all(color: cs.surface, width: 3),
                           ),
-                          child: const Icon(
-                            Icons.camera_alt_outlined,
-                            color: Colors.white,
-                            size: 15,
-                          ),
+                          child: vm.uploadingAvatar
+                              ? const SizedBox(
+                                  width: 15,
+                                  height: 15,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.camera_alt_outlined,
+                                  color: Colors.white,
+                                  size: 15,
+                                ),
                         ),
                       ),
                     ],

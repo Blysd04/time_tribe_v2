@@ -5,18 +5,39 @@ và 3 ngôn ngữ: Tiếng Việt, English, Français.
 
 ## Chạy app
 
+Bật backend trước (xem `backend/README.md`), sau đó:
+
 ```bash
 flutter pub get
+```
+
+```bash
 flutter run
 ```
 
-Tài khoản mẫu: `admin` (hoặc `admin@timetribe.com`), mật khẩu `123456`.
+Máy ảo Android gọi backend qua `http://10.0.2.2:8080/api/v1`. Chạy trên điện thoại thật thì truyền IP máy tính:
+
+```bash
+flutter run --dart-define=API_BASE_URL=http://192.168.1.10:8080/api/v1
+```
+
+Đăng nhập Google trên Android cần thêm SHA-1 của khoá ký vào Firebase Console
+(Project settings > Your apps > Add fingerprint), lấy SHA-1 bằng lệnh:
+
+```bash
+cd android && ./gradlew signingReport
+```
+
+Tài khoản mẫu (sau khi chạy `go run ./cmd/seed` trong thư mục backend): `tuyetnga@timetribe.app`, mật khẩu `123456`.
+Danh sách đầy đủ ở `backend/API_TESTING.md`.
 
 ## Cấu trúc thư mục
 
 ```
 lib/
 ├── core/                      # Dùng chung cho mọi tính năng
+│   ├── api/                   # ApiClient: gọi backend, tự làm mới token
+│   ├── services/              # Firebase: thông báo đẩy, đăng nhập Google
 │   ├── l10n/                  # context.l10n, LocaleProvider (đổi ngôn ngữ)
 │   ├── models/                # AppUser
 │   ├── session/               # Người dùng đang đăng nhập
@@ -26,8 +47,8 @@ lib/
 │       └── calendar/          # CalendarPanel, DayStrip, TimeGrid, TimeblockCard
 ├── features/<tính năng>/
 │   ├── models/                # Khớp bảng trong database (fromJson/toJson)
-│   ├── viewmodels/            # ChangeNotifier, chứa logic + TODO(backend)
-│   ├── data/ hoặc services/   # Dữ liệu giả lập / thuật toán thuần (có test)
+│   ├── viewmodels/            # ChangeNotifier, chứa logic và gọi API backend
+│   ├── services/              # Thuật toán thuần, ví dụ tính giờ rảnh (có test)
 │   └── views/                 # Màn hình
 │       └── widgets/           # Widget riêng của tính năng
 └── l10n/                      # app_vi.arb (gốc), app_en.arb, app_fr.arb + gen/

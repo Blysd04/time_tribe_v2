@@ -8,6 +8,7 @@ import 'time_grid.dart';
 class CurrentTimeLine extends StatefulWidget {
   const CurrentTimeLine({super.key});
 
+  /// Tạo phần state giữ dữ liệu thay đổi của vạch giờ hiện tại.
   @override
   State<CurrentTimeLine> createState() => _CurrentTimeLineState();
 }
@@ -15,6 +16,7 @@ class CurrentTimeLine extends StatefulWidget {
 class _CurrentTimeLineState extends State<CurrentTimeLine> {
   Timer? _timer;
 
+  /// Chạy một lần lúc vạch giờ hiện tại vừa được tạo, chuẩn bị dữ liệu ban đầu.
   @override
   void initState() {
     super.initState();
@@ -35,10 +37,12 @@ class _CurrentTimeLineState extends State<CurrentTimeLine> {
     });
   }
 
+  /// Mỗi phút vẽ lại để vạch giờ hiện tại chạy theo đồng hồ.
   void _refresh() {
     if (mounted) setState(() {});
   }
 
+  /// Dọn controller, listener khi vạch giờ hiện tại bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     _timer?.cancel();
@@ -46,6 +50,7 @@ class _CurrentTimeLineState extends State<CurrentTimeLine> {
     super.dispose();
   }
 
+  /// Dựng giao diện vạch giờ hiện tại.
   @override
   Widget build(BuildContext context) {
     // Gọi AppTime để xác định giờ hiện tại theo cấu hình của người dùng

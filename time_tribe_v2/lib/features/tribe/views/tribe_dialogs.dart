@@ -11,6 +11,7 @@ import '../viewmodels/tribe_viewmodel.dart';
 import 'tribe_detail_screen.dart';
 import 'tribe_texts.dart';
 
+/// Mở trang lịch của một nhóm.
 void openTribeDetail(BuildContext context, String tribeId) {
   Navigator.push(
     context,
@@ -40,7 +41,7 @@ void showTribeAddOptions(BuildContext context) {
         onTap: () => showCreateTribeDialog(context),
       ),
       SheetOption(
-        icon: Icons.link_rounded,
+        icon: Icons.vpn_key_outlined,
         color: AppColors.success,
         title: l.joinTribe,
         subtitle: l.joinTribeHint,
@@ -62,8 +63,8 @@ Future<void> showCreateTribeDialog(BuildContext context) async {
     confirmLabel: l.create,
     maxLength: TribeLimits.maxNameLength,
     prefixIcon: Icons.groups_outlined,
-    onSubmit: (value) {
-      final res = vm.createTribe(value);
+    onSubmit: (value) async {
+      final res = await vm.createTribe(value);
       return res.result == TribeResult.success
           ? InputOutcome.done(res.tribe!.id)
           : InputOutcome.error(l.tribeResult(res.result));
@@ -75,7 +76,7 @@ Future<void> showCreateTribeDialog(BuildContext context) async {
   }
 }
 
-/// COM-11: tham gia bằng đường link mời.
+/// COM-11: tham gia nhóm bằng mã mời.
 Future<void> showJoinTribeDialog(BuildContext context) async {
   final l = context.l10n;
   final vm = context.read<TribeViewModel>();
@@ -84,29 +85,22 @@ Future<void> showJoinTribeDialog(BuildContext context) async {
     context,
     title: l.joinTribe,
     description: l.joinTribeDescription,
-    hint: 'timetribe.app/tribe/ABC123',
+    hint: 'NIC2026',
     confirmLabel: l.join,
     confirmColor: AppColors.success,
-    prefixIcon: Icons.link,
-    onSubmit: (value) {
-      final res = vm.joinByLink(value);
+    prefixIcon: Icons.vpn_key_outlined,
+    onSubmit: (value) async {
+      final res = await vm.joinByCode(value);
       switch (res.result) {
         case TribeResult.success:
           joinedNew = true;
           return InputOutcome.done(res.tribe!.id);
-        case TribeResult.alreadyMember:
+        case TribeResult.alreadyMember when res.tribe != null:
           // Không phải lỗi: báo rõ là đã ở trong nhóm, cho mở nhanh
           return InputOutcome.info(
             l.infoAlreadyMemberOf(res.tribe!.name),
             actionLabel: l.openTribe,
             actionValue: res.tribe!.id,
-          );
-        case TribeResult.tribeFull:
-          return InputOutcome.error(
-            l.errorTribeFullNamed(
-              res.tribe!.name,
-              TribeLimits.maxMembersPerTribe,
-            ),
           );
         default:
           return InputOutcome.error(l.tribeResult(res.result));
@@ -133,8 +127,8 @@ Future<void> showRenameTribeDialog(
     initialValue: tribe.name,
     confirmLabel: l.save,
     maxLength: TribeLimits.maxNameLength,
-    onSubmit: (value) {
-      final res = vm.renameTribe(tribe.id, value);
+    onSubmit: (value) async {
+      final res = await vm.renameTribe(tribe.id, value);
       return res == TribeResult.success
           ? const InputOutcome.done(true)
           : InputOutcome.error(l.tribeResult(res));
@@ -143,7 +137,7 @@ Future<void> showRenameTribeDialog(
   if (ok == true && context.mounted) AppSnack.show(context, l.tribeRenamed);
 }
 
-/// COM-18: chia sẻ đường link mời.
+/// COM-18: chia sẻ mã mời vào nhóm.
 void showInviteSheet(BuildContext context, TribeModel tribe) {
   final l = context.l10n;
   showModalBottomSheet(
@@ -197,15 +191,18 @@ void showInviteSheet(BuildContext context, TribeModel tribe) {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.link,
+                      Icons.vpn_key_outlined,
                       color: cs.onSurface.withValues(alpha: 0.5),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        tribe.inviteLink,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                        overflow: TextOverflow.ellipsis,
+                      child: SelectableText(
+                        tribe.inviteCode,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
                       ),
                     ),
                     TextButton(
@@ -219,10 +216,10 @@ void showInviteSheet(BuildContext context, TribeModel tribe) {
                       ),
                       onPressed: () {
                         Clipboard.setData(
-                          ClipboardData(text: tribe.inviteLink),
+                          ClipboardData(text: tribe.inviteCode),
                         );
                         Navigator.pop(ctx);
-                        AppSnack.show(context, l.linkCopied);
+                        AppSnack.show(context, l.codeCopied);
                       },
                       child: Text(l.copy),
                     ),
@@ -230,66 +227,6 @@ void showInviteSheet(BuildContext context, TribeModel tribe) {
                 ),
               ),
             ],
-          ),
-        ),
-      );
-    },
-  );
-}
-
-/// COM-09: đổi màu nhóm (trưởng & phó nhóm).
-void showTribeColorSheet(BuildContext context, TribeModel tribe) {
-  final l = context.l10n;
-  showModalBottomSheet(
-    context: context,
-    builder: (ctx) {
-      String color = tribe.backgroundColor ?? AppColors.palette.first;
-      return StatefulBuilder(
-        builder: (ctx, setState) => SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l.tribeColor,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ColorDotPicker(
-                  colors: AppColors.palette,
-                  selected: color,
-                  size: 40,
-                  onSelected: (c) => setState(() => color = c),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final res = context.read<TribeViewModel>().updateColor(
-                        tribe.id,
-                        color,
-                      );
-                      Navigator.pop(ctx);
-                      res == TribeResult.success
-                          ? AppSnack.show(context, l.tribeColorUpdated)
-                          : AppSnack.show(
-                              context,
-                              l.tribeResult(res),
-                              type: AppSnackType.error,
-                            );
-                    },
-                    child: Text(l.save),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       );

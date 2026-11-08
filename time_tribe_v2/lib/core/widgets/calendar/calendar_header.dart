@@ -19,6 +19,7 @@ class CalendarHeader extends StatelessWidget {
     required this.onToggle,
   });
 
+  /// Dựng giao diện phần đầu lịch (tháng, năm, nút mở lịch).
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -106,6 +107,7 @@ class DayStrip extends StatefulWidget {
     this.firstDay,
   });
 
+  /// Tạo phần state giữ dữ liệu thay đổi của thanh chọn ngày.
   @override
   State<DayStrip> createState() => _DayStripState();
 }
@@ -114,6 +116,7 @@ class _DayStripState extends State<DayStrip> {
   static const double _extent = 66;
   final _controller = ScrollController();
 
+  /// Chạy một lần lúc thanh chọn ngày vừa được tạo, chuẩn bị dữ liệu ban đầu.
   @override
   void initState() {
     super.initState();
@@ -122,6 +125,7 @@ class _DayStripState extends State<DayStrip> {
     );
   }
 
+  /// Ngày đang chọn thay đổi từ bên ngoài thì cuộn thanh ngày tới ngày đó.
   @override
   void didUpdateWidget(DayStrip old) {
     super.didUpdateWidget(old);
@@ -130,15 +134,18 @@ class _DayStripState extends State<DayStrip> {
     }
   }
 
+  /// Dọn controller, listener khi thanh chọn ngày bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
+  /// Hai mốc thời gian có cùng một ngày không.
   bool _same(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
+  /// Danh sách ngày hiện trên thanh (từ ngày đầu tiên cho phép tới vài tháng sau).
   List<DateTime> get _days {
     final s = widget.selected;
     final first = widget.firstDay;
@@ -151,6 +158,7 @@ class _DayStripState extends State<DayStrip> {
         .toList();
   }
 
+  /// Cuộn thanh ngày sao cho ngày đang chọn nằm giữa.
   void _center({bool animate = true}) {
     if (!mounted || !_controller.hasClients) return;
     final index = _days.indexWhere((d) => _same(d, widget.selected));
@@ -169,6 +177,7 @@ class _DayStripState extends State<DayStrip> {
         : _controller.jumpTo(target);
   }
 
+  /// Dựng giao diện thanh chọn ngày.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -190,7 +199,10 @@ class _DayStripState extends State<DayStrip> {
           final status = deco.statusColor;
           final selected = _same(d, widget.selected);
           final isToday = _same(d, today);
-          final base = status ?? cs.onSurface.withValues(alpha: 0.12);
+          // Viền ngày thường: xám nhạt ở theme sáng cho mềm mắt, theme tối thì viền mờ
+          final neutralBorder = Theme.of(context).brightness == Brightness.dark
+              ? cs.onSurface.withValues(alpha: 0.16)
+              : Colors.grey.shade300;
 
           return GestureDetector(
             onTap: () => widget.onSelected(d),
@@ -209,9 +221,9 @@ class _DayStripState extends State<DayStrip> {
                       ? Colors.transparent
                       : (isToday
                             ? AppColors.primary
-                            : base.withValues(
-                                alpha: status == null ? 1 : 0.45,
-                              )),
+                            : status == null
+                            ? neutralBorder
+                            : status.withValues(alpha: 0.45)),
                   width: isToday ? 2 : 1,
                 ),
               ),
@@ -298,6 +310,7 @@ class MonthCalendar extends StatelessWidget {
     required this.onSelected,
   });
 
+  /// Dựng giao diện lịch tháng.
   @override
   Widget build(BuildContext context) {
     final last = DateTime(AppTime.now().year + 10);
@@ -335,6 +348,7 @@ class CalendarPanel extends StatelessWidget {
     this.decorate,
   });
 
+  /// Dựng giao diện khung lịch (đầu lịch, thanh ngày, lịch tháng).
   @override
   Widget build(BuildContext context) {
     return Column(

@@ -1,13 +1,42 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/api/api_client.dart';
+import '../../../core/session/session.dart';
 import '../models/template_model.dart';
 
-/// Kết quả nhập lịch mẫu từ link.
+/// Kết quả nhập lịch mẫu bằng mã chia sẻ.
 enum TemplateImportResult {
   success,
-  invalidLink,
+  invalidCode,
   notFound,
   duplicate,
   limitExceeded,
+  failed,
+}
+
+/// Kết quả áp dụng lịch mẫu vào lịch cá nhân.
+class ApplyTemplateResult {
+  /// Số hoạt động đã thêm và số hoạt động cũ bị thay thế.
+  final int added;
+  final int overwritten;
+
+  /// Có trùng giờ mà chưa đồng ý thay thế: số hoạt động bị trùng và các ngày bị trùng.
+  final int conflictCount;
+  final List<DateTime> conflictDates;
+
+  /// Mã lỗi khác (mất mạng...), null là không có lỗi.
+  final String? error;
+
+  const ApplyTemplateResult({
+    this.added = 0,
+    this.overwritten = 0,
+    this.conflictCount = 0,
+    this.conflictDates = const [],
+    this.error,
+  });
+
+  /// Server báo có hoạt động bị trùng giờ và chưa thêm gì.
+  bool get hasConflict => conflictCount > 0 && error == null && added == 0;
 }
 
 class TemplateLimits {
@@ -15,191 +44,166 @@ class TemplateLimits {
 }
 
 class TemplateViewModel extends ChangeNotifier {
-  final List<TemplateModel> _templates = [
-    TemplateModel(
-      id: 'tpl-1',
-      userId: 'user-123',
-      templateName: 'Tuần học NIC & Đi làm',
-      blocks: [
-        // Các block Thứ 2 (dayIndex: 1)
-        TemplateBlockModel(
-          id: 'tb-1',
-          templateId: 'tpl-1',
-          dayIndex: 1,
-          title: 'Học UI/UX',
-          startTime: const TimeOfDay(hour: 8, minute: 0),
-          endTime: const TimeOfDay(hour: 11, minute: 30),
-          colorCode: '#3A86FF',
-          description: 'Phòng Lab 3',
-        ),
-        // Các block Thứ 4 (dayIndex: 3)
-        TemplateBlockModel(
-          id: 'tb-2',
-          templateId: 'tpl-1',
-          dayIndex: 3,
-          title: 'Làm part-time',
-          startTime: const TimeOfDay(hour: 13, minute: 0),
-          endTime: const TimeOfDay(hour: 17, minute: 0),
-          colorCode: '#FFB703',
-        ),
-      ],
-    ),
-    TemplateModel(
-      id: 'tpl-2',
-      userId: 'user-123',
-      templateName: 'Quy trình tập Gym 4 ngày',
-      blocks: [
-        TemplateBlockModel(
-          id: 'tb-3',
-          templateId: 'tpl-2',
-          dayIndex: 2,
-          title: 'Push Day',
-          startTime: const TimeOfDay(hour: 17, minute: 30),
-          endTime: const TimeOfDay(hour: 19, minute: 0),
-          colorCode: '#FF007F',
-          description: 'Ngực, Vai, Tay sau',
-        ),
-        TemplateBlockModel(
-          id: 'tb-4',
-          templateId: 'tpl-2',
-          dayIndex: 4,
-          title: 'Pull Day',
-          startTime: const TimeOfDay(hour: 17, minute: 30),
-          endTime: const TimeOfDay(hour: 19, minute: 0),
-          colorCode: '#9B5DE5',
-          description: 'Lưng, Tay trước',
-        ),
-      ],
-    ),
-  ];
+  TemplateViewModel({ApiClient? api}) : _api = api ?? ApiClient.instance;
 
+  final ApiClient _api;
+
+  List<TemplateModel> _templates = [];
+
+  /// Các lịch mẫu đã tải về.
   List<TemplateModel> get templates => _templates;
 
+  bool _isLoading = false;
+
+  /// Đang tải danh sách lịch mẫu hay không.
+  bool get isLoading => _isLoading;
+
   TemplateModel? _draftTemplate;
+
+  /// Bản nháp lịch mẫu chưa lưu (nếu có).
   TemplateModel? get draftTemplate => _draftTemplate;
 
+  /// TP-01: tải danh sách lịch mẫu của mình.
+  Future<void> load() async {
+    if (Session.currentUserId.isEmpty) return;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final data = await _api.get('/templates');
+      _templates = [
+        for (final j in (data['templates'] as List)) TemplateModel.fromJson(j),
+      ];
+    } on ApiException catch (e) {
+      debugPrint('tải lịch mẫu lỗi: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Xoá dữ liệu khi đăng xuất.
+  void clear() {
+    _templates = [];
+    _draftTemplate = null;
+    notifyListeners();
+  }
+
+  /// TP-02: thoát màn hình khi chưa bấm Lưu thì giữ lại bản nháp trên máy.
   void saveDraft(TemplateModel draft) {
     _draftTemplate = draft;
     notifyListeners();
   }
 
+  /// Bỏ bản nháp sau khi đã lưu thật.
   void clearDraft() {
     _draftTemplate = null;
     notifyListeners();
   }
 
-  void deleteTemplate(String id) {
-    _templates.removeWhere((t) => t.id == id);
-    notifyListeners();
-  }
-
-  void saveTemplate(TemplateModel savedTemplate) {
-    final index = _templates.indexWhere((t) => t.id == savedTemplate.id);
-    if (index != -1) {
-      _templates[index] = savedTemplate; // Ghi đè nếu sửa
-    } else {
-      _templates.add(savedTemplate); // Lưu mới
+  /// TP-02, TP-04, TP-05, TP-07: lưu lịch mẫu lên server (tạo mới hoặc ghi đè toàn bộ khối).
+  /// Trả về mã lỗi nếu có, null là thành công.
+  Future<String?> saveTemplate(
+    TemplateModel template, {
+    required bool isNew,
+  }) async {
+    try {
+      final data = isNew
+          ? await _api.post('/templates', template.toJson())
+          : await _api.put('/templates/${template.id}', template.toJson());
+      final saved = TemplateModel.fromJson(data);
+      final index = _templates.indexWhere((t) => t.id == saved.id);
+      if (index == -1) {
+        _templates.insert(0, saved);
+      } else {
+        _templates[index] = saved;
+      }
+      _draftTemplate = null;
+      notifyListeners();
+      return null;
+    } on ApiException catch (e) {
+      return e.code;
     }
-    clearDraft();
-    notifyListeners();
   }
 
-  // Giả lập kho Lịch mẫu được chia sẻ công khai trên server.
-  // Key = share_token (phần cuối của link https://timetribe.app/t/<token>).
-  // TODO(backend): thay bằng GET /templates/shared/{token}
-  final Map<String, TemplateModel> _mockSharedTemplates = {
-    'study-week': TemplateModel(
-      id: 'shared-1',
-      userId: 'other-user',
-      templateName: 'Tuần ôn thi cuối kỳ',
-      shareToken: 'study-week',
-      blocks: [
-        TemplateBlockModel(
-          id: 'sb-1',
-          templateId: 'shared-1',
-          dayIndex: 1,
-          title: 'Ôn Toán',
-          startTime: const TimeOfDay(hour: 19, minute: 0),
-          endTime: const TimeOfDay(hour: 21, minute: 0),
-          colorCode: '#3A86FF',
-        ),
-        TemplateBlockModel(
-          id: 'sb-2',
-          templateId: 'shared-1',
-          dayIndex: 3,
-          title: 'Ôn Tiếng Anh',
-          startTime: const TimeOfDay(hour: 19, minute: 0),
-          endTime: const TimeOfDay(hour: 21, minute: 0),
-          colorCode: '#00F5D4',
-        ),
-      ],
-    ),
-  };
-
-  Future<TemplateModel?> _fetchSharedTemplate(String token) async {
-    await Future.delayed(const Duration(milliseconds: 400)); // giả lập gọi API
-    return _mockSharedTemplates[token];
+  /// TP-06: xoá lịch mẫu.
+  Future<bool> deleteTemplate(String id) async {
+    try {
+      await _api.delete('/templates/$id');
+      _templates.removeWhere((t) => t.id == id);
+      notifyListeners();
+      return true;
+    } on ApiException {
+      return false;
+    }
   }
 
-  /// Lấy share token từ link người dùng dán vào.
-  /// Chấp nhận: "https://timetribe.app/t/abc", "timetribe.app/t/abc/", "abc".
-  static String? extractShareToken(String link) {
-    final segments =
-        (Uri.tryParse(link.trim())?.pathSegments ?? const <String>[])
-            .where((s) => s.isNotEmpty)
-            .toList();
-    if (segments.isEmpty) return null;
-    return segments.last;
+  /// TP-08: lấy mã chia sẻ (server tạo mới nếu mẫu chưa từng được chia sẻ).
+  Future<String?> shareCodeOf(TemplateModel template) async {
+    if (template.shareCode != null) return template.shareCode;
+    try {
+      final data = await _api.post('/templates/${template.id}/share');
+      await load();
+      return data['share_code'];
+    } on ApiException {
+      return null;
+    }
   }
 
-  Future<TemplateImportResult> importTemplateByLink(String link) async {
-    // Chỉ cho phép lưu tối đa 10 template
+  /// TP-03: nhập lịch mẫu bằng mã chia sẻ người khác gửi.
+  Future<TemplateImportResult> importByCode(String code) async {
+    if (code.trim().isEmpty) return TemplateImportResult.invalidCode;
     if (_templates.length >= TemplateLimits.maxTemplates) {
       return TemplateImportResult.limitExceeded;
     }
+    try {
+      final data = await _api.post('/templates/import', {
+        'share_code': code.trim(),
+      });
+      _templates.insert(0, TemplateModel.fromJson(data));
+      notifyListeners();
+      return TemplateImportResult.success;
+    } on ApiException catch (e) {
+      return switch (e.code) {
+        'invalid_code' => TemplateImportResult.invalidCode,
+        'not_found' => TemplateImportResult.notFound,
+        'duplicate' => TemplateImportResult.duplicate,
+        'limit_exceeded' => TemplateImportResult.limitExceeded,
+        _ => TemplateImportResult.failed,
+      };
+    }
+  }
 
-    final token = extractShareToken(link);
-    if (token == null) return TemplateImportResult.invalidLink;
-
-    bool alreadyInStore(String key) => _templates.any(
-      (t) => t.id == key || t.originalTemplateId == key || t.shareToken == key,
-    );
-
-    // Link trỏ tới mẫu đang có sẵn trong kho của mình
-    if (alreadyInStore(token)) return TemplateImportResult.duplicate;
-
-    final shared = await _fetchSharedTemplate(token);
-    if (shared == null) return TemplateImportResult.notFound;
-
-    if (alreadyInStore(shared.id)) return TemplateImportResult.duplicate;
-
-    // Chép mẫu về kho (id mới, ghi nhớ id gốc để chặn nhập trùng lần sau)
-    final newId = DateTime.now().millisecondsSinceEpoch.toString();
-    final newTemplate = TemplateModel(
-      id: newId,
-      userId: 'current-user-id',
-      originalTemplateId: shared.id,
-      templateName: shared.templateName,
-      blocks: shared.blocks
-          .map(
-            (b) => TemplateBlockModel(
-              id: '$newId-${b.id}',
-              templateId: newId,
-              dayIndex: b.dayIndex,
-              title: b.title,
-              description: b.description,
-              startTime: b.startTime,
-              endTime: b.endTime,
-              colorCode: b.colorCode,
-              remind: b.remind,
-            ),
-          )
-          .toList(),
-    );
-
-    _templates.add(newTemplate);
-    notifyListeners();
-
-    return TemplateImportResult.success;
+  /// TP-09: áp dụng lịch mẫu cho các thứ đã chọn trong [weeks] tuần tới.
+  /// Lần đầu gọi với replace = false, nếu trùng giờ thì kết quả có hasConflict để
+  /// hỏi người dùng, đồng ý thì gọi lại với replace = true.
+  Future<ApplyTemplateResult> applyTemplate(
+    String templateId, {
+    required List<int> days,
+    required int weeks,
+    required bool replace,
+  }) async {
+    try {
+      final data = await _api.post('/templates/$templateId/apply', {
+        'day_indexes': days,
+        'weeks': weeks,
+        'replace_conflicts': replace,
+      });
+      return ApplyTemplateResult(
+        added: data['added'] ?? 0,
+        overwritten: data['overwritten'] ?? 0,
+      );
+    } on ApiException catch (e) {
+      if (e.code == 'conflict' && e.details is Map) {
+        final d = e.details as Map;
+        return ApplyTemplateResult(
+          conflictCount: d['conflict_count'] ?? 0,
+          conflictDates: [
+            for (final s in (d['conflict_dates'] as List? ?? const []))
+              DateTime.parse(s.toString()),
+          ],
+        );
+      }
+      return ApplyTemplateResult(error: e.code);
+    }
   }
 }

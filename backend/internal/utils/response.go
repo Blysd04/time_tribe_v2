@@ -11,14 +11,17 @@ import (
 // thành công: {"success": true, "message": "...", "data": ...}
 // thất bại:   {"success": false, "error": {"code": "...", "message": "...", "details": ...}}
 
+// OK trả HTTP 200 với dữ liệu.
 func OK(c *gin.Context, message string, data any) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": message, "data": data})
 }
 
+// Created trả HTTP 201 khi vừa tạo mới dữ liệu.
 func Created(c *gin.Context, message string, data any) {
 	c.JSON(http.StatusCreated, gin.H{"success": true, "message": message, "data": data})
 }
 
+// Fail trả lỗi: lỗi nghiệp vụ thì trả đúng mã, lỗi lạ thì ghi log và trả 500.
 func Fail(c *gin.Context, err error) {
 	if ae, ok := AsAppError(err); ok {
 		c.AbortWithStatusJSON(ae.Status, gin.H{"success": false, "error": ae})

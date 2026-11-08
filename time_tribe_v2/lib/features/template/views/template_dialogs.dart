@@ -39,7 +39,7 @@ void showTemplateAddOptions(BuildContext context) {
         ),
       ),
       SheetOption(
-        icon: Icons.link_rounded,
+        icon: Icons.vpn_key_outlined,
         color: AppColors.success,
         title: l.importTemplate,
         subtitle: l.importTemplateHint,
@@ -50,23 +50,24 @@ void showTemplateAddOptions(BuildContext context) {
   );
 }
 
-/// Nhập lịch mẫu từ link chia sẻ. Lỗi hiện ngay trong hộp thoại.
+/// Nhập lịch mẫu bằng mã chia sẻ. Lỗi hiện ngay trong hộp thoại.
 Future<void> showImportTemplateDialog(BuildContext context) async {
   final l = context.l10n;
   final vm = context.read<TemplateViewModel>();
   final result = await showInputDialog<TemplateImportResult>(
     context,
     title: l.importTemplate,
-    hint: 'timetribe.app/t/xyz',
+    description: l.importTemplateCodeHint,
+    hint: 'GYM4DAY',
     confirmLabel: l.importAction,
     confirmColor: AppColors.success,
-    prefixIcon: Icons.link,
+    prefixIcon: Icons.vpn_key_outlined,
     onSubmit: (value) async {
-      if (value.trim().isEmpty) return InputOutcome.error(l.errorLinkEmpty);
-      final res = await vm.importTemplateByLink(value);
+      if (value.trim().isEmpty) return InputOutcome.error(l.errorCodeEmpty);
+      final res = await vm.importByCode(value);
       return switch (res) {
-        TemplateImportResult.invalidLink => InputOutcome.error(
-          l.errorInvalidLink,
+        TemplateImportResult.invalidCode => InputOutcome.error(
+          l.errorCodeEmpty,
         ),
         TemplateImportResult.notFound => InputOutcome.error(
           l.errorTemplateNotFound,
@@ -77,6 +78,7 @@ Future<void> showImportTemplateDialog(BuildContext context) async {
         TemplateImportResult.limitExceeded => InputOutcome.error(
           l.errorTemplateLimit(TemplateLimits.maxTemplates),
         ),
+        TemplateImportResult.failed => InputOutcome.error(l.errorServer),
         TemplateImportResult.success => const InputOutcome.done(
           TemplateImportResult.success,
         ),
@@ -88,14 +90,19 @@ Future<void> showImportTemplateDialog(BuildContext context) async {
   }
 }
 
-/// Chia sẻ lịch mẫu bằng link.
-void showShareTemplateSheet(BuildContext context, TemplateModel template) {
+/// TP-08: chia sẻ lịch mẫu bằng mã. Lấy mã từ server rồi hiện kèm nút sao chép.
+Future<void> showShareTemplateSheet(
+  BuildContext context,
+  TemplateModel template,
+) async {
   final l = context.l10n;
-  final safeId = template.id.length > 8
-      ? template.id.substring(0, 8)
-      : template.id;
-  final link = 'https://timetribe.app/t/${template.shareToken ?? safeId}';
-  showModalBottomSheet(
+  final code = await context.read<TemplateViewModel>().shareCodeOf(template);
+  if (!context.mounted) return;
+  if (code == null) {
+    AppSnack.show(context, l.errorServer, type: AppSnackType.error);
+    return;
+  }
+  await showModalBottomSheet(
     context: context,
     builder: (ctx) {
       final cs = Theme.of(ctx).colorScheme;
@@ -141,12 +148,19 @@ void showShareTemplateSheet(BuildContext context, TemplateModel template) {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.link,
+                      Icons.vpn_key_outlined,
                       color: cs.onSurface.withValues(alpha: 0.5),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(link, overflow: TextOverflow.ellipsis),
+                      child: SelectableText(
+                        code,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
+                        ),
+                      ),
                     ),
                     TextButton(
                       style: TextButton.styleFrom(
@@ -158,9 +172,9 @@ void showShareTemplateSheet(BuildContext context, TemplateModel template) {
                         ),
                       ),
                       onPressed: () {
-                        Clipboard.setData(ClipboardData(text: link));
+                        Clipboard.setData(ClipboardData(text: code));
                         Navigator.pop(ctx);
-                        AppSnack.show(context, l.linkCopied);
+                        AppSnack.show(context, l.codeCopied);
                       },
                       child: Text(l.copy),
                     ),

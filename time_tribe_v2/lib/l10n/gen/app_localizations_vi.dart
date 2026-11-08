@@ -640,7 +640,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get importTemplate => 'Nhập bằng liên kết';
 
   @override
-  String get importTemplateHint => 'Dán link chia sẻ từ bạn bè';
+  String get importTemplateHint => 'Nhập mã chia sẻ từ bạn bè';
 
   @override
   String get importAction => 'Nhập';
@@ -652,8 +652,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get errorLinkEmpty => 'Bạn chưa dán link vào';
 
   @override
-  String get errorTemplateNotFound =>
-      'Không tìm thấy lịch mẫu nào với link này';
+  String get errorTemplateNotFound => 'Không tìm thấy lịch mẫu nào với mã này';
 
   @override
   String get errorTemplateDuplicate => 'Lịch mẫu này đã có trong kho rồi';
@@ -734,7 +733,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get shareTemplateDescription =>
-      'Ai có link này đều có thể xem và chép lịch mẫu này về tài khoản của họ.';
+      'Gửi mã này cho bạn bè, họ nhập mã ở mục Nhập lịch mẫu để chép về tài khoản của họ.';
 
   @override
   String get addActivity => 'Thêm hoạt động';
@@ -1166,4 +1165,102 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get errorItemGone => 'Dữ liệu này không còn tồn tại';
+
+  @override
+  String get errorNameLength => 'Tên hiển thị phải từ 2 đến 100 ký tự';
+
+  @override
+  String get errorPasswordTooShort => 'Mật khẩu tối thiểu 6 ký tự';
+
+  @override
+  String get errorEmailTaken => 'Email này đã được sử dụng';
+
+  @override
+  String get errorNameTaken => 'Tên hiển thị này đã có người dùng';
+
+  @override
+  String get errorAccountBanned => 'Tài khoản của bạn đang bị khoá';
+
+  @override
+  String get errorAccountDeleted => 'Tài khoản này đã bị xoá';
+
+  @override
+  String get errorGoogleAccount =>
+      'Tài khoản này đăng nhập bằng Google, hãy chọn Đăng nhập với Google';
+
+  @override
+  String get errorGoogleFailed =>
+      'Đăng nhập Google không thành công, vui lòng thử lại';
+
+  @override
+  String get errorGoogleUnsupported =>
+      'Thiết bị này chưa hỗ trợ đăng nhập Google';
+
+  @override
+  String get errorNetwork =>
+      'Không kết nối được máy chủ, vui lòng kiểm tra mạng';
+
+  @override
+  String get errorServer => 'Có lỗi xảy ra, vui lòng thử lại';
+
+  @override
+  String get forgotPasswordTitle => 'Quên mật khẩu';
+
+  @override
+  String get forgotPasswordMessage =>
+      'Nhập email đã đăng ký, chúng tôi sẽ gửi đường dẫn đặt lại mật khẩu.';
+
+  @override
+  String get forgotPasswordSent =>
+      'Nếu email có trong hệ thống, đường dẫn đặt lại mật khẩu đã được gửi';
+
+  @override
+  String get sendLabel => 'Gửi';
+
+  @override
+  String get sessionEnded =>
+      'Phiên đăng nhập đã kết thúc, có thể tài khoản vừa đăng nhập trên máy khác';
+
+  @override
+  String get changeAvatar => 'Đổi ảnh đại diện';
+
+  @override
+  String get pickFromGallery => 'Chọn ảnh từ thư viện';
+
+  @override
+  String get takePhoto => 'Chụp ảnh';
+
+  @override
+  String get avatarUpdated => 'Đã cập nhật ảnh đại diện';
+
+  @override
+  String get errorBlockEnded => 'Hoạt động này đã kết thúc';
+
+  @override
+  String get pullToRefresh => 'Kéo xuống để tải lại';
+
+  @override
+  String get importTemplateCodeHint =>
+      'Nhập mã chia sẻ bạn bè gửi cho bạn, ví dụ GYM4DAY';
+
+  @override
+  String get errorCodeEmpty => 'Bạn chưa nhập mã';
+
+  @override
+  String get codeCopied => 'Đã sao chép mã!';
+
+  @override
+  String nTitleReminder(String task) {
+    return 'Sắp tới giờ: $task';
+  }
+
+  @override
+  String nBodyPersonalReminder(String task, String time) {
+    return '\"$task\" bắt đầu lúc $time.';
+  }
+
+  @override
+  String nBodyTribeReminder(String tribe, String time) {
+    return 'Hoạt động của nhóm $tribe bắt đầu lúc $time.';
+  }
 }

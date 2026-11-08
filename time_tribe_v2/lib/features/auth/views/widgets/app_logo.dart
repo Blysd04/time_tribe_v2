@@ -6,6 +6,7 @@ class AppLogo extends StatelessWidget {
   final double height;
   const AppLogo({super.key, this.height = 120});
 
+  /// Dựng giao diện logo TimeTribe.
   @override
   Widget build(BuildContext context) {
     final image = Image.asset('assets/images/splash_logo.png', height: height);

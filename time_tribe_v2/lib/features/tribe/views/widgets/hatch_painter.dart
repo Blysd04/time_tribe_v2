@@ -7,6 +7,7 @@ class HatchPainter extends CustomPainter {
 
   const HatchPainter({required this.color, this.gap = 8});
 
+  /// Vẽ các sọc chéo báo giờ bận lên canvas.
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
@@ -21,6 +22,7 @@ class HatchPainter extends CustomPainter {
     }
   }
 
+  /// Có cần vẽ lại các sọc chéo báo giờ bận không.
   @override
   bool shouldRepaint(HatchPainter oldDelegate) =>
       oldDelegate.color != color || oldDelegate.gap != gap;

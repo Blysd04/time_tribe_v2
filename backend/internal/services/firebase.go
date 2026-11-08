@@ -21,6 +21,7 @@ type FirebaseService struct {
 	Messaging *messaging.Client
 }
 
+// NewFirebaseService đọc file service account để dùng Firebase Admin SDK, thiếu file thì chỉ tắt Google và FCM.
 func NewFirebaseService(credsFile string) *FirebaseService {
 	if _, err := os.Stat(credsFile); err != nil {
 		log.Printf("không thấy file %s, tắt đăng nhập Google và thông báo đẩy", credsFile)
@@ -43,5 +44,8 @@ func NewFirebaseService(credsFile string) *FirebaseService {
 	return fs
 }
 
+// AuthEnabled cho biết có xác thực được token đăng nhập Google không.
 func (f *FirebaseService) AuthEnabled() bool { return f.Auth != nil }
+
+// PushEnabled cho biết có gửi được thông báo đẩy FCM không.
 func (f *FirebaseService) PushEnabled() bool { return f.Messaging != nil }

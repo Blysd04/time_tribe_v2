@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/models/app_user.dart';
+import '../../../core/theme/app_theme.dart';
 
 export '../../../core/models/app_user.dart';
 
-/// Chức vụ trong nhóm — enum `tribe_attendees.role`.
+/// Chức vụ trong nhóm, enum tribe_attendees.role.
 enum TribeRole {
   leader('leader'),
   viceLeader('vice_leader'),
@@ -13,6 +14,7 @@ enum TribeRole {
   final String value;
   const TribeRole(this.value);
 
+  /// Đổi chuỗi trong JSON thành enum, giá trị lạ thì coi như thành viên.
   static TribeRole fromValue(String? value) => TribeRole.values.firstWhere(
     (r) => r.value == value,
     orElse: () => TribeRole.member,
@@ -22,7 +24,7 @@ enum TribeRole {
   bool get canManageBlocks => this != TribeRole.member;
 }
 
-/// Một dòng của `tribe_attendees`, kèm thông tin user để hiển thị.
+/// Một dòng của tribe_attendees, kèm thông tin user để hiển thị.
 class TribeMember {
   final String id;
   final String tribeId;
@@ -38,8 +40,10 @@ class TribeMember {
     DateTime? joinedAt,
   }) : joinedAt = joinedAt ?? DateTime.now();
 
+  /// id của người dùng ứng với dòng thành viên này.
   String get userId => user.id;
 
+  /// Tạo bản sao với chức vụ mới.
   TribeMember copyWith({TribeRole? role}) => TribeMember(
     id: id,
     tribeId: tribeId,
@@ -48,6 +52,7 @@ class TribeMember {
     joinedAt: joinedAt,
   );
 
+  /// Đọc một dòng tribe_attendees kèm thông tin user từ JSON.
   factory TribeMember.fromJson(Map<String, dynamic> json) => TribeMember(
     id: json['id'] ?? '',
     tribeId: json['tribe_id'] ?? '',
@@ -59,15 +64,14 @@ class TribeMember {
   );
 }
 
-/// Bảng `tribes` + danh sách thành viên.
+/// Bảng tribes kèm danh sách thành viên.
 class TribeModel {
   final String id;
   final String name;
   final String createdBy;
+
+  /// Mã mời (invite_code), người khác gõ mã này để vào nhóm.
   final String inviteCode;
-  final String inviteLink;
-  final String? backgroundColor;
-  final String? backgroundImageUrl;
   final DateTime createdAt;
   final DateTime? deletedAt;
   final List<TribeMember> members;
@@ -77,19 +81,15 @@ class TribeModel {
     required this.name,
     required this.createdBy,
     required this.inviteCode,
-    String? inviteLink,
-    this.backgroundColor,
-    this.backgroundImageUrl,
     DateTime? createdAt,
     this.deletedAt,
     this.members = const [],
-  }) : inviteLink = inviteLink ?? 'https://timetribe.app/tribe/$inviteCode',
-       createdAt = createdAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now();
 
-  Color get color => backgroundColor == null
-      ? const Color(0xFF3A86FF)
-      : Color(int.parse(backgroundColor!.replaceAll('#', '0xFF')));
+  /// Màu đại diện của nhóm, sinh cố định theo id nên mỗi nhóm luôn một màu.
+  Color get color => AppColors.seeded(id);
 
+  /// Trưởng nhóm hiện tại.
   TribeMember? get leader {
     for (final m in members) {
       if (m.role == TribeRole.leader) return m;
@@ -97,9 +97,11 @@ class TribeModel {
     return null;
   }
 
+  /// Các phó nhóm.
   List<TribeMember> get viceLeaders =>
       members.where((m) => m.role == TribeRole.viceLeader).toList();
 
+  /// Tìm dòng thành viên của một người, không có thì trả null.
   TribeMember? memberOf(String userId) {
     for (final m in members) {
       if (m.userId == userId) return m;
@@ -107,9 +109,10 @@ class TribeModel {
     return null;
   }
 
+  /// Chức vụ của một người trong nhóm.
   TribeRole? roleOf(String userId) => memberOf(userId)?.role;
 
-  /// Thành viên sắp theo thứ tự: trưởng nhóm -> phó nhóm -> thành viên.
+  /// Thành viên sắp theo thứ tự: trưởng nhóm, phó nhóm, thành viên; cùng chức vụ thì ai vào trước đứng trước.
   List<TribeMember> get sortedMembers {
     final list = members.toList();
     list.sort((a, b) {
@@ -119,11 +122,9 @@ class TribeModel {
     return list;
   }
 
+  /// Tạo bản sao với vài trường thay đổi.
   TribeModel copyWith({
     String? name,
-    String? backgroundColor,
-    String? backgroundImageUrl,
-    bool clearBackgroundImage = false,
     List<TribeMember>? members,
     DateTime? deletedAt,
   }) => TribeModel(
@@ -131,24 +132,17 @@ class TribeModel {
     name: name ?? this.name,
     createdBy: createdBy,
     inviteCode: inviteCode,
-    inviteLink: inviteLink,
-    backgroundColor: backgroundColor ?? this.backgroundColor,
-    backgroundImageUrl: clearBackgroundImage
-        ? null
-        : (backgroundImageUrl ?? this.backgroundImageUrl),
     createdAt: createdAt,
     deletedAt: deletedAt ?? this.deletedAt,
     members: members ?? this.members,
   );
 
+  /// Đọc JSON backend (GET /tribes, GET /tribes/:id).
   factory TribeModel.fromJson(Map<String, dynamic> json) => TribeModel(
     id: json['id'] ?? '',
     name: json['name'] ?? '',
     createdBy: json['created_by'] ?? '',
     inviteCode: json['invite_code'] ?? '',
-    inviteLink: json['invite_link'],
-    backgroundColor: json['background_color'],
-    backgroundImageUrl: json['background_image_url'],
     createdAt: json['created_at'] != null
         ? DateTime.parse(json['created_at'])
         : null,
@@ -159,14 +153,4 @@ class TribeModel {
         .map((m) => TribeMember.fromJson(m))
         .toList(),
   );
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'created_by': createdBy,
-    'invite_code': inviteCode,
-    'invite_link': inviteLink,
-    'background_color': backgroundColor,
-    'background_image_url': backgroundImageUrl,
-  };
 }

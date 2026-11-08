@@ -21,6 +21,7 @@ class AppCard extends StatelessWidget {
     this.radius = AppSpacing.radiusCard,
   });
 
+  /// Dựng giao diện thẻ nền trắng bo góc.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -63,6 +64,7 @@ class IconBadge extends StatelessWidget {
     this.size = 40,
   });
 
+  /// Dựng giao diện icon có nền màu.
   @override
   Widget build(BuildContext context) => Container(
     width: size,
@@ -96,6 +98,7 @@ class AppListTile extends StatelessWidget {
     this.destructive = false,
   });
 
+  /// Dựng giao diện một dòng trong danh sách cài đặt.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -156,6 +159,7 @@ class AppSection extends StatelessWidget {
 
   const AppSection({super.key, this.title, required this.children});
 
+  /// Dựng giao diện nhóm các dòng có tiêu đề.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -203,6 +207,7 @@ class SectionLabel extends StatelessWidget {
     this.padding = const EdgeInsets.fromLTRB(4, 0, 4, 8),
   });
 
+  /// Dựng giao diện tiêu đề của một mục.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -235,6 +240,7 @@ class CountPill extends StatelessWidget {
 
   const CountPill(this.text, {super.key, this.color});
 
+  /// Dựng giao diện ô đếm nhỏ dạng viên thuốc.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;

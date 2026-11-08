@@ -19,6 +19,7 @@ class TribeMembersDrawer extends StatelessWidget {
   final String tribeId;
   const TribeMembersDrawer({super.key, required this.tribeId});
 
+  /// Dựng giao diện ngăn kéo danh sách thành viên.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -140,7 +141,16 @@ class TribeMembersDrawer extends StatelessWidget {
     );
   }
 
-  /// COM-12 / COM-13
+  /// Hiện lỗi khi rời nhóm không thành công.
+  void _showError(BuildContext context, TribeResult res) {
+    AppSnack.show(
+      context,
+      context.l10n.tribeResult(res),
+      type: AppSnackType.error,
+    );
+  }
+
+  /// COM-12, COM-13: rời nhóm. Trưởng nhóm còn người khác thì phải chọn người kế nhiệm trước.
   Future<void> _leave(BuildContext context, TribeModel tribe) async {
     final l = context.l10n;
     final vm = context.read<TribeViewModel>();
@@ -159,8 +169,12 @@ class TribeMembersDrawer extends StatelessWidget {
         destructive: true,
       );
       if (!ok) return;
-      vm.transferLeader(tribe.id, successor.userId);
-      vm.leaveTribe(tribe.id);
+      // Server tự chuyển quyền cho người kế nhiệm rồi cho mình rời nhóm
+      final res = await vm.leaveTribe(tribe.id, newLeaderId: successor.userId);
+      if (res != TribeResult.success) {
+        if (context.mounted) _showError(context, res);
+        return;
+      }
     } else {
       final alone = isLeader && tribe.members.length == 1;
       final ok = await AppDialogs.confirm(
@@ -173,13 +187,18 @@ class TribeMembersDrawer extends StatelessWidget {
         destructive: true,
       );
       if (!ok) return;
-      vm.leaveTribe(tribe.id);
+      final res = await vm.leaveTribe(tribe.id);
+      if (res != TribeResult.success) {
+        if (context.mounted) _showError(context, res);
+        return;
+      }
     }
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(l.leftTribe(tribe.name))));
   }
 
+  /// Hộp thoại chọn người kế nhiệm khi trưởng nhóm muốn rời nhóm.
   Future<TribeMember?> _pickSuccessor(BuildContext context, TribeModel tribe) {
     final l = context.l10n;
     final candidates = tribe.sortedMembers
@@ -262,6 +281,7 @@ class _MemberTile extends StatelessWidget {
     required this.myRole,
   });
 
+  /// Dựng giao diện một dòng thành viên.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -336,6 +356,7 @@ class _MemberMenu extends StatelessWidget {
     required this.myRole,
   });
 
+  /// Báo kết quả sau khi bổ nhiệm, bãi nhiệm, chuyển quyền.
   Future<void> _done(
     BuildContext context,
     TribeResult result,
@@ -353,6 +374,7 @@ class _MemberMenu extends StatelessWidget {
     await AppDialogs.success(context, successMessage);
   }
 
+  /// Dựng giao diện menu ba chấm của một thành viên.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -400,11 +422,10 @@ class _MemberMenu extends StatelessWidget {
       onSelected: (value) async {
         switch (value) {
           case 'vice':
-            await _done(
-              context,
-              vm.appointVice(tribe.id, member.userId),
-              l.appointedVice(name),
-            );
+            final res = await vm.appointVice(tribe.id, member.userId);
+            if (context.mounted) {
+              await _done(context, res, l.appointedVice(name));
+            }
           case 'dismiss':
             final ok = await AppDialogs.confirm(
               context,
@@ -413,11 +434,10 @@ class _MemberMenu extends StatelessWidget {
               confirmLabel: l.dismiss,
             );
             if (ok && context.mounted) {
-              await _done(
-                context,
-                vm.dismissVice(tribe.id, member.userId),
-                l.dismissedVice(name),
-              );
+              final res = await vm.dismissVice(tribe.id, member.userId);
+              if (context.mounted) {
+                await _done(context, res, l.dismissedVice(name));
+              }
             }
           case 'leader':
             final willBeVice =
@@ -434,11 +454,10 @@ class _MemberMenu extends StatelessWidget {
               confirmLabel: l.appoint,
             );
             if (ok && context.mounted) {
-              await _done(
-                context,
-                vm.transferLeader(tribe.id, member.userId),
-                l.appointedLeader(name),
-              );
+              final res = await vm.transferLeader(tribe.id, member.userId);
+              if (context.mounted) {
+                await _done(context, res, l.appointedLeader(name));
+              }
             }
           case 'kick':
             final ok = await AppDialogs.confirm(
@@ -449,7 +468,8 @@ class _MemberMenu extends StatelessWidget {
               destructive: true,
             );
             if (ok && context.mounted) {
-              final res = vm.kickMember(tribe.id, member.userId);
+              final res = await vm.kickMember(tribe.id, member.userId);
+              if (!context.mounted) return;
               res == TribeResult.success
                   ? AppSnack.show(context, l.kicked(name))
                   : AppSnack.show(

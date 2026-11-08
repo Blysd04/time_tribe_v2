@@ -21,6 +21,7 @@ type Uploader struct {
 	cld *cloudinary.Cloudinary
 }
 
+// NewUploader đọc CLOUDINARY_URL để tải ảnh lên Cloudinary, thiếu thì tắt chức năng tải ảnh.
 func NewUploader(cloudinaryURL string) *Uploader {
 	if cloudinaryURL == "" {
 		log.Println("chưa cấu hình CLOUDINARY_URL, tắt chức năng tải ảnh")

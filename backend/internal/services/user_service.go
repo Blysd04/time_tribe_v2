@@ -2,12 +2,10 @@ package services
 
 import (
 	"context"
-	"log"
 	"mime/multipart"
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"timetribe-backend/internal/models"
@@ -20,13 +18,15 @@ type UserService struct {
 	auth     *AuthService
 	tribes   *TribeService
 	uploader *Uploader
-	firebase *FirebaseService
+	notifier *NotificationService
 }
 
-func NewUserService(store *repository.Store, auth *AuthService, tribes *TribeService, up *Uploader, fb *FirebaseService) *UserService {
-	return &UserService{store: store, auth: auth, tribes: tribes, uploader: up, firebase: fb}
+// NewUserService tạo service hồ sơ người dùng.
+func NewUserService(store *repository.Store, auth *AuthService, tribes *TribeService, up *Uploader, n *NotificationService) *UserService {
+	return &UserService{store: store, auth: auth, tribes: tribes, uploader: up, notifier: n}
 }
 
+// Me lấy hồ sơ của chính mình (users + vài cột của user_securities).
 func (s *UserService) Me(ctx context.Context, userID string) (*MeResponse, error) {
 	u, err := s.store.UserByID(ctx, userID)
 	if err != nil {
@@ -138,45 +138,23 @@ func (s *UserService) DeleteAccount(ctx context.Context, userID, reason string) 
 	if _, err := s.store.UserTokens.DeleteMany(ctx, bson.M{"user_id": userID}); err != nil {
 		return nil, err
 	}
+	if err := s.notifier.ClearFCMToken(ctx, userID); err != nil {
+		return nil, err
+	}
 	return plans, nil
 }
 
-// RegisterDevice lưu mã FCM của thiết bị (token_type = fcm) và đăng ký topic thông báo chung.
-// Một mã FCM chỉ thuộc về một người, đăng nhập tài khoản khác trên cùng máy thì chuyển chủ.
-func (s *UserService) RegisterDevice(ctx context.Context, userID, fcmToken, device string) error {
-	fcmToken = strings.TrimSpace(fcmToken)
-	if fcmToken == "" {
+// UpdateFCMToken cho app cập nhật users.fcm_token khi Firebase cấp mã mới (onTokenRefresh).
+func (s *UserService) UpdateFCMToken(ctx context.Context, userID, token string) error {
+	if strings.TrimSpace(token) == "" {
 		return utils.BadRequest("validation_error", "Thiếu fcm_token")
 	}
-	now := time.Now().UTC()
-	_, err := s.store.UserTokens.UpdateOne(ctx,
-		bson.M{"token": fcmToken},
-		bson.M{
-			"$set": bson.M{
-				"user_id": userID, "token_type": models.TokenFCM, "device_info": utils.TrimPtr(&device),
-				"expires_at": now.AddDate(0, 2, 0),
-			},
-			"$setOnInsert": bson.M{"_id": uuid.NewString(), "created_at": now},
-		},
-		upsertOne())
-	if err != nil {
-		return err
-	}
-	if s.firebase.PushEnabled() {
-		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-			if _, err := s.firebase.Messaging.SubscribeToTopic(ctx, []string{fcmToken}, TopicAllUsers); err != nil {
-				log.Printf("đăng ký topic %s lỗi: %v", TopicAllUsers, err)
-			}
-		}()
-	}
-	return nil
+	return s.notifier.SaveFCMToken(ctx, userID, token)
 }
 
-func (s *UserService) UnregisterDevice(ctx context.Context, userID, fcmToken string) error {
-	_, err := s.store.UserTokens.DeleteOne(ctx, bson.M{"user_id": userID, "token": fcmToken, "token_type": models.TokenFCM})
-	return err
+// ClearFCMToken đặt fcm_token của mình về null, máy hiện tại thôi nhận thông báo đẩy.
+func (s *UserService) ClearFCMToken(ctx context.Context, userID string) error {
+	return s.notifier.ClearFCMToken(ctx, userID)
 }
 
 // SetBan dành cho admin: khoá hoặc mở khoá tài khoản.

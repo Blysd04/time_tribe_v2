@@ -38,6 +38,7 @@ class TimeGrid extends StatelessWidget {
     controller.jumpTo(offset.clamp(p.minScrollExtent, p.maxScrollExtent));
   }
 
+  /// Dựng giao diện lưới 24 giờ.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;

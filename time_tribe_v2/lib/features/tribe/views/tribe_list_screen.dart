@@ -12,18 +12,23 @@ import '../../../core/widgets/form_widgets.dart';
 import '../models/tribe_model.dart';
 import '../viewmodels/tribe_viewmodel.dart';
 import 'tribe_dialogs.dart';
+import 'tribe_texts.dart';
 import 'widgets/tribe_widgets.dart';
 
 /// COM-01: danh sách các nhóm đang tham gia.
 class TribeListScreen extends StatelessWidget {
   const TribeListScreen({super.key});
 
+  /// Dựng giao diện danh sách nhóm.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final vm = context.watch<TribeViewModel>();
     final tribes = vm.tribes;
 
+    if (tribes.isEmpty && vm.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
     if (tribes.isEmpty) {
       return EmptyState(
         icon: Icons.groups_outlined,
@@ -37,30 +42,35 @@ class TribeListScreen extends StatelessWidget {
           ),
           OutlinedButton.icon(
             onPressed: () => showJoinTribeDialog(context),
-            icon: const Icon(Icons.link),
+            icon: const Icon(Icons.vpn_key_outlined),
             label: Text(l.joinTribe),
           ),
         ],
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.page,
-        4,
-        AppSpacing.page,
-        24,
-      ),
-      children: [
-        SectionLabel(
-          l.yourTribes,
-          trailing: CountPill(
-            '${tribes.length}/${TribeLimits.maxTribesPerUser}',
-          ),
-          padding: const EdgeInsets.fromLTRB(4, 0, 0, 12),
+    // Kéo xuống để tải lại danh sách nhóm từ server
+    return RefreshIndicator(
+      onRefresh: vm.load,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.page,
+          4,
+          AppSpacing.page,
+          24,
         ),
-        for (final tribe in tribes) _TribeCard(tribe: tribe),
-      ],
+        children: [
+          SectionLabel(
+            l.yourTribes,
+            trailing: CountPill(
+              '${tribes.length}/${TribeLimits.maxTribesPerUser}',
+            ),
+            padding: const EdgeInsets.fromLTRB(4, 0, 0, 12),
+          ),
+          for (final tribe in tribes) _TribeCard(tribe: tribe),
+        ],
+      ),
     );
   }
 }
@@ -69,6 +79,7 @@ class _TribeCard extends StatelessWidget {
   final TribeModel tribe;
   const _TribeCard({required this.tribe});
 
+  /// Dựng giao diện thẻ một nhóm.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -172,6 +183,7 @@ class _NextActivity extends StatelessWidget {
   final DateTime? startUtc;
   const _NextActivity({required this.color, this.task, this.startUtc});
 
+  /// Dựng giao diện dòng hoạt động sắp tới của nhóm.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -217,12 +229,13 @@ class _NextActivity extends StatelessWidget {
   }
 }
 
-/// Menu 3 chấm — hiện mục theo chức vụ.
+/// Menu 3 chấm, hiện mục theo chức vụ.
 class _TribeMenu extends StatelessWidget {
   final TribeModel tribe;
   final TribeRole role;
   const _TribeMenu({required this.tribe, required this.role});
 
+  /// Dựng giao diện menu ba chấm của nhóm.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -252,8 +265,6 @@ class _TribeMenu extends StatelessWidget {
             showInviteSheet(context, tribe);
           case 'rename':
             showRenameTribeDialog(context, tribe);
-          case 'color':
-            showTribeColorSheet(context, tribe);
           case 'dissolve':
             final ok = await AppDialogs.confirm(
               context,
@@ -263,8 +274,17 @@ class _TribeMenu extends StatelessWidget {
               destructive: true,
             );
             if (ok && context.mounted) {
-              context.read<TribeViewModel>().dissolveTribe(tribe.id);
-              AppSnack.show(context, l.tribeDissolved(tribe.name));
+              final res = await context.read<TribeViewModel>().dissolveTribe(
+                tribe.id,
+              );
+              if (!context.mounted) return;
+              res == TribeResult.success
+                  ? AppSnack.show(context, l.tribeDissolved(tribe.name))
+                  : AppSnack.show(
+                      context,
+                      l.tribeResult(res),
+                      type: AppSnackType.error,
+                    );
             }
         }
       },
@@ -272,8 +292,6 @@ class _TribeMenu extends StatelessWidget {
         item('invite', Icons.person_add_alt_1_outlined, l.inviteShareLink),
         if (TribePermissions.canRename(role))
           item('rename', Icons.edit_outlined, l.renameTribe),
-        if (TribePermissions.canChangeColor(role))
-          item('color', Icons.palette_outlined, l.tribeColor),
         if (TribePermissions.canDissolve(role))
           item(
             'dissolve',

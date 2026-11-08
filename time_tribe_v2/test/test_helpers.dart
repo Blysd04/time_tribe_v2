@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'package:time_tribe_v2/core/l10n/l10n.dart';
@@ -16,3 +17,14 @@ Widget localizedApp(Widget home, {Locale locale = const Locale('vi')}) =>
       ],
       home: home,
     );
+
+/// Cho thời gian thật trôi (để request giả trả về) rồi vẽ lại, lặp tới khi [done] đúng.
+Future<void> pumpUntil(WidgetTester tester, bool Function() done) async {
+  for (var i = 0; i < 50 && !done(); i++) {
+    await tester.runAsync(
+      () => Future.delayed(const Duration(milliseconds: 20)),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+  expect(done(), isTrue);
+}

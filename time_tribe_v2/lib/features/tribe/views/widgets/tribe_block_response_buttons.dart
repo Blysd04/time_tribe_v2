@@ -22,12 +22,24 @@ class TribeBlockResponseButtons extends StatelessWidget {
     this.expanded = false,
   });
 
+  /// Dựng giao diện hai nút Tham gia / Không tham gia.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final vm = context.watch<TribeViewModel>();
     final block = vm.blockById(blockId);
     if (block == null) {
+      // Hoạt động nằm ngoài khoảng ngày đã tải thì hỏi server một lần
+      if (vm.ensureBlock(blockId)) {
+        return const Padding(
+          padding: EdgeInsets.only(top: 8),
+          child: SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        );
+      }
       return Padding(
         padding: const EdgeInsets.only(top: 8),
         child: Text(
@@ -43,8 +55,18 @@ class TribeBlockResponseButtons extends StatelessWidget {
     final isPast = block.endUtc.isBefore(DateTime.now().toUtc());
     final status = block.statusOf(vm.me);
 
-    void answer(AttendanceStatus s) {
-      vm.respond(blockId, s);
+    // Bấm Tham gia / Không tham gia: gửi lên server, lỗi thì báo lại
+    Future<void> answer(AttendanceStatus s) async {
+      final res = await vm.respond(blockId, s);
+      if (!context.mounted) return;
+      if (res != TribeResult.success) {
+        AppSnack.show(
+          context,
+          context.l10n.tribeResult(res),
+          type: AppSnackType.error,
+        );
+        return;
+      }
       onResponded?.call();
       AppSnack.show(
         context,

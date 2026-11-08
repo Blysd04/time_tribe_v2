@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/l10n/locale_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_dialogs.dart';
+import '../../../core/widgets/google_logo.dart';
 import '../../home/views/home_screen.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import 'register_screen.dart';
@@ -13,6 +15,7 @@ import 'widgets/auth_texts.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
+  /// Tạo phần state giữ dữ liệu thay đổi của màn hình đăng nhập.
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -22,24 +25,73 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
+  /// Bấm nút Đăng nhập: gọi API, thành công thì sang trang chủ, lỗi chung thì hiện snackbar.
   Future<void> _handleLogin() async {
-    final success = await context.read<AuthViewModel>().login(
+    final vm = context.read<AuthViewModel>();
+    final success = await vm.login(
       _emailController.text,
       _passwordController.text,
     );
-    if (success && mounted) {
+    _afterAuth(vm, success);
+  }
+
+  /// Bấm nút Đăng nhập với Google.
+  Future<void> _handleGoogle() async {
+    final vm = context.read<AuthViewModel>();
+    final success = await vm.loginWithGoogle();
+    _afterAuth(vm, success);
+  }
+
+  /// Xử lý chung sau khi đăng nhập: vào trang chủ hoặc báo lỗi.
+  void _afterAuth(AuthViewModel vm, bool success) {
+    if (!mounted) return;
+    if (success) {
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, _, _) => HomeScreen(),
+          pageBuilder: (_, _, _) => const HomeScreen(),
           transitionsBuilder: (_, animation, _, child) =>
               FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 400),
         ),
       );
+    } else if (vm.generalError != null) {
+      AppSnack.show(
+        context,
+        context.l10n.authError(vm.generalError)!,
+        type: AppSnackType.error,
+      );
     }
   }
 
+  /// Quên mật khẩu: nhập email, server gửi đường dẫn đặt lại mật khẩu về email đó.
+  Future<void> _forgotPassword() async {
+    final l = context.l10n;
+    final vm = context.read<AuthViewModel>();
+    final sent = await showInputDialog<bool>(
+      context,
+      title: l.forgotPasswordTitle,
+      description: l.forgotPasswordMessage,
+      hint: l.email,
+      initialValue: _emailController.text.contains('@')
+          ? _emailController.text.trim()
+          : '',
+      confirmLabel: l.sendLabel,
+      prefixIcon: Icons.email_outlined,
+      onSubmit: (value) async {
+        final ok = await vm.forgotPassword(value);
+        if (ok) return const InputOutcome.done(true);
+        return InputOutcome.error(
+          l.authError(vm.emailError ?? vm.generalError) ?? l.errorServer,
+        );
+      },
+    );
+    if (sent == true && mounted) {
+      AppSnack.show(context, l.forgotPasswordSent);
+    }
+  }
+
+  /// Dọn controller, listener khi màn hình đăng nhập bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     _emailController.dispose();
@@ -47,6 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// Dựng giao diện màn hình đăng nhập.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -135,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const Spacer(),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: _forgotPassword,
                         style: TextButton.styleFrom(
                           foregroundColor: cs.onSurface.withValues(alpha: 0.7),
                         ),
@@ -168,15 +221,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(52),
                     ),
-                    onPressed: () {},
-                    icon: const Text(
-                      'G',
-                      style: TextStyle(
-                        color: Color(0xFFDB4437),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
+                    onPressed: vm.isLoading ? null : _handleGoogle,
+                    icon: const GoogleLogo(size: 20),
                     label: Text(l.loginWithGoogle),
                   ),
                   const SizedBox(height: 24),

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/l10n/l10n.dart';
+import '../../../core/services/push_service.dart';
+import '../../../core/session/app_reset.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../notifications/viewmodels/notification_viewmodel.dart';
 import '../../notifications/views/notification_screen.dart';
@@ -13,13 +16,54 @@ import '../../timeblock/viewmodels/timeblock_viewmodel.dart';
 import '../../timeblock/views/add_edit_timeblock_screen.dart';
 import '../../timeblock/views/timeblock_home_tab.dart';
 import '../../tribe/views/tribe_dialogs.dart';
+import '../../tribe/viewmodels/tribe_viewmodel.dart';
 import '../../tribe/views/tribe_list_screen.dart';
 import '../viewmodels/home_viewmodel.dart';
 
-class HomeScreen extends StatelessWidget {
-  HomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
+  /// Tạo phần state giữ dữ liệu thay đổi của trang chủ.
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  /// Chạy một lần lúc trang chủ vừa được tạo, chuẩn bị dữ liệu ban đầu.
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+  }
+
+  /// Dọn controller, listener khi trang chủ bị đóng để không rò bộ nhớ.
+  @override
+  void dispose() {
+    PushService.onMessage = null;
+    PushService.onTokenRefresh = null;
+    super.dispose();
+  }
+
+  /// Vừa vào trang chủ: tải dữ liệu thật từ server và bật thông báo đẩy.
+  Future<void> _bootstrap() async {
+    final notifications = context.read<NotificationViewModel>();
+    final tribes = context.read<TribeViewModel>();
+    // Có thông báo đẩy mới lúc app đang mở thì tải lại thông báo và nhóm
+    PushService.onMessage = () {
+      notifications.load(silent: true);
+      tribes.load();
+    };
+    // Firebase cấp mã FCM mới thì gửi lên server
+    PushService.onTokenRefresh = (token) {
+      ApiClient.instance
+          .put('/users/me/fcm-token', {'fcm_token': token})
+          .catchError((_) => null);
+    };
+    PushService.requestPermission();
+    await AppData.loadAll(context);
+  }
 
   /// Nút "+" giữa thanh điều hướng: hành động theo mục đang mở.
   void _onAdd(BuildContext context, HomeViewModel home) {
@@ -39,6 +83,7 @@ class HomeScreen extends StatelessWidget {
     }
   }
 
+  /// Dựng giao diện trang chủ.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -230,6 +275,7 @@ class _DrawerItem extends StatelessWidget {
     required this.onTap,
   });
 
+  /// Dựng giao diện một mục trong menu bên trái.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;

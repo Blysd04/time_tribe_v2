@@ -10,6 +10,7 @@ import 'widgets/auth_texts.dart';
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
+  /// Tạo phần state giữ dữ liệu thay đổi của màn hình đăng ký.
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
@@ -22,20 +23,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePass = true;
   bool _obscureConfirm = true;
 
+  /// Bấm Đăng ký: lỗi từng ô hiện ngay dưới ô đó, lỗi chung (mất mạng...) hiện snackbar.
   Future<void> _handleRegister() async {
     final l = context.l10n;
-    final success = await context.read<AuthViewModel>().register(
+    final vm = context.read<AuthViewModel>();
+    final success = await vm.register(
       _nameController.text,
       _emailController.text,
       _passwordController.text,
       _confirmController.text,
     );
-    if (success && mounted) {
+    if (!mounted) return;
+    if (success) {
       AppSnack.show(context, l.registerSuccess);
       Navigator.pop(context);
+    } else if (vm.generalError != null) {
+      AppSnack.show(
+        context,
+        l.authError(vm.generalError)!,
+        type: AppSnackType.error,
+      );
     }
   }
 
+  /// Dọn controller, listener khi màn hình đăng ký bị đóng để không rò bộ nhớ.
   @override
   void dispose() {
     _nameController.dispose();
@@ -45,6 +56,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  /// Dựng giao diện màn hình đăng ký.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
