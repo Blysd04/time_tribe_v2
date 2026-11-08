@@ -36,6 +36,8 @@ type NotifyInput struct {
 	Args          map[string]string
 	ReferenceID   *string
 	ReferenceType *string
+	// SkipPush: chỉ lưu vào danh sách thông báo, không gửi FCM (VD nhắc bù khi hoạt động đã bắt đầu)
+	SkipPush bool
 }
 
 // Notify lưu thông báo vào DB cho từng người nhận rồi gửi FCM ở goroutine riêng,
@@ -85,6 +87,9 @@ func (s *NotificationService) Notify(ctx context.Context, in NotifyInput) {
 	}
 	if in.ReferenceType != nil {
 		data["reference_type"] = *in.ReferenceType
+	}
+	if in.SkipPush {
+		return
 	}
 	go s.pushToUsers(recipients, title, body, data)
 }
@@ -214,6 +219,8 @@ func (s *NotificationService) List(ctx context.Context, userID, filter string) (
 	out := make([]NotificationDTO, 0, len(rows))
 	for _, n := range rows {
 		dto := toNotificationDTO(n)
+		// Thông báo chung: đã đọc hay chưa tính riêng cho từng người
+		dto.IsRead = n.IsReadBy(userID)
 		switch filter {
 		case "", "all":
 		case "personal":
@@ -231,11 +238,15 @@ func (s *NotificationService) List(ctx context.Context, userID, filter string) (
 }
 
 // UnreadSummary đếm thông báo chưa đọc: tổng, cá nhân và theo từng nhóm (để hiện badge trên chip lọc).
-// Thông báo chung của admin không tính vào vì cột is_read của nó dùng chung cho mọi người.
+// Thông báo chung của admin tính vào mục cá nhân nếu người này chưa đọc.
 func (s *NotificationService) UnreadSummary(ctx context.Context, userID string) (map[string]any, error) {
 	since := time.Now().UTC().AddDate(0, 0, -models.NotificationRetentionDays)
 	rows, err := repository.FindMany[models.Notification](ctx, s.store.Notifications, bson.M{
-		"user_id": userID, "is_read": false, "created_at": bson.M{"$gte": since},
+		"$or": bson.A{
+			bson.M{"user_id": userID, "is_read": false},
+			bson.M{"user_id": nil, "read_by": bson.M{"$ne": userID}},
+		},
+		"created_at": bson.M{"$gte": since},
 	})
 	if err != nil {
 		return nil, err
@@ -253,13 +264,22 @@ func (s *NotificationService) UnreadSummary(ctx context.Context, userID string) 
 	return map[string]any{"total": len(rows), "personal": personal, "by_tribe": byTribe}, nil
 }
 
-// MarkRead (NOTI-02) đánh dấu một thông báo của mình là đã đọc.
+// MarkRead (NOTI-02) đánh dấu một thông báo của mình (hoặc thông báo chung) là đã đọc.
 func (s *NotificationService) MarkRead(ctx context.Context, userID, id string) error {
 	res, err := s.store.Notifications.UpdateOne(ctx,
 		bson.M{"_id": id, "user_id": userID},
 		bson.M{"$set": bson.M{"is_read": true}})
 	if err != nil {
 		return err
+	}
+	if res.MatchedCount == 0 {
+		// Thông báo chung: ghi id người đọc vào read_by
+		res, err = s.store.Notifications.UpdateOne(ctx,
+			bson.M{"_id": id, "user_id": nil},
+			bson.M{"$addToSet": bson.M{"read_by": userID}})
+		if err != nil {
+			return err
+		}
 	}
 	if res.MatchedCount == 0 {
 		return utils.NotFound("not_found_item", "Không tìm thấy thông báo")
@@ -275,7 +295,13 @@ func (s *NotificationService) MarkAllRead(ctx context.Context, userID string) (i
 	if err != nil {
 		return 0, err
 	}
-	return res.ModifiedCount, nil
+	shared, err := s.store.Notifications.UpdateMany(ctx,
+		bson.M{"user_id": nil, "read_by": bson.M{"$ne": userID}},
+		bson.M{"$addToSet": bson.M{"read_by": userID}})
+	if err != nil {
+		return 0, err
+	}
+	return res.ModifiedCount + shared.ModifiedCount, nil
 }
 
 // Broadcast: admin gửi thông báo chung, lưu một bản ghi user_id = null và đẩy qua topic.

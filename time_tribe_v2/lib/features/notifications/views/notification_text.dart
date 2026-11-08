@@ -1,5 +1,16 @@
 import '../../../core/l10n/l10n.dart';
+import '../../../core/utils/app_time.dart';
 import '../models/app_notification.dart';
+
+/// Giờ bắt đầu của hoạt động nhóm theo giờ trên máy: ưu tiên mốc UTC `start_at`
+/// (đổi bằng AppTime), thông báo cũ không có thì dùng chữ `time` server gửi sẵn.
+String _groupStartTime(Map<String, String> a) {
+  final utc = DateTime.tryParse(a['start_at'] ?? '');
+  if (utc == null) return a['time'] ?? '';
+  final local = AppTime.fromUtc(utc);
+  String two(int v) => v.toString().padLeft(2, '0');
+  return '${two(local.hour)}:${two(local.minute)}';
+}
 
 /// Dựng tiêu đề và nội dung thông báo theo ngôn ngữ đang chọn.
 extension NotificationTextX on AppLocalizations {
@@ -75,7 +86,7 @@ extension NotificationTextX on AppLocalizations {
       ),
       NotificationKind.tribeReminder => nBodyTribeReminder(
         tribe,
-        a['time'] ?? '',
+        _groupStartTime(a),
       ),
       NotificationKind.systemBroadcast => n.rawContent,
     };

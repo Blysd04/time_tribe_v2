@@ -90,7 +90,7 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Múi giờ IANA đang có hiệu lực -> giá trị gửi lên `users.timezone`.
   String get timezone => _isAutoTimezone
-      ? (_deviceTimezoneId ?? DateTime.now().timeZoneName)
+      ? (_deviceTimezoneId ?? AppTime.resolveDeviceTimezone(null))
       : (_manualTimezoneId ?? 'Asia/Ho_Chi_Minh');
 
   /// Độ lệch GMT hiện tại của múi giờ đang áp dụng, VD `GMT+07:00`.
@@ -102,23 +102,30 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Tên hiển thị của múi giờ thiết bị.
   String get deviceTimezoneLabel =>
-      _deviceTimezoneId ?? DateTime.now().timeZoneName;
+      _deviceTimezoneId ?? AppTime.resolveDeviceTimezone(null);
 
   /// Đọc lại múi giờ của thiết bị từ hệ điều hành.
   Future<void> refreshDeviceTimezone({bool notify = true}) async {
-    String? id;
+    String? raw;
     try {
       final info = await FlutterTimezone.getLocalTimezone();
-      id = info.identifier;
+      raw = info.identifier;
     } catch (_) {
-      id = null; // Nền tảng không hỗ trợ -> dùng tên viết tắt của Dart.
+      raw = null; // Nền tảng không hỗ trợ -> suy ra từ độ lệch giờ của máy.
     }
+    // Luôn ra một tên IANA hợp lệ và đúng độ lệch giờ đang hiện trên máy
+    final id = AppTime.resolveDeviceTimezone(raw);
     final changed = id != _deviceTimezoneId;
     _deviceTimezoneId = id;
     if (notify) {
       // Múi giờ thiết bị có thể đã đổi khi app chạy nền -> vẽ lại mọi màn hình.
       if (_isAutoTimezone) AppTime.notifyChanged();
       if (changed || _isAutoTimezone) notifyListeners();
+    }
+    // Server tính giờ nhắc lịch cá nhân theo múi giờ này, lệch là báo sai giờ
+    final serverTz = Session.currentUser?.timezone;
+    if (_isAutoTimezone && serverTz != null && serverTz != timezone) {
+      await _syncTimezone();
     }
   }
 

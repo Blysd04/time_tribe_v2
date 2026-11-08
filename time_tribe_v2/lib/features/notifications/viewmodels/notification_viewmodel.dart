@@ -82,13 +82,12 @@ class NotificationViewModel extends ChangeNotifier {
   }
 
   /// NOTI-02: đánh dấu đã đọc một thông báo. Đổi trên máy trước cho nhanh rồi mới gọi server.
-  /// Thông báo chung của admin dùng chung một dòng cho mọi người nên chỉ đổi trên máy.
+  /// Thông báo chung của admin cũng gửi lên: server ghi nhận riêng cho từng người (read_by).
   Future<void> markAsRead(String id) async {
     for (final n in _all) {
       if (n.id == id && n.isUnread) {
         n.isUnread = false;
         notifyListeners();
-        if (n.kind == NotificationKind.systemBroadcast) return;
         try {
           await _api.patch('/notifications/$id/read');
         } on ApiException catch (e) {

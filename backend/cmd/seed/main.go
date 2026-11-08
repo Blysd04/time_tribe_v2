@@ -111,6 +111,7 @@ func main() {
 		models.CollUsers, models.CollUserSecurities, models.CollUserTokens, models.CollTimeblocks,
 		models.CollTemplates, models.CollTemplateBlocks, models.CollTribes, models.CollTribeAttendees,
 		models.CollTribeBlocks, models.CollTribeBlockAttendance, models.CollNotifications,
+		models.CollWorkerState, models.CollReminderLogs,
 	} {
 		if err := db.Collection(c).Drop(ctx); err != nil {
 			log.Fatal(err)

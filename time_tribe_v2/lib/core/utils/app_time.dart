@@ -70,6 +70,35 @@ class AppTime {
     }
   }
 
+  /// Tên múi giờ IANA chắc chắn khớp với độ lệch hiện tại của thiết bị.
+  ///
+  /// Một số máy trả về tên lạ (VD `GMT+08:00`) hoặc tên không khớp với giờ đang hiện
+  /// trên máy. Gửi tên đó lên thì server từ chối hoặc tính sai giờ nhắc lịch, nên:
+  /// tên hợp lệ và đúng độ lệch thì giữ, không thì đổi sang `Etc/GMT±N`
+  /// (lưu ý dấu ngược: `Etc/GMT-7` là UTC+7), lệch lẻ phút thì tìm một múi giờ cùng độ lệch.
+  static String resolveDeviceTimezone(String? id) {
+    ensureInitialized();
+    final offset = DateTime.now().timeZoneOffset;
+    if (id != null && id.isNotEmpty) {
+      final location = findLocation(id);
+      if (location != null &&
+          tz.TZDateTime.now(location).timeZoneOffset == offset) {
+        return id;
+      }
+    }
+    if (offset.inMinutes % 60 == 0) {
+      final h = offset.inHours;
+      if (h == 0) return 'Etc/UTC';
+      return 'Etc/GMT${h > 0 ? '-' : '+'}${h.abs()}';
+    }
+    for (final location in tz.timeZoneDatabase.locations.values) {
+      if (tz.TZDateTime.now(location).timeZoneOffset == offset) {
+        return location.name;
+      }
+    }
+    return id ?? 'Etc/UTC';
+  }
+
   /// Thời gian hiện tại theo múi giờ đang áp dụng.
   static DateTime now() {
     if (isAuto) return DateTime.now();

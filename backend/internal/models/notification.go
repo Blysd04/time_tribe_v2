@@ -59,4 +59,20 @@ type Notification struct {
 	ReferenceType *string   `bson:"reference_type" json:"reference_type"`
 	IsRead        bool      `bson:"is_read" json:"is_read"`
 	CreatedAt     time.Time `bson:"created_at" json:"created_at"`
+	// ReadBy chỉ dùng cho thông báo chung (user_id = null): danh sách id người đã đọc,
+	// vì một bản ghi dùng chung cho mọi người nên không dùng được is_read.
+	ReadBy []string `bson:"read_by,omitempty" json:"-"`
+}
+
+// IsReadBy cho biết người dùng đã đọc thông báo này chưa (tính cả thông báo chung).
+func (n *Notification) IsReadBy(userID string) bool {
+	if n.UserID != nil {
+		return n.IsRead
+	}
+	for _, id := range n.ReadBy {
+		if id == userID {
+			return true
+		}
+	}
+	return false
 }
