@@ -52,3 +52,14 @@ func TestPersonalReminderVietnam(t *testing.T) {
 		}
 	}
 }
+
+// Điện thoại đặt múi giờ Vancouver: lịch 19:55 ngày 8/11, nhắc trước 5 phút -> 02:50 UTC ngày 9/11
+// (UTC-7). Dữ liệu múi giờ cũ của Go tính UTC-8 nên từng nhắc trễ 1 tiếng.
+func TestPersonalReminderVancouver(t *testing.T) {
+	start := utils.At("2026-11-08", "19:55:00", utils.LoadLocation("America/Vancouver"))
+	want := time.Date(2026, 11, 9, 2, 50, 0, 0, time.UTC)
+	at, ok, late := due(start, 5, want.Add(-time.Minute), want)
+	if !ok || late || !at.Equal(want) {
+		t.Fatalf("at=%v ok=%v late=%v, muốn %v", at.UTC(), ok, late, want)
+	}
+}

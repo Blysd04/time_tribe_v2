@@ -13,9 +13,9 @@ const (
 
 // LoadLocation trả về múi giờ IANA, sai tên thì dùng giờ Việt Nam.
 func LoadLocation(tz string) *time.Location {
-	loc, err := time.LoadLocation(tz)
+	loc, err := loadZone(tz)
 	if err != nil || tz == "" {
-		loc, _ = time.LoadLocation("Asia/Ho_Chi_Minh")
+		loc, _ = loadZone("Asia/Ho_Chi_Minh")
 	}
 	return loc
 }
@@ -25,7 +25,7 @@ func IsValidTimezone(tz string) bool {
 	if tz == "" || tz == "Local" {
 		return false
 	}
-	_, err := time.LoadLocation(tz)
+	_, err := loadZone(tz)
 	return err == nil
 }
 
