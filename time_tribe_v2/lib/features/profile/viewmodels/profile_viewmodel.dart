@@ -133,18 +133,37 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      AppTime.checkDayChanged();
       refreshDeviceTimezone();
     }
   }
 
   /// Gán hồ sơ lấy từ server (sau khi đăng nhập hoặc mở app).
-  /// Múi giờ đang dùng trên máy được gửi lên server nếu khác, để giờ nhắc lịch và
-  /// giờ hoạt động nhóm tính đúng theo nơi người dùng đang ở.
+  ///
+  /// Cách chọn múi giờ lấy theo CSDL (users.timezone_auto, users.timezone) để mọi máy
+  /// hiển thị giống hệt giờ đã lưu trên server:
+  /// - Tự động: dùng múi giờ thiết bị, khác với server thì gửi lên cho khớp.
+  /// - Tự chọn: dùng đúng múi giờ server đang lưu, không lấy cài đặt cũ còn trên máy.
   Future<void> loadFromSession() async {
     final user = Session.currentUser;
     if (user == null) return;
     _applyUser(user);
-    if (user.timezone != timezone) await _syncTimezone();
+    if (!user.timezoneAuto && AppTime.findLocation(user.timezone) != null) {
+      _isAutoTimezone = false;
+      _manualTimezoneId = user.timezone;
+      _manualCity = user.timezoneCity;
+      _manualCountry = user.timezoneCountry;
+    } else {
+      _isAutoTimezone = true;
+      _manualTimezoneId = null;
+      _manualCity = null;
+      _manualCountry = null;
+    }
+    _applyToAppTime();
+    AppTime.notifyChanged();
+    await _persist();
+    notifyListeners();
+    if (_isAutoTimezone && user.timezone != timezone) await _syncTimezone();
   }
 
   /// Gán thông tin hồ sơ mới nhận từ server rồi vẽ lại giao diện.
@@ -166,6 +185,8 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
     _manualCity = null;
     _manualCountry = null;
     _applyToAppTime();
+    // Xoá lựa chọn múi giờ của tài khoản cũ trên máy, tài khoản sau lấy lại từ server
+    _persist();
     notifyListeners();
   }
 
@@ -223,7 +244,12 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _syncTimezone() async {
     if (Session.currentUserId.isEmpty) return;
     try {
-      final data = await _api.patch('/users/me', {'timezone': timezone});
+      final data = await _api.patch('/users/me', {
+        'timezone': timezone,
+        'timezone_auto': _isAutoTimezone,
+        if (!_isAutoTimezone) 'timezone_city': _manualCity,
+        if (!_isAutoTimezone) 'timezone_country': _manualCountry,
+      });
       _applyUser(UserModel.fromJson(data));
     } on ApiException {
       // Bỏ qua
@@ -274,13 +300,17 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_kAutoKey, _isAutoTimezone);
-      if (_manualTimezoneId != null) {
-        await prefs.setString(_kTimezoneIdKey, _manualTimezoneId!);
+      Future<void> put(String key, String? value) async {
+        if (value == null) {
+          await prefs.remove(key);
+        } else {
+          await prefs.setString(key, value);
+        }
       }
-      if (_manualCity != null && _manualCountry != null) {
-        await prefs.setString(_kCityKey, _manualCity!);
-        await prefs.setString(_kCountryKey, _manualCountry!);
-      }
+
+      await put(_kTimezoneIdKey, _manualTimezoneId);
+      await put(_kCityKey, _manualCity);
+      await put(_kCountryKey, _manualCountry);
     } catch (_) {
       // Bỏ qua lỗi lưu cục bộ, cấu hình vẫn có hiệu lực trong phiên hiện tại.
     }

@@ -48,6 +48,10 @@ type UpdateMeInput struct {
 	Timezone *string `json:"timezone"`
 	// Chỉ nhận false: app báo người dùng đã xem xong phần chào mừng
 	NeedsOnboarding *bool `json:"needs_onboarding"`
+	// Cách chọn múi giờ: true = theo thiết bị; false = tự chọn, kèm thành phố và mã quốc gia để hiển thị
+	TimezoneAuto    *bool   `json:"timezone_auto"`
+	TimezoneCity    *string `json:"timezone_city"`
+	TimezoneCountry *string `json:"timezone_country"`
 }
 
 // UpdateMe (INFO-01, INFO-04): sửa tên hiển thị, email, múi giờ IANA.
@@ -80,6 +84,21 @@ func (s *UserService) UpdateMe(ctx context.Context, userID string, in UpdateMeIn
 			set["timezone"] = *in.Timezone
 		}
 	}
+	unset := bson.M{}
+	if in.TimezoneAuto != nil {
+		set["timezone_auto"] = *in.TimezoneAuto
+		if *in.TimezoneAuto {
+			// Theo thiết bị thì bỏ thành phố đã chọn trước đó
+			unset["timezone_city"], unset["timezone_country"] = "", ""
+		} else {
+			if in.TimezoneCity != nil {
+				set["timezone_city"] = strings.TrimSpace(*in.TimezoneCity)
+			}
+			if in.TimezoneCountry != nil {
+				set["timezone_country"] = strings.TrimSpace(*in.TimezoneCountry)
+			}
+		}
+	}
 	if in.NeedsOnboarding != nil && !*in.NeedsOnboarding {
 		set["needs_onboarding"] = false
 	}
@@ -93,7 +112,11 @@ func (s *UserService) UpdateMe(ctx context.Context, userID string, in UpdateMeIn
 		return nil, err
 	}
 	set["updated_at"] = time.Now().UTC()
-	if _, err := s.store.Users.UpdateOne(ctx, repository.ByID(userID), bson.M{"$set": set}); err != nil {
+	update := bson.M{"$set": set}
+	if len(unset) > 0 {
+		update["$unset"] = unset
+	}
+	if _, err := s.store.Users.UpdateOne(ctx, repository.ByID(userID), update); err != nil {
 		if repository.IsDuplicateKey(err) {
 			return nil, utils.Conflict("account_exists", "Email hoặc tên hiển thị đã được sử dụng")
 		}

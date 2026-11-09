@@ -49,11 +49,13 @@ type MeResponse struct {
 	Role         string `json:"role"`
 	AuthProvider string `json:"auth_provider"`
 	HasPassword  bool   `json:"has_password"`
+	TimezoneAuto bool   `json:"timezone_auto"`
 }
 
 // buildMe ghép users và user_securities thành dữ liệu trả về cho app.
 func buildMe(u *models.User, sec *models.UserSecurity) *MeResponse {
-	return &MeResponse{User: *u, Role: sec.Role, AuthProvider: sec.AuthProvider, HasPassword: sec.PasswordHash != nil}
+	return &MeResponse{User: *u, Role: sec.Role, AuthProvider: sec.AuthProvider, HasPassword: sec.PasswordHash != nil,
+		TimezoneAuto: u.IsTimezoneAuto()}
 }
 
 type RegisterInput struct {

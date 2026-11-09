@@ -33,10 +33,18 @@ type User struct {
 	FCMToken  *string `bson:"fcm_token" json:"fcm_token"`
 	// NeedsOnboarding = true với tài khoản mới tạo, app hiện màn hình chào mừng + hướng dẫn
 	// rồi gửi false lên. Tài khoản cũ không có trường này nên coi như đã xong.
-	NeedsOnboarding bool      `bson:"needs_onboarding,omitempty" json:"needs_onboarding"`
+	NeedsOnboarding bool `bson:"needs_onboarding,omitempty" json:"needs_onboarding"`
+	// Cách chọn múi giờ, lưu trên server để mọi máy của người dùng hiển thị giống nhau.
+	// timezone_auto: nil/true = theo múi giờ của thiết bị, false = người dùng tự chọn thành phố.
+	TimezoneAuto    *bool     `bson:"timezone_auto,omitempty" json:"-"`
+	TimezoneCity    *string   `bson:"timezone_city,omitempty" json:"timezone_city"`
+	TimezoneCountry *string   `bson:"timezone_country,omitempty" json:"timezone_country"`
 	CreatedAt       time.Time `bson:"created_at" json:"created_at"`
 	UpdatedAt       time.Time `bson:"updated_at" json:"updated_at"`
 }
+
+// IsTimezoneAuto: tài khoản cũ chưa có cột timezone_auto thì coi như tự động.
+func (u *User) IsTimezoneAuto() bool { return u.TimezoneAuto == nil || *u.TimezoneAuto }
 
 // AppUser là bản rút gọn để hiển thị trong danh sách thành viên, người tham gia...
 // (không lộ email của người khác).

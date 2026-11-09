@@ -32,6 +32,7 @@ Future<void> main() async {
 
   // Nạp múi giờ, ngôn ngữ, giao diện đã lưu trước khi vẽ giao diện
   AppTime.ensureInitialized();
+  AppTime.startDayWatcher();
   final profileViewModel = ProfileViewModel();
   final localeProvider = LocaleProvider();
   final themeProvider = ThemeProvider();

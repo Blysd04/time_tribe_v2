@@ -654,6 +654,8 @@ class TribeBlockTile extends StatelessWidget {
     final declined = block.userIdsWith(AttendanceStatus.declined).length;
     final pending = block.attendance.length - accepted - declined;
     final isPast = block.endUtc.isBefore(DateTime.now().toUtc());
+    // Làm mờ giống lịch cá nhân: chỉ khi hoạt động thuộc ngày đã qua (theo múi giờ đang dùng)
+    final isPastDay = !block.endUtc.isAfter(AppTime.toUtc(AppTime.today()));
 
     return TimeblockCard(
       title: block.task,
@@ -663,8 +665,8 @@ class TribeBlockTile extends StatelessWidget {
       icon: Icons.groups_rounded,
       // Mình chưa xác nhận -> viền nét; mình không tham gia / đã qua -> mờ
       outlined: myStatus == AttendanceStatus.pending && !isPast,
-      dimmed: isPast || myStatus == AttendanceStatus.declined,
-      done: isPast && myStatus == AttendanceStatus.accepted,
+      dimmed: isPastDay || myStatus == AttendanceStatus.declined,
+      done: isPastDay && myStatus == AttendanceStatus.accepted,
       footer: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
@@ -54,6 +56,27 @@ class AppTime {
     _manualLocation = location;
     notifyChanged();
     return true;
+  }
+
+  static Timer? _dayWatcher;
+  static DateTime? _lastDay;
+
+  /// Theo dõi lúc sang ngày mới (app để mở qua nửa đêm): báo [changes] để
+  /// "Hôm nay", vạch giờ hiện tại và lịch đang xem chuyển sang ngày mới. Gọi 1 lần trong `main()`.
+  static void startDayWatcher() {
+    _lastDay = today();
+    _dayWatcher ??= Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => checkDayChanged(),
+    );
+  }
+
+  /// Kiểm tra đã sang ngày mới chưa (cũng gọi khi app quay lại từ nền).
+  static void checkDayChanged() {
+    final t = today();
+    final changed = _lastDay != null && t != _lastDay;
+    _lastDay = t;
+    if (changed) notifyChanged();
   }
 
   /// Báo cho các widget đang lắng nghe biết cần vẽ lại

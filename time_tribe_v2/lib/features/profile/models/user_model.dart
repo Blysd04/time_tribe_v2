@@ -12,6 +12,13 @@ class UserModel {
 
   /// Tài khoản mới tạo, chưa xem màn hình chào mừng / hướng dẫn.
   final bool needsOnboarding;
+
+  /// Cách chọn múi giờ lưu trên server: true = theo thiết bị, false = tự chọn thành phố.
+  final bool timezoneAuto;
+
+  /// Thành phố + mã quốc gia khi tự chọn múi giờ.
+  final String? timezoneCity;
+  final String? timezoneCountry;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -26,6 +33,9 @@ class UserModel {
     this.authProvider = 'local',
     this.hasPassword = true,
     this.needsOnboarding = false,
+    this.timezoneAuto = true,
+    this.timezoneCity,
+    this.timezoneCountry,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) : createdAt = createdAt ?? DateTime.now(),
@@ -44,6 +54,9 @@ class UserModel {
       authProvider: json['auth_provider'] ?? 'local',
       hasPassword: json['has_password'] ?? true,
       needsOnboarding: json['needs_onboarding'] == true,
+      timezoneAuto: json['timezone_auto'] != false,
+      timezoneCity: json['timezone_city'],
+      timezoneCountry: json['timezone_country'],
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
