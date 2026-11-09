@@ -19,6 +19,9 @@ class UserModel {
   /// Thành phố + mã quốc gia khi tự chọn múi giờ.
   final String? timezoneCity;
   final String? timezoneCountry;
+
+  /// Email mới đang chờ bấm link xác nhận, email thật chỉ đổi sau khi xác nhận.
+  final String? pendingEmail;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -36,6 +39,7 @@ class UserModel {
     this.timezoneAuto = true,
     this.timezoneCity,
     this.timezoneCountry,
+    this.pendingEmail,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) : createdAt = createdAt ?? DateTime.now(),
@@ -57,6 +61,7 @@ class UserModel {
       timezoneAuto: json['timezone_auto'] != false,
       timezoneCity: json['timezone_city'],
       timezoneCountry: json['timezone_country'],
+      pendingEmail: json['pending_email'],
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,

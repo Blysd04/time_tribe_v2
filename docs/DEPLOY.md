@@ -58,7 +58,8 @@ MONGO_URI='mongodb+srv://<user>:<password>@kidsenglishcluster.pa5mcec.mongodb.ne
 | `CLOUDINARY_URL` | `cloudinary://<api_key>:<api_secret>@<cloud_name>` |
 | `BASE_URL` | domain Zeabur ở bước 5, ví dụ `https://timetribe-api.zeabur.app` |
 | `ENABLE_REMINDER` | `true` |
-| `SMTP_*` | để trống nếu chưa gửi email |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | **bắt buộc** khi có người dùng thật: email xác nhận đổi email và email quên mật khẩu gửi qua đây. Thiếu thì email chỉ in ra log, người dùng không đổi được email. Gmail: `smtp.gmail.com`, cổng `587`, `SMTP_PASS` là *Mật khẩu ứng dụng* (Tài khoản Google → Bảo mật → Xác minh 2 bước → Mật khẩu ứng dụng) |
+| `APK_URL` | link tải file APK mới nhất (GitHub Releases, Google Drive...). Trang chủ của domain có nút tải trỏ về `/download`, server chuyển tiếp tới link này |
 
    Lấy base64 của `serviceAccountKey.json` (chạy lệnh tuỳ hệ điều hành):
 
@@ -156,7 +157,11 @@ flutter build apk --release --dart-define=API_BASE_URL=https://timetribe-api.zea
 flutter build apk --release --split-per-abi --dart-define=API_BASE_URL=https://timetribe-api.zeabur.app/api/v1
 ```
 
-6. Phát hành: đưa file APK lên **GitHub Releases** hoặc Google Drive (chế độ "Ai có link cũng xem được"), rồi gửi link.
+6. Phát hành:
+   1. Đưa file APK lên **GitHub Releases** (repo phải công khai) hoặc Google Drive (chế độ "Ai có link cũng xem được").
+   2. Dán link vào biến `APK_URL` trên Zeabur. Mỗi bản mới chỉ cần đổi biến này, trang tải không phải sửa.
+      Với Google Drive, dùng link tải trực tiếp: `https://drive.google.com/uc?export=download&id=<ID file>`.
+   3. Gửi người dùng link **trang tải**: `https://timetribe-api.zeabur.app/`. Nút "Tải APK" trỏ về `/download`.
    Người dùng tải về, cho phép "Cài ứng dụng không rõ nguồn gốc", cài đặt, rồi **cho phép thông báo** khi app hỏi.
 
 ## Bước 4. Kiểm tra sau khi phát hành
@@ -167,6 +172,8 @@ flutter build apk --release --split-per-abi --dart-define=API_BASE_URL=https://t
 - [ ] Cài đặt → Trợ giúp → **Gửi thông báo thử** → có thông báo.
 - [ ] Tạo lịch nhắc trước 5 phút → tới giờ có thông báo, kể cả khi đã tắt app.
 - [ ] Đổi ảnh đại diện được (Cloudinary).
+- [ ] Đổi email: hộp thư mới nhận link xác nhận, bấm link thì thấy trang "Đã xác nhận email", mở lại app thấy email mới.
+- [ ] Mở `https://timetribe-api.zeabur.app/` thấy trang tải, nút "Tải APK" tải được file.
 - [ ] Atlas → Browse Collections → database `timetribe` có dữ liệu mới.
 
 ## Lỗi thường gặp

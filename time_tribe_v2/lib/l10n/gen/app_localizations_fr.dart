@@ -1462,4 +1462,23 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get testPushNoToken => 'Ce téléphone n\'a pas encore de jeton. Autorisez les notifications pour TimeTribe puis rouvrez l\'app.';
+
+  @override
+  String emailPendingLabel(String email) {
+    return 'En attente de confirmation : $email';
+  }
+
+  @override
+  String emailVerifySent(String email) {
+    return 'Un lien de confirmation a été envoyé à $email. Ouvrez-le pour terminer le changement d\'e-mail.';
+  }
+
+  @override
+  String get emailPendingCancel => 'Annuler le changement d\'e-mail';
+
+  @override
+  String get emailPendingCancelled => 'Changement d\'e-mail annulé';
+
+  @override
+  String get emailPendingHint => 'L\'e-mail ne change qu\'après avoir ouvert le lien envoyé à la nouvelle adresse.';
 }

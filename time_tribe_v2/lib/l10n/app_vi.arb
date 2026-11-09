@@ -1006,5 +1006,24 @@
   "testPush": "Gửi thông báo thử",
   "testPushSubtitle": "Kiểm tra máy có nhận được thông báo đẩy không",
   "testPushSent": "Đã gửi, thông báo sẽ hiện sau vài giây",
-  "testPushNoToken": "Máy chưa có mã nhận thông báo. Hãy cho phép thông báo cho TimeTribe rồi mở lại app."
+  "testPushNoToken": "Máy chưa có mã nhận thông báo. Hãy cho phép thông báo cho TimeTribe rồi mở lại app.",
+  "emailPendingLabel": "Đang chờ xác nhận: {email}",
+  "@emailPendingLabel": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "emailVerifySent": "Đã gửi link xác nhận tới {email}. Mở email đó và bấm link để hoàn tất đổi email.",
+  "@emailVerifySent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "emailPendingCancel": "Huỷ đổi email",
+  "emailPendingCancelled": "Đã huỷ yêu cầu đổi email",
+  "emailPendingHint": "Email chỉ thay đổi sau khi bạn bấm link xác nhận gửi tới địa chỉ mới."
 }

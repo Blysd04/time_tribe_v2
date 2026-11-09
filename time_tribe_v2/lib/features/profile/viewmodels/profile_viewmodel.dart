@@ -25,6 +25,7 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
 
   String _name = '';
   String _email = '';
+  String? _pendingEmail;
   String? _avatarUrl;
   bool _uploadingAvatar = false;
 
@@ -66,6 +67,9 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Email của người đang đăng nhập.
   String get email => _email;
+
+  /// Email mới đang chờ xác nhận qua link gửi tới hộp thư mới.
+  String? get pendingEmail => _pendingEmail;
 
   /// Link ảnh đại diện trên Cloudinary, chưa có ảnh thì null.
   String? get avatarUrl => _avatarUrl;
@@ -170,6 +174,7 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
   void _applyUser(UserModel user) {
     _name = user.nickName;
     _email = user.email;
+    _pendingEmail = user.pendingEmail;
     _avatarUrl = user.avatarUrl;
     Session.start(user);
     notifyListeners();
@@ -179,6 +184,7 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
   void clear() {
     _name = '';
     _email = '';
+    _pendingEmail = null;
     _avatarUrl = null;
     _isAutoTimezone = true;
     _manualTimezoneId = null;
@@ -215,9 +221,32 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
   Future<ProfileError?> updateName(String newName) =>
       _patch({'nick_name': newName.trim()});
 
-  /// INFO-01: đổi email.
+  /// INFO-01: đổi email. Server chưa đổi ngay mà gửi link xác nhận tới email mới,
+  /// trong lúc chờ thì [pendingEmail] mang địa chỉ mới.
   Future<ProfileError?> updateEmail(String newEmail) =>
       _patch({'email': newEmail.trim()});
+
+  /// Huỷ yêu cầu đổi email đang chờ xác nhận.
+  Future<ProfileError?> cancelEmailChange() async {
+    try {
+      final data = await _api.delete('/users/me/pending-email');
+      _applyUser(UserModel.fromJson(data));
+      return null;
+    } on ApiException catch (e) {
+      return e.isNetwork ? ProfileError.network : ProfileError.server;
+    }
+  }
+
+  /// Tải lại hồ sơ từ server, dùng khi mở màn hình hồ sơ để biết email mới đã được xác nhận chưa.
+  Future<void> reloadMe() async {
+    if (Session.currentUserId.isEmpty) return;
+    try {
+      final data = await _api.get('/users/me');
+      _applyUser(UserModel.fromJson(data));
+    } on ApiException {
+      // Bỏ qua, giữ thông tin đang có
+    }
+  }
 
   /// INFO-02, INFO-03: tải ảnh đại diện lên server (server đẩy tiếp lên Cloudinary).
   Future<ProfileError?> uploadAvatar(List<int> bytes, String filename) async {

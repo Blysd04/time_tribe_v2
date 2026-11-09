@@ -24,6 +24,9 @@ func Routes(svc *services.Services) *gin.Engine {
 		})
 	})
 
+	r.GET("/", Landing)
+	r.GET("/download", Download(svc.Cfg.APKURL))
+
 	api := r.Group("/api/v1")
 
 	// Không cần đăng nhập
@@ -34,6 +37,7 @@ func Routes(svc *services.Services) *gin.Engine {
 	auth.POST("/refresh", h.Refresh)
 	auth.POST("/forgot-password", h.ForgotPassword)
 	auth.POST("/reset-password", h.ResetPassword)
+	auth.GET("/confirm-email", h.ConfirmEmail)
 
 	// Cần access token
 	p := api.Group("", middleware.Auth(svc))
@@ -48,6 +52,7 @@ func Routes(svc *services.Services) *gin.Engine {
 	p.PUT("/users/me/fcm-token", h.UpdateFCMToken)
 	p.DELETE("/users/me/fcm-token", h.ClearFCMToken)
 	p.POST("/users/me/test-push", h.TestPush)
+	p.DELETE("/users/me/pending-email", h.CancelEmailChange)
 
 	p.GET("/schedule", h.Schedule)
 	p.GET("/schedule/counts", h.ScheduleCounts)

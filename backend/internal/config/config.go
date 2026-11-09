@@ -38,6 +38,9 @@ type Config struct {
 	SMTPPass string
 	SMTPFrom string
 
+	// Link file APK mới nhất, /download chuyển hướng tới đây
+	APKURL string
+
 	// Bật bộ quét gửi nhắc lịch mỗi phút
 	EnableReminder bool
 }
@@ -70,6 +73,7 @@ func Load() *Config {
 		SMTPPass:          get("SMTP_PASS", ""),
 		SMTPFrom:          get("SMTP_FROM", ""),
 		EnableReminder:    get("ENABLE_REMINDER", "true") == "true",
+		APKURL:            get("APK_URL", ""),
 	}
 	if !cfg.IsDev() && (cfg.JWTSecret == "doi-chuoi-nay-truoc-khi-deploy" || len(cfg.JWTSecret) < 32) {
 		log.Fatal("APP_ENV=production cần JWT_SECRET ngẫu nhiên dài ít nhất 32 ký tự")

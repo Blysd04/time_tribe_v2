@@ -87,16 +87,19 @@ type UserSecurity struct {
 const (
 	TokenRefresh       = "refresh"
 	TokenResetPassword = "reset_password"
+	TokenChangeEmail   = "change_email" // xác nhận email mới, new_email giữ địa chỉ đang chờ
 )
 
 // Bảng user_tokens.
 // Cột token lưu chuỗi băm SHA-256 chứ không lưu bản gốc, lỡ lộ database thì cũng không dùng lại được.
 type UserToken struct {
-	ID         string    `bson:"_id" json:"id"`
-	UserID     string    `bson:"user_id" json:"user_id"`
-	Token      string    `bson:"token" json:"-"`
-	TokenType  string    `bson:"token_type" json:"token_type"`
-	DeviceInfo *string   `bson:"device_info" json:"device_info"`
-	ExpiresAt  time.Time `bson:"expires_at" json:"expires_at"`
-	CreatedAt  time.Time `bson:"created_at" json:"created_at"`
+	ID         string  `bson:"_id" json:"id"`
+	UserID     string  `bson:"user_id" json:"user_id"`
+	Token      string  `bson:"token" json:"-"`
+	TokenType  string  `bson:"token_type" json:"token_type"`
+	DeviceInfo *string `bson:"device_info" json:"device_info"`
+	// Chỉ dùng với token_type = change_email: email mới đang chờ xác nhận
+	NewEmail  *string   `bson:"new_email,omitempty" json:"-"`
+	ExpiresAt time.Time `bson:"expires_at" json:"expires_at"`
+	CreatedAt time.Time `bson:"created_at" json:"created_at"`
 }

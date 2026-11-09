@@ -78,7 +78,13 @@ class _EditTextScreenState extends State<EditTextScreen> {
       return;
     }
     Navigator.pop(context);
-    AppSnack.show(context, l.saved);
+    final pending = vm.pendingEmail;
+    if (_isEmail && pending != null && pending == value.toLowerCase()) {
+      // Email chưa đổi ngay, server đã gửi link xác nhận tới địa chỉ mới
+      AppSnack.show(context, l.emailVerifySent(pending), type: AppSnackType.info);
+    } else {
+      AppSnack.show(context, l.saved);
+    }
   }
 
   /// Dựng giao diện màn hình sửa tên hoặc email.

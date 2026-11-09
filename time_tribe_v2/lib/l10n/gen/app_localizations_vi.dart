@@ -1377,4 +1377,23 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get testPushNoToken => 'Máy chưa có mã nhận thông báo. Hãy cho phép thông báo cho TimeTribe rồi mở lại app.';
+
+  @override
+  String emailPendingLabel(String email) {
+    return 'Đang chờ xác nhận: $email';
+  }
+
+  @override
+  String emailVerifySent(String email) {
+    return 'Đã gửi link xác nhận tới $email. Mở email đó và bấm link để hoàn tất đổi email.';
+  }
+
+  @override
+  String get emailPendingCancel => 'Huỷ đổi email';
+
+  @override
+  String get emailPendingCancelled => 'Đã huỷ yêu cầu đổi email';
+
+  @override
+  String get emailPendingHint => 'Email chỉ thay đổi sau khi bạn bấm link xác nhận gửi tới địa chỉ mới.';
 }

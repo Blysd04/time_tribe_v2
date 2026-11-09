@@ -39,7 +39,9 @@ func (s *UserService) Me(ctx context.Context, userID string) (*MeResponse, error
 	if u == nil || sec == nil {
 		return nil, utils.NotFound("not_found_item", "Không tìm thấy tài khoản")
 	}
-	return buildMe(u, sec), nil
+	me := buildMe(u, sec)
+	me.PendingEmail = s.pendingEmail(ctx, userID)
+	return me, nil
 }
 
 type UpdateMeInput struct {
@@ -69,12 +71,14 @@ func (s *UserService) UpdateMe(ctx context.Context, userID string, in UpdateMeIn
 			set["nick_name"] = nick
 		}
 	}
+	// Email không đổi ngay: gửi link xác nhận tới email mới, bấm link rồi mới lưu (xem email_change.go)
+	newEmail := ""
 	if in.Email != nil {
 		email = strings.ToLower(strings.TrimSpace(*in.Email))
 		if !utils.IsEmail(email) {
 			fields["email"] = "email_invalid"
 		} else {
-			set["email"] = email
+			newEmail = email
 		}
 	}
 	if in.Timezone != nil {
@@ -105,11 +109,32 @@ func (s *UserService) UpdateMe(ctx context.Context, userID string, in UpdateMeIn
 	if len(fields) > 0 {
 		return nil, utils.BadRequest("validation_error", "Thông tin chưa hợp lệ").WithDetails(fields)
 	}
-	if len(set) == 0 {
+	current, err := s.store.UserByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if current == nil {
+		return nil, utils.NotFound("not_found_item", "Không tìm thấy tài khoản")
+	}
+	if newEmail == current.Email {
+		newEmail, email = "", "" // giữ nguyên email thì bỏ qua
+	}
+	if len(set) == 0 && newEmail == "" {
+		if in.Email != nil {
+			return s.Me(ctx, userID)
+		}
 		return nil, utils.BadRequest("validation_error", "Không có thông tin nào cần cập nhật")
 	}
 	if err := s.auth.ensureUnique(ctx, userID, email, nick); err != nil {
 		return nil, err
+	}
+	if newEmail != "" {
+		if err := s.requestEmailChange(ctx, current, newEmail); err != nil {
+			return nil, err
+		}
+	}
+	if len(set) == 0 {
+		return s.Me(ctx, userID)
 	}
 	set["updated_at"] = time.Now().UTC()
 	update := bson.M{"$set": set}

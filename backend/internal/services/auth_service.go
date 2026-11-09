@@ -50,6 +50,8 @@ type MeResponse struct {
 	AuthProvider string `json:"auth_provider"`
 	HasPassword  bool   `json:"has_password"`
 	TimezoneAuto bool   `json:"timezone_auto"`
+	// Email mới đang chờ người dùng bấm link xác nhận (null nếu không có)
+	PendingEmail *string `json:"pending_email"`
 }
 
 // buildMe ghép users và user_securities thành dữ liệu trả về cho app.

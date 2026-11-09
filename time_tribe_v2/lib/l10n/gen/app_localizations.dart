@@ -2439,6 +2439,36 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Máy chưa có mã nhận thông báo. Hãy cho phép thông báo cho TimeTribe rồi mở lại app.'**
   String get testPushNoToken;
+
+  /// No description provided for @emailPendingLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang chờ xác nhận: {email}'**
+  String emailPendingLabel(String email);
+
+  /// No description provided for @emailVerifySent.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã gửi link xác nhận tới {email}. Mở email đó và bấm link để hoàn tất đổi email.'**
+  String emailVerifySent(String email);
+
+  /// No description provided for @emailPendingCancel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Huỷ đổi email'**
+  String get emailPendingCancel;
+
+  /// No description provided for @emailPendingCancelled.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã huỷ yêu cầu đổi email'**
+  String get emailPendingCancelled;
+
+  /// No description provided for @emailPendingHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Email chỉ thay đổi sau khi bạn bấm link xác nhận gửi tới địa chỉ mới.'**
+  String get emailPendingHint;
 }
 
 class _AppLocalizationsDelegate

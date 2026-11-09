@@ -77,8 +77,58 @@ Future<void> pickAndUploadAvatar(BuildContext context) async {
   }
 }
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen>
+    with WidgetsBindingObserver {
+  /// Mở tab hồ sơ thì tải lại từ server, để biết email mới đã được xác nhận chưa.
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<ProfileViewModel>().reloadMe();
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Quay lại app (thường là sau khi bấm link xác nhận trong hộp thư) thì tải lại hồ sơ.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        context.read<ProfileViewModel>().pendingEmail != null) {
+      context.read<ProfileViewModel>().reloadMe();
+    }
+  }
+
+  /// Hỏi lại rồi huỷ yêu cầu đổi email đang chờ xác nhận.
+  Future<void> _cancelEmailChange(ProfileViewModel vm) async {
+    final l = context.l10n;
+    final ok = await AppDialogs.confirm(
+      context,
+      title: l.emailPendingCancel,
+      message: l.emailPendingLabel(vm.pendingEmail ?? ''),
+      confirmLabel: l.emailPendingCancel,
+    );
+    if (!ok || !mounted) return;
+    final err = await vm.cancelEmailChange();
+    if (!mounted) return;
+    if (err == null) {
+      AppSnack.show(context, l.emailPendingCancelled);
+    } else {
+      AppSnack.show(context, l.profileError(err), type: AppSnackType.error);
+    }
+  }
 
   /// Dựng giao diện tab Hồ sơ.
   @override
@@ -183,17 +233,27 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.email_outlined,
                 color: AppColors.success,
                 title: l.email,
-                subtitle: vm.email,
+                subtitle: vm.pendingEmail == null
+                    ? vm.email
+                    : '${vm.email}\n${l.emailPendingLabel(vm.pendingEmail!)}',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => EditTextScreen(
                       field: EditField.email,
-                      initialValue: vm.email,
+                      initialValue: vm.pendingEmail ?? vm.email,
                     ),
                   ),
                 ),
               ),
+              if (vm.pendingEmail != null)
+                AppListTile(
+                  icon: Icons.cancel_schedule_send_outlined,
+                  color: AppColors.warning,
+                  title: l.emailPendingCancel,
+                  subtitle: l.emailPendingHint,
+                  onTap: () => _cancelEmailChange(vm),
+                ),
               AppListTile(
                 icon: Icons.public,
                 color: const Color(0xFF9B5DE5),

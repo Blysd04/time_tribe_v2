@@ -1,0 +1,271 @@
+<title>TimeTribe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="TimeTribe: lịch cá nhân và lịch nhóm nhiều múi giờ. Tải APK cho Android.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: hero chia đôi (lời mời tải + dải ba múi giờ), rồi tính năng, cách cài, câu hỏi. */
+:root {
+  --ink: #0F1B33;
+  --muted: #55627A;
+  --paper: #F3F6FB;
+  --card: #FFFFFF;
+  --line: #DCE3EF;
+  --blue: #3A86FF;
+  --blue-ink: #1F5FD1;
+  --busy: #F4A100;
+  --busy-soft: rgba(244, 161, 0, .18);
+  --ok: #00A383;
+  --on-blue: #FFFFFF;
+  --f-display: "Bricolage Grotesque", "Be Vietnam Pro", system-ui, sans-serif;
+  --f-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #E7EDF8; --muted: #9AA8C0; --paper: #0B1324; --card: #121D33; --line: #24314B;
+    --blue: #5B9BFF; --blue-ink: #8DB8FF; --busy: #FFB733; --busy-soft: rgba(255, 183, 51, .16);
+    --ok: #2BD1AE; --on-blue: #06132B; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #E7EDF8; --muted: #9AA8C0; --paper: #0B1324; --card: #121D33; --line: #24314B;
+  --blue: #5B9BFF; --blue-ink: #8DB8FF; --busy: #FFB733; --busy-soft: rgba(255, 183, 51, .16);
+  --ok: #2BD1AE; --on-blue: #06132B; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink);
+  font: 400 1rem/1.6 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1080px; margin-inline: auto; }
+a { color: var(--blue-ink); }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 6px; }
+
+/* Thanh đầu trang */
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; }
+.brand { display: flex; align-items: center; gap: 10px; font: 800 1.25rem/1 var(--f-display); letter-spacing: -.01em; color: var(--ink); text-decoration: none; }
+.mark { width: 30px; height: 30px; border-radius: 9px; background: var(--blue); display: grid; place-items: center; }
+.mark svg { width: 18px; height: 18px; }
+.top nav { display: flex; gap: 20px; font-size: .95rem; }
+.top nav a { color: var(--muted); text-decoration: none; }
+.top nav a:hover { color: var(--ink); }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; padding-block: 40px 64px; }
+.hero > * { min-width: 0; }
+.eyebrow { font: 500 .78rem/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--blue-ink); }
+h1 { font: 800 clamp(2.3rem, 5.4vw, 3.9rem)/1.02 var(--f-display); letter-spacing: -.03em; margin: 14px 0 18px; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--blue); }
+.lede { font-size: 1.12rem; color: var(--muted); max-width: 34ch; margin: 0 0 28px; }
+.cta { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
+  background: var(--blue); color: var(--on-blue); font: 600 1.05rem/1 var(--f-body);
+  padding: 16px 22px; border-radius: 14px; transition: transform .15s ease, background .15s ease;
+}
+.btn:hover { background: var(--blue-ink); transform: translateY(-1px); }
+.btn svg { width: 20px; height: 20px; }
+.meta { font: 500 .8rem/1.4 var(--f-mono); color: var(--muted); }
+
+/* Dải ba múi giờ: chi tiết riêng của TimeTribe */
+.zones { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 22px 20px 18px; }
+.zones h2 { font: 600 .95rem/1.3 var(--f-body); margin: 0 0 4px; }
+.zones p.small { margin: 0 0 18px; color: var(--muted); font-size: .85rem; }
+.zone { display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: center; margin-bottom: 14px; }
+.zone .city { font-size: .85rem; line-height: 1.2; }
+.zone .city b { display: block; font-weight: 600; }
+.zone .city span { color: var(--muted); font: 500 .72rem/1 var(--f-mono); }
+.track { position: relative; height: 38px; border-radius: 10px; background: var(--paper); border: 1px solid var(--line); overflow: hidden; }
+.busy {
+  position: absolute; top: 0; bottom: 0; border-inline: 1px solid var(--busy);
+  background: repeating-linear-gradient(135deg, var(--busy-soft) 0 6px, transparent 6px 11px);
+}
+.slot {
+  position: absolute; top: 5px; bottom: 5px; border-radius: 7px; background: var(--blue); color: var(--on-blue);
+  font: 500 .72rem/1 var(--f-mono); display: flex; align-items: center; justify-content: center; white-space: nowrap;
+}
+.ticks { display: grid; grid-template-columns: 92px 1fr; gap: 12px; }
+.ticks div { display: flex; justify-content: space-between; font: 500 .68rem/1 var(--f-mono); color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; font-size: .8rem; color: var(--muted); }
+.legend i { display: inline-block; width: 14px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+.legend .l-slot { background: var(--blue); }
+.legend .l-busy { background: repeating-linear-gradient(135deg, var(--busy) 0 2px, transparent 2px 4px); border: 1px solid var(--busy); }
+
+/* Các phần dưới */
+section.block { padding-block: 56px; border-top: 1px solid var(--line); }
+h2.title { font: 800 clamp(1.6rem, 3.2vw, 2.2rem)/1.15 var(--f-display); letter-spacing: -.02em; margin: 0 0 28px; text-wrap: balance; }
+.features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 40px; }
+.feature h3 { font: 600 1.08rem/1.35 var(--f-body); margin: 0 0 6px; }
+.feature p { margin: 0; color: var(--muted); max-width: 46ch; }
+.feature .tag { font: 500 .72rem/1 var(--f-mono); color: var(--blue-ink); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 10px; display: block; }
+
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; counter-reset: step; }
+.steps li { counter-increment: step; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+.steps li::before { content: counter(step); font: 800 1.6rem/1 var(--f-display); color: var(--blue); display: block; margin-bottom: 10px; }
+.steps b { display: block; margin-bottom: 4px; }
+.steps span { color: var(--muted); font-size: .92rem; }
+
+.faq { display: grid; gap: 10px; max-width: 760px; }
+.faq details { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; }
+.faq summary { cursor: pointer; font-weight: 600; }
+.faq p { margin: 10px 0 2px; color: var(--muted); }
+
+.final { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; }
+.final p { margin: 0; font: 600 1.25rem/1.35 var(--f-display); }
+footer { padding-block: 28px 40px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; gap: 36px; padding-top: 20px; }
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .top nav { display: none; }
+  .features, .steps { grid-template-columns: 1fr; }
+  .zone, .ticks { grid-template-columns: 72px 1fr; gap: 8px; }
+  .slot { font-size: .62rem; }
+}
+@media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#top" id="top">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+      </span>
+      TimeTribe
+    </a>
+    <nav aria-label="Mục lục">
+      <a href="#tinh-nang">Tính năng</a>
+      <a href="#cai-dat">Cách cài</a>
+      <a href="#hoi-dap">Hỏi đáp</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <span class="eyebrow">Ứng dụng Android · miễn phí</span>
+        <h1>Hẹn cả nhóm, <em>khác múi giờ</em> vẫn khớp lịch.</h1>
+        <p class="lede">TimeTribe gom lịch của bạn và cả nhóm vào một chỗ, chỉ ra giờ mọi người cùng rảnh và nhắc đúng giờ ở nơi mỗi người đang sống.</p>
+        <div class="cta">
+          <a class="btn" id="download" href="https://timetribe-api.zeabur.app/download" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+            Tải APK cho Android
+          </a>
+          <span class="meta">Bản 1.0.0<br>Tiếng Việt · English · Français</span>
+        </div>
+      </div>
+
+      <figure class="zones" aria-label="Ví dụ một buổi họp nhóm ở ba múi giờ">
+        <h2>Họp chốt tiến độ · nhóm Đồ án NIC</h2>
+        <p class="small">Cùng một buổi họp, mỗi người thấy theo giờ địa phương của mình.</p>
+        <!-- Trục 24 giờ theo giờ Hà Nội. Buổi họp 18:00–21:00 Hà Nội = 11:00–14:00 UTC (75% → 87.5%).
+             Vùng sọc: Hà Nội bận 08–12, Tokyo bận 09–18 giờ Tokyo (07–16 HN), London bận 09–10:30 giờ London (16–17:30 HN). -->
+        <div class="zone">
+          <div class="city"><b>Hà Nội</b><span>UTC+7</span></div>
+          <div class="track">
+            <div class="busy" style="left:33.3%;width:16.7%"></div>
+            <div class="slot" style="left:75%;width:12.5%">18:00</div>
+          </div>
+        </div>
+        <div class="zone">
+          <div class="city"><b>Tokyo</b><span>UTC+9</span></div>
+          <div class="track">
+            <div class="busy" style="left:29.2%;width:37.5%"></div>
+            <div class="slot" style="left:75%;width:12.5%">20:00</div>
+          </div>
+        </div>
+        <div class="zone">
+          <div class="city"><b>London</b><span>UTC+0</span></div>
+          <div class="track">
+            <div class="busy" style="left:66.7%;width:6.25%"></div>
+            <div class="slot" style="left:75%;width:12.5%">11:00</div>
+          </div>
+        </div>
+        <div class="ticks" aria-hidden="true"><span></span><div><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></div>
+        <div class="legend"><span><i class="l-slot"></i>Giờ họp</span><span><i class="l-busy"></i>Có người bận</span><span>Trục giờ theo giờ Hà Nội</span></div>
+      </figure>
+    </section>
+
+    <section class="block" id="tinh-nang">
+      <h2 class="title">Một ứng dụng cho lịch riêng và lịch chung</h2>
+      <div class="features">
+        <div class="feature">
+          <span class="tag">Lịch nhóm</span>
+          <h3>Tìm giờ cả nhóm cùng rảnh</h3>
+          <p>Trưởng nhóm thấy khung nào có người bận và được gợi ý những khoảng từ 30 phút trở lên mà mọi người đều trống. Chỉ hiện ai bận, không lộ nội dung lịch riêng.</p>
+        </div>
+        <div class="feature">
+          <span class="tag">Nhiều múi giờ</span>
+          <h3>Mỗi người thấy giờ của mình</h3>
+          <p>Bạn ở Hà Nội, bạn cùng nhóm ở Tokyo hay London đều thấy đúng giờ địa phương. Đổi múi giờ trên điện thoại thì lịch tự cập nhật.</p>
+        </div>
+        <div class="feature">
+          <span class="tag">Nhắc lịch</span>
+          <h3>Thông báo đúng giờ, không trùng lặp</h3>
+          <p>Chọn nhắc trước 5, 10, 15, 30 hay 60 phút. Thông báo hiện cả khi đã tắt ứng dụng, bấm vào là mở ngay danh sách thông báo.</p>
+        </div>
+        <div class="feature">
+          <span class="tag">Lịch mẫu</span>
+          <h3>Dựng tuần mẫu một lần, dùng nhiều tuần</h3>
+          <p>Lưu lịch học, lịch tập gym thành mẫu, chia sẻ bằng mã 8 ký tự và áp dụng cho tối đa 12 tuần. Trùng giờ với lịch cũ thì ứng dụng hỏi trước khi thay.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="cai-dat">
+      <h2 class="title">Cài đặt trong vài phút</h2>
+      <ol class="steps">
+        <li><b>Tải file APK</b><span>Bấm nút "Tải APK cho Android" và đợi tải xong.</span></li>
+        <li><b>Cho phép cài đặt</b><span>Mở file vừa tải. Nếu điện thoại hỏi, bật "Cho phép từ nguồn này" cho trình duyệt.</span></li>
+        <li><b>Đăng ký tài khoản</b><span>Dùng email hoặc đăng nhập Google. Lần đầu sẽ có phần hướng dẫn từng bước.</span></li>
+        <li><b>Bật thông báo</b><span>Chọn "Cho phép" khi ứng dụng hỏi để nhận nhắc lịch đúng giờ.</span></li>
+      </ol>
+    </section>
+
+    <section class="block" id="hoi-dap">
+      <h2 class="title">Câu hỏi thường gặp</h2>
+      <div class="faq">
+        <details>
+          <summary>Điện thoại báo "ứng dụng không rõ nguồn gốc", có an toàn không?</summary>
+          <p>Cảnh báo này hiện với mọi ứng dụng không cài từ Google Play. TimeTribe chỉ xin quyền thông báo và quyền chọn ảnh đại diện. Bạn có thể tắt lại "Cho phép từ nguồn này" sau khi cài xong.</p>
+        </details>
+        <details>
+          <summary>Có bản cho iPhone không?</summary>
+          <p>Hiện chỉ có bản Android. Bản iOS đang được chuẩn bị.</p>
+        </details>
+        <details>
+          <summary>Tôi không nhận được thông báo nhắc lịch?</summary>
+          <p>Vào Cài đặt của ứng dụng, mục Trợ giúp, bấm "Gửi thông báo thử". Với máy Xiaomi, Oppo, Vivo, hãy bật "Tự khởi chạy" và chọn "Không hạn chế" pin cho TimeTribe.</p>
+        </details>
+        <details>
+          <summary>Làm sao cập nhật lên bản mới?</summary>
+          <p>Tải lại file APK từ trang này và cài đè lên bản cũ. Dữ liệu của bạn lưu trên máy chủ nên không bị mất.</p>
+        </details>
+        <details>
+          <summary>Đổi email đăng nhập thế nào?</summary>
+          <p>Vào Hồ sơ, sửa Email. Chúng tôi gửi link xác nhận tới địa chỉ mới; email chỉ đổi sau khi bạn bấm link đó.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="block final">
+      <p>Sẵn sàng xếp lịch cho cả nhóm?</p>
+      <a class="btn" href="https://timetribe-api.zeabur.app/download" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+        Tải APK
+      </a>
+    </section>
+  </main>
+
+  <footer>
+    <span>© 2026 TimeTribe · Đồ án môn học</span>
+    <span>Lịch riêng và lịch nhóm cho mọi múi giờ</span>
+  </footer>
+</div>

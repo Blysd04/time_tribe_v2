@@ -1456,4 +1456,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get testPushNoToken => 'This phone has no push token yet. Allow notifications for TimeTribe and reopen the app.';
+
+  @override
+  String emailPendingLabel(String email) {
+    return 'Waiting for confirmation: $email';
+  }
+
+  @override
+  String emailVerifySent(String email) {
+    return 'A confirmation link was sent to $email. Open it to finish changing your email.';
+  }
+
+  @override
+  String get emailPendingCancel => 'Cancel email change';
+
+  @override
+  String get emailPendingCancelled => 'Email change cancelled';
+
+  @override
+  String get emailPendingHint => 'Your email only changes after you open the confirmation link sent to the new address.';
 }
