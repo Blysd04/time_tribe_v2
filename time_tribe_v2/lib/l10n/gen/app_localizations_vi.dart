@@ -1365,4 +1365,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get view => 'Xem';
+
+  @override
+  String get testPush => 'Gửi thông báo thử';
+
+  @override
+  String get testPushSubtitle => 'Kiểm tra máy có nhận được thông báo đẩy không';
+
+  @override
+  String get testPushSent => 'Đã gửi, thông báo sẽ hiện sau vài giây';
+
+  @override
+  String get testPushNoToken => 'Máy chưa có mã nhận thông báo. Hãy cho phép thông báo cho TimeTribe rồi mở lại app.';
 }

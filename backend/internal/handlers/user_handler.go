@@ -88,6 +88,15 @@ func (h *Handler) UpdateFCMToken(c *gin.Context) {
 	utils.OK(c, "Đã cập nhật fcm_token", nil)
 }
 
+// TestPush xử lý POST /users/me/test-push: gửi thông báo đẩy thử tới máy của chính mình.
+func (h *Handler) TestPush(c *gin.Context) {
+	if err := h.svc.Notifications.TestPush(c.Request.Context(), middleware.UserID(c)); err != nil {
+		utils.Fail(c, err)
+		return
+	}
+	utils.OK(c, "Đã gửi thông báo thử", nil)
+}
+
 // ClearFCMToken xử lý DELETE /users/me/fcm-token.
 func (h *Handler) ClearFCMToken(c *gin.Context) {
 	if err := h.svc.Users.ClearFCMToken(c.Request.Context(), middleware.UserID(c)); err != nil {

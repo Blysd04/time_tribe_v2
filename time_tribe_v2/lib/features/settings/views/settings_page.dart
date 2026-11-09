@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/l10n/l10n.dart';
+import '../../../core/services/push_service.dart';
 import '../../../core/session/app_reset.dart';
 import '../../../core/l10n/locale_provider.dart';
 import '../../../core/theme/theme_provider.dart';
@@ -62,6 +64,28 @@ class SettingsPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Gửi thông báo đẩy thử tới chính máy này: gửi lại mã FCM rồi nhờ server đẩy một tin.
+  /// Lỗi ở bước nào (chưa có mã, server chưa cấu hình Firebase, Firebase từ chối) thì báo đúng lỗi đó.
+  Future<void> _testPush(BuildContext context) async {
+    final l = context.l10n;
+    await PushService.requestPermission();
+    final token = await PushService.getToken();
+    if (!context.mounted) return;
+    if (token == null || token.isEmpty) {
+      AppSnack.show(context, l.testPushNoToken, type: AppSnackType.error);
+      return;
+    }
+    try {
+      await ApiClient.instance.put('/users/me/fcm-token', {'fcm_token': token});
+      await ApiClient.instance.post('/users/me/test-push');
+      if (context.mounted) AppSnack.show(context, l.testPushSent);
+    } on ApiException catch (e) {
+      if (context.mounted) {
+        AppSnack.show(context, e.message, type: AppSnackType.error);
+      }
+    }
   }
 
   /// AU-06: đăng xuất. Server xoá phiên và fcm_token, máy xoá sạch dữ liệu của tài khoản
@@ -139,6 +163,13 @@ class SettingsPage extends StatelessWidget {
                   Onboarding.pendingTour = true;
                   context.read<HomeViewModel>().changeTab(1);
                 },
+              ),
+              AppListTile(
+                icon: Icons.notifications_active_outlined,
+                color: AppColors.warning,
+                title: l.testPush,
+                subtitle: l.testPushSubtitle,
+                onTap: () => _testPush(context),
               ),
             ],
           ),

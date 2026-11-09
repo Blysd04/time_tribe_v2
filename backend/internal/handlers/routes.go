@@ -47,6 +47,7 @@ func Routes(svc *services.Services) *gin.Engine {
 	p.DELETE("/users/me", h.DeleteMe)
 	p.PUT("/users/me/fcm-token", h.UpdateFCMToken)
 	p.DELETE("/users/me/fcm-token", h.ClearFCMToken)
+	p.POST("/users/me/test-push", h.TestPush)
 
 	p.GET("/schedule", h.Schedule)
 	p.GET("/schedule/counts", h.ScheduleCounts)

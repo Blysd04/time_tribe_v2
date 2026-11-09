@@ -385,5 +385,9 @@
   "help": "Help",
   "replayTour": "Replay app tour",
   "replayTourSubtitle": "A quick look at the main features",
-  "view": "View"
+  "view": "View",
+  "testPush": "Send a test notification",
+  "testPushSubtitle": "Check that this phone receives push notifications",
+  "testPushSent": "Sent, it should appear in a few seconds",
+  "testPushNoToken": "This phone has no push token yet. Allow notifications for TimeTribe and reopen the app."
 }

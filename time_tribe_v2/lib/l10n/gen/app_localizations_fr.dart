@@ -1450,4 +1450,16 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get view => 'Voir';
+
+  @override
+  String get testPush => 'Envoyer une notification test';
+
+  @override
+  String get testPushSubtitle => 'Vérifier que ce téléphone reçoit les notifications';
+
+  @override
+  String get testPushSent => 'Envoyée, elle devrait apparaître dans quelques secondes';
+
+  @override
+  String get testPushNoToken => 'Ce téléphone n\'a pas encore de jeton. Autorisez les notifications pour TimeTribe puis rouvrez l\'app.';
 }

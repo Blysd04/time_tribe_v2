@@ -38,6 +38,9 @@ type NotifyInput struct {
 	ReferenceType *string
 	// SkipPush: chỉ lưu vào danh sách thông báo, không gửi FCM (VD nhắc bù khi hoạt động đã bắt đầu)
 	SkipPush bool
+	// At: thời điểm ghi vào created_at (nhắc lịch dùng đúng mốc nhắc, kể cả khi nhắc bù),
+	// nil thì lấy giờ hiện tại.
+	At *time.Time
 }
 
 // Notify lưu thông báo vào DB cho từng người nhận rồi gửi FCM ở goroutine riêng,
@@ -48,6 +51,9 @@ func (s *NotificationService) Notify(ctx context.Context, in NotifyInput) {
 	}
 	content, _ := json.Marshal(in.Args)
 	now := time.Now().UTC()
+	if in.At != nil {
+		now = in.At.UTC()
+	}
 	docs := make([]any, 0, len(in.Recipients))
 	seen := map[string]bool{}
 	for _, uid := range in.Recipients {
@@ -94,6 +100,35 @@ func (s *NotificationService) Notify(ctx context.Context, in NotifyInput) {
 	go s.pushToUsers(recipients, title, body, data)
 }
 
+// TestPush gửi một thông báo đẩy thử tới máy của chính người dùng, để kiểm tra
+// Firebase, mã FCM và quyền hiện thông báo trên máy. Trả lỗi rõ ràng nếu không gửi được.
+func (s *NotificationService) TestPush(ctx context.Context, userID string) error {
+	if !s.firebase.PushEnabled() {
+		return utils.BadRequest("push_disabled", "Server chưa cấu hình Firebase (thiếu serviceAccountKey.json)")
+	}
+	u, err := s.store.UserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if u == nil || u.FCMToken == nil || *u.FCMToken == "" {
+		return utils.BadRequest("no_fcm_token", "Tài khoản chưa có mã FCM của máy")
+	}
+	_, err = s.firebase.Messaging.Send(ctx, &messaging.Message{
+		Token:        *u.FCMToken,
+		Notification: &messaging.Notification{Title: "TimeTribe", Body: "Thông báo thử lúc " + time.Now().In(utils.LoadLocation(u.Timezone)).Format("15:04:05")},
+		Data:         map[string]string{"kind": "test", "type": "system"},
+		Android: &messaging.AndroidConfig{
+			Priority:     "high",
+			Notification: &messaging.AndroidNotification{Priority: messaging.PriorityHigh, DefaultSound: true},
+		},
+	})
+	if err != nil {
+		log.Printf("gửi thông báo thử cho %s lỗi: %v", u.NickName, err)
+		return utils.BadRequest("push_failed", "Firebase từ chối: "+err.Error())
+	}
+	return nil
+}
+
 // pushToUsers lấy users.fcm_token của người nhận rồi gửi, mã nào đã chết thì đặt lại null.
 func (s *NotificationService) pushToUsers(userIDs []string, title, body string, data map[string]string) {
 	if !s.firebase.PushEnabled() {
@@ -137,11 +172,15 @@ func (s *NotificationService) pushToUsers(userIDs []string, title, body string, 
 			log.Printf("gửi FCM lỗi: %v", err)
 			continue
 		}
+		log.Printf("FCM %q: gửi thành công %d/%d máy", title, res.SuccessCount, len(regs))
 		for i, r := range res.Responses {
 			if r.Success || r.Error == nil {
 				continue
 			}
-			if messaging.IsRegistrationTokenNotRegistered(r.Error) || messaging.IsInvalidArgument(r.Error) {
+			log.Printf("FCM tới %s lỗi: %v", batch[i].NickName, r.Error)
+			// Chỉ xoá mã khi Firebase báo mã đã chết. Lỗi invalid-argument có thể do nội dung
+			// tin nhắn, xoá mã lúc đó làm người dùng mất hẳn thông báo đẩy.
+			if messaging.IsRegistrationTokenNotRegistered(r.Error) || messaging.IsSenderIDMismatch(r.Error) {
 				_ = s.ClearFCMToken(ctx, batch[i].ID)
 			}
 		}

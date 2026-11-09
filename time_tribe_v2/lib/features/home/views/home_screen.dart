@@ -76,8 +76,18 @@ class _HomeScreenState extends State<HomeScreen> {
           .put('/users/me/fcm-token', {'fcm_token': token})
           .catchError((_) => null);
     };
-    PushService.requestPermission();
-    await AppData.loadAll(context);
+    final load = AppData.loadAll(context);
+    await PushService.requestPermission();
+    // Mỗi lần mở app đều gửi mã FCM hiện tại lên server. Trước đây chỉ gửi lúc bấm đăng nhập,
+    // nên tự đăng nhập lại / cài lại app / server đã xoá mã thì users.fcm_token bị null
+    // và không bao giờ nhận được thông báo đẩy.
+    final token = await PushService.getToken();
+    if (token != null && token.isNotEmpty) {
+      ApiClient.instance
+          .put('/users/me/fcm-token', {'fcm_token': token})
+          .catchError((_) => null);
+    }
+    await load;
   }
 
   /// Nút "+" giữa thanh điều hướng: hành động theo mục đang mở.

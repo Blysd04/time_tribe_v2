@@ -385,5 +385,9 @@
   "help": "Aide",
   "replayTour": "Revoir le guide",
   "replayTourSubtitle": "Un aperçu rapide des fonctions principales",
-  "view": "Voir"
+  "view": "Voir",
+  "testPush": "Envoyer une notification test",
+  "testPushSubtitle": "Vérifier que ce téléphone reçoit les notifications",
+  "testPushSent": "Envoyée, elle devrait apparaître dans quelques secondes",
+  "testPushNoToken": "Ce téléphone n'a pas encore de jeton. Autorisez les notifications pour TimeTribe puis rouvrez l'app."
 }

@@ -3,6 +3,8 @@ package services
 import (
 	"testing"
 	"time"
+
+	"timetribe-backend/internal/utils"
 )
 
 func TestDue(t *testing.T) {
@@ -25,6 +27,28 @@ func TestDue(t *testing.T) {
 		_, got, late := due(start, c.remind, c.from, c.now)
 		if got != c.want || (got && late != c.late) {
 			t.Errorf("%s: got %v/%v want %v/%v", c.name, got, late, c.want, c.late)
+		}
+	}
+}
+
+// Đúng ca người dùng báo lỗi: lịch cá nhân 19:55 ngày 8/11 giờ Việt Nam, nhắc trước 5 phút
+// thì phải nhắc lúc 19:50 giờ Việt Nam (12:50 UTC), không phải lệch 1 tiếng.
+func TestPersonalReminderVietnam(t *testing.T) {
+	loc := utils.LoadLocation("Asia/Ho_Chi_Minh")
+	start := utils.At("2026-11-08", "19:55:00", loc)
+	want := time.Date(2026, 11, 8, 12, 50, 0, 0, time.UTC)
+	// Bộ nhắc quét đúng đầu phút: phút 12:49 -> 12:50 UTC
+	at, ok, late := due(start, 5, want.Add(-time.Minute), want)
+	if !ok || late || !at.Equal(want) {
+		t.Fatalf("at=%v ok=%v late=%v, muốn %v", at.UTC(), ok, late, want)
+	}
+	// Tên cũ của múi giờ VN và dạng Etc mà app có thể gửi lên cũng phải ra cùng giờ
+	for _, tz := range []string{"Asia/Saigon", "Etc/GMT-7"} {
+		if !utils.IsValidTimezone(tz) {
+			t.Fatalf("%s phải hợp lệ", tz)
+		}
+		if s := utils.At("2026-11-08", "19:55:00", utils.LoadLocation(tz)); !s.Equal(start) {
+			t.Fatalf("%s: %v khác %v", tz, s.UTC(), start.UTC())
 		}
 	}
 }

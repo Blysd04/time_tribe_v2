@@ -1444,4 +1444,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get view => 'View';
+
+  @override
+  String get testPush => 'Send a test notification';
+
+  @override
+  String get testPushSubtitle => 'Check that this phone receives push notifications';
+
+  @override
+  String get testPushSent => 'Sent, it should appear in a few seconds';
+
+  @override
+  String get testPushNoToken => 'This phone has no push token yet. Allow notifications for TimeTribe and reopen the app.';
 }

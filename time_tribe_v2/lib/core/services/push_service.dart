@@ -77,7 +77,7 @@ class PushService {
     try {
       // ignore: deprecated_member_use
       return await FirebaseMessaging.instance.getToken().timeout(
-        const Duration(seconds: 5),
+        const Duration(seconds: 15),
       );
     } catch (_) {
       return null;

@@ -2415,6 +2415,30 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Xem'**
   String get view;
+
+  /// No description provided for @testPush.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi thông báo thử'**
+  String get testPush;
+
+  /// No description provided for @testPushSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Kiểm tra máy có nhận được thông báo đẩy không'**
+  String get testPushSubtitle;
+
+  /// No description provided for @testPushSent.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã gửi, thông báo sẽ hiện sau vài giây'**
+  String get testPushSent;
+
+  /// No description provided for @testPushNoToken.
+  ///
+  /// In vi, this message translates to:
+  /// **'Máy chưa có mã nhận thông báo. Hãy cho phép thông báo cho TimeTribe rồi mở lại app.'**
+  String get testPushNoToken;
 }
 
 class _AppLocalizationsDelegate

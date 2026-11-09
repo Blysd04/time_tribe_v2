@@ -1002,5 +1002,9 @@
   "help": "Trợ giúp",
   "replayTour": "Xem hướng dẫn sử dụng",
   "replayTourSubtitle": "Giới thiệu nhanh các chức năng chính",
-  "view": "Xem"
+  "view": "Xem",
+  "testPush": "Gửi thông báo thử",
+  "testPushSubtitle": "Kiểm tra máy có nhận được thông báo đẩy không",
+  "testPushSent": "Đã gửi, thông báo sẽ hiện sau vài giây",
+  "testPushNoToken": "Máy chưa có mã nhận thông báo. Hãy cho phép thông báo cho TimeTribe rồi mở lại app."
 }

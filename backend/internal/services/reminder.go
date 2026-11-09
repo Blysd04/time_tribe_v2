@@ -203,7 +203,7 @@ func (w *ReminderWorker) personal(ctx context.Context, from, now time.Time) erro
 				"start_at": start.UTC().Format(time.RFC3339),
 			},
 			ReferenceID: utils.Ptr(t.ID), ReferenceType: utils.Ptr(models.RefTimeblock),
-			SkipPush: late,
+			SkipPush: late, At: utils.Ptr(at),
 		})
 	}
 	return nil
@@ -255,7 +255,7 @@ func (w *ReminderWorker) group(ctx context.Context, from, now time.Time) error {
 					"start_at": r.Start.UTC().Format(time.RFC3339),
 				},
 				ReferenceID: utils.Ptr(b.ID), ReferenceType: utils.Ptr(models.RefTribeBlock),
-				SkipPush: late,
+				SkipPush: late, At: utils.Ptr(at),
 			})
 		}
 	}
