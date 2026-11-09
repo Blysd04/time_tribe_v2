@@ -117,10 +117,7 @@ func (s *NotificationService) TestPush(ctx context.Context, userID string) error
 		Token:        *u.FCMToken,
 		Notification: &messaging.Notification{Title: "TimeTribe", Body: "Thông báo thử lúc " + time.Now().In(utils.LoadLocation(u.Timezone)).Format("15:04:05")},
 		Data:         map[string]string{"kind": "test", "type": "system"},
-		Android: &messaging.AndroidConfig{
-			Priority:     "high",
-			Notification: &messaging.AndroidNotification{Priority: messaging.PriorityHigh, DefaultSound: true},
-		},
+		Android:      AndroidPush(),
 	})
 	if err != nil {
 		log.Printf("gửi thông báo thử cho %s lỗi: %v", u.NickName, err)
@@ -155,14 +152,7 @@ func (s *NotificationService) pushToUsers(userIDs []string, title, body string, 
 			Tokens:       regs,
 			Notification: &messaging.Notification{Title: title, Body: body},
 			Data:         data,
-			// Ưu tiên cao để máy đang tiết kiệm pin (Doze, MIUI...) vẫn hiện ngay, không gom lại gửi trễ
-			Android: &messaging.AndroidConfig{
-				Priority: "high",
-				Notification: &messaging.AndroidNotification{
-					Priority:     messaging.PriorityHigh,
-					DefaultSound: true,
-				},
-			},
+			Android:      AndroidPush(),
 			APNS: &messaging.APNSConfig{
 				Headers: map[string]string{"apns-priority": "10", "apns-push-type": "alert"},
 				Payload: &messaging.APNSPayload{Aps: &messaging.Aps{Sound: "default"}},
@@ -365,6 +355,7 @@ func (s *NotificationService) Broadcast(ctx context.Context, adminID, title, con
 				Topic:        TopicAllUsers,
 				Notification: &messaging.Notification{Title: title, Body: content},
 				Data:         map[string]string{"kind": models.NotiSystemBroadcast, "type": models.NotiSystemBroadcast},
+				Android:      AndroidPush(),
 			})
 			if err != nil {
 				log.Printf("gửi thông báo chung lỗi: %v", err)

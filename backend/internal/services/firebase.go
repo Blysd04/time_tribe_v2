@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
@@ -13,6 +14,31 @@ import (
 
 // TopicAllUsers là topic FCM mà mọi thiết bị đều đăng ký, dùng cho thông báo hệ thống.
 const TopicAllUsers = "all_users"
+
+// AndroidChannelID là kênh thông báo mức ưu tiên cao mà app tạo sẵn (MainActivity.kt).
+// Không chỉ định kênh thì Android dùng kênh mặc định "Miscellaneous" mức thấp: khi app chạy nền
+// thông báo chỉ nằm im trong thanh thông báo, không hiện nổi, không chuông (nhất là máy Xiaomi).
+const AndroidChannelID = "timetribe_alerts"
+
+// AndroidPush là cấu hình Android dùng chung cho mọi thông báo đẩy: ưu tiên cao để máy đang
+// tiết kiệm pin (Doze, MIUI...) vẫn nhận ngay, hiện nổi + chuông + rung qua kênh timetribe_alerts.
+func AndroidPush() *messaging.AndroidConfig {
+	return &messaging.AndroidConfig{
+		Priority: "high",
+		TTL:      ptrDuration(24 * time.Hour),
+		Notification: &messaging.AndroidNotification{
+			ChannelID:             AndroidChannelID,
+			Priority:              messaging.PriorityHigh,
+			DefaultSound:          true,
+			DefaultVibrateTimings: true,
+			Visibility:            messaging.VisibilityPublic,
+			Icon:                  "ic_stat_notification",
+			Color:                 "#3A86FF",
+		},
+	}
+}
+
+func ptrDuration(d time.Duration) *time.Duration { return &d }
 
 // FirebaseService bọc Firebase Admin SDK: xác thực ID token đăng nhập Google và gửi FCM.
 // Thiếu file serviceAccountKey.json thì server vẫn chạy, chỉ tắt hai chức năng này.

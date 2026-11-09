@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Kênh thông báo mức ưu tiên cao (MainActivity.kt tạo, server gửi vào kênh này) -->
+    <string name="notification_channel_name">Nhắc lịch &amp; hoạt động nhóm</string>
+    <string name="notification_channel_description">Nhắc trước giờ bắt đầu, lời mời và thay đổi hoạt động của nhóm</string>
+</resources>

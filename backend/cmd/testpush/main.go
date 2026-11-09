@@ -36,10 +36,7 @@ func main() {
 		Token:        *token,
 		Notification: &messaging.Notification{Title: *title, Body: *body},
 		Data:         map[string]string{"kind": "test", "type": "system"},
-		Android: &messaging.AndroidConfig{
-			Priority:     "high",
-			Notification: &messaging.AndroidNotification{Priority: messaging.PriorityHigh, DefaultSound: true},
-		},
+		Android:      services.AndroidPush(),
 	})
 	if err != nil {
 		log.Fatalf("gửi lỗi: %v", err)

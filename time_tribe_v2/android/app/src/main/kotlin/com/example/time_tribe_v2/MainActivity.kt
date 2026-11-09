@@ -1,5 +1,7 @@
 package com.example.time_tribe_v2
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.UiModeManager
 import android.content.Context
 import android.os.Build
@@ -21,12 +23,37 @@ class MainActivity : FlutterActivity() {
         private const val CHANNEL = "timetribe/theme"
         private const val NATIVE_PREFS = "timetribe_native"
         private const val KEY_APPLIED = "applied_night_mode"
+        /** Trùng với AndroidChannelID bên backend và meta-data trong AndroidManifest.xml. */
+        private const val NOTIFICATION_CHANNEL_ID = "timetribe_alerts"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Phòng khi bản cũ của app chưa kịp báo xuống: đọc lựa chọn Flutter đã lưu
         applyNightMode(readSavedThemeMode())
         super.onCreate(savedInstanceState)
+        createNotificationChannel()
+    }
+
+    /**
+     * Kênh thông báo mức cao (IMPORTANCE_HIGH): hiện nổi trên màn hình, có chuông và rung.
+     * Thông báo FCM tới lúc app chạy nền do Android tự hiện, nên phải có kênh này
+     * (kênh mặc định "Miscellaneous" mức thấp, nhiều máy chỉ để im trong thanh thông báo).
+     * Tạo lại nhiều lần không sao, Android giữ nguyên cài đặt người dùng đã chỉnh.
+     */
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+        val channel = NotificationChannel(
+            NOTIFICATION_CHANNEL_ID,
+            getString(R.string.notification_channel_name),
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = getString(R.string.notification_channel_description)
+            enableVibration(true)
+            enableLights(true)
+            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+        }
+        manager.createNotificationChannel(channel)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
