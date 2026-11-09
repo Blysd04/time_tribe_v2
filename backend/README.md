@@ -61,6 +61,9 @@ go mod download
 go run ./cmd/seed
 ```
 
+   Quay video demo: `go run ./cmd/seed -demo -tz America/Vancouver -lead 12`
+   (thêm lịch canh giờ để có thông báo nhắc thật, xem `docs/DEMO_PLAN.md`).
+
 4. Chạy server:
 
 ```bash

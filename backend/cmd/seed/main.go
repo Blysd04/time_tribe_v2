@@ -4,16 +4,27 @@
 // ID sinh cố định theo tên (UUID v5) nên chạy lại bao nhiêu lần ID cũng không đổi.
 //
 // Chạy: go run ./cmd/seed
+//
+// Chế độ quay video demo (xem docs/DEMO_PLAN.md):
+//
+//	go run ./cmd/seed -demo -tz America/Vancouver -lead 10
+//
+//	-demo  thêm tài khoản "Người Mới" (chưa xem hướng dẫn) và các lịch canh theo giờ chạy seed,
+//	       để vài phút sau có thông báo nhắc thật, có lịch trùng giờ, có thông báo nhắc bù.
+//	-tz    múi giờ cho tài khoản Tuyết Nga và Người Mới, đặt đúng múi giờ của điện thoại dùng để quay.
+//	-lead  số phút từ lúc seed tới lần nhắc đầu tiên (mặc định 10), đủ thời gian bật server và đăng nhập.
 package main
 
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"golang.org/x/crypto/bcrypt"
 	_ "time/tzdata"
 
@@ -99,6 +110,28 @@ var weekly = map[string]map[int][]slot{
 
 // main xoá 11 collection, tạo lại index rồi nạp dữ liệu mẫu, cuối cùng in danh sách tài khoản và id để test.
 func main() {
+	demo := flag.Bool("demo", false, "thêm dữ liệu canh giờ để quay video demo")
+	demoTZ := flag.String("tz", "", "múi giờ IANA cho tài khoản Tuyết Nga và Người Mới (VD America/Vancouver)")
+	lead := flag.Int("lead", 10, "số phút từ lúc seed tới lần nhắc demo đầu tiên")
+	flag.Parse()
+	if *demoTZ != "" && !utils.IsValidTimezone(*demoTZ) {
+		log.Fatalf("múi giờ %q không hợp lệ", *demoTZ)
+	}
+	if *demoTZ != "" {
+		for i := range users {
+			if users[i].key == "nga" {
+				users[i].tz = *demoTZ
+			}
+		}
+	}
+	if *demo {
+		tz := *demoTZ
+		if tz == "" {
+			tz = models.DefaultTimezone
+		}
+		users = append(users, seedUser{"newbie", "Người Mới", "nguoimoi@timetribe.app", tz, models.RoleCustomer, models.ProviderLocal, false})
+	}
+
 	cfg := config.Load()
 	client, db, err := database.Connect(cfg.MongoURI, cfg.DBName)
 	if err != nil {
@@ -131,6 +164,7 @@ func main() {
 		created := now.AddDate(0, 0, -30+i) // ngày tạo tài khoản rải trong tháng trước
 		must(s.Users.InsertOne(ctx, models.User{
 			ID: id("user", u.key), Email: u.email, NickName: u.nick, Timezone: u.tz, CreatedAt: created, UpdatedAt: created,
+			NeedsOnboarding: u.key == "newbie", // tài khoản này mở app sẽ thấy màn hình chào mừng + hướng dẫn
 		}))
 		sec := models.UserSecurity{UserID: id("user", u.key), Role: u.role, AuthProvider: u.provider, IsBanned: u.banned}
 		if u.provider == models.ProviderLocal {
@@ -335,6 +369,18 @@ func main() {
 		Type:    models.NotiSystemBroadcast, CreatedAt: now.Add(-24 * time.Hour),
 	}))
 
+	// Mốc quét của bộ nhắc lịch: đặt bằng lúc seed để server bật lên không nhắc bù hàng loạt
+	// lịch mẫu của 24 giờ trước. Chế độ demo lùi 30 phút để có đúng một thông báo "nhắc bù".
+	cursor := now
+	if *demo {
+		cursor = now.Add(-30 * time.Minute)
+	}
+	must(db.Collection(models.CollWorkerState).InsertOne(ctx, bson.M{"_id": "reminder", "last": cursor}))
+
+	if *demo {
+		seedDemo(ctx, s, tz, now, *lead)
+	}
+
 	fmt.Println("Đã seed xong database", cfg.DBName)
 	fmt.Printf("  %d users, %d timeblocks, 4 templates, 5 tribes, 7 tribe_blocks, 9 notifications\n\n", len(users), tbCount)
 	fmt.Println("Tài khoản (mật khẩu chung: " + seedPassword + ", trừ tài khoản Google):")
@@ -360,6 +406,77 @@ func main() {
 	for _, k := range []string{"nga-nic", "nga-gym", "linh-exam", "minh-gym"} {
 		fmt.Printf("  %-10s %s\n", k, id("template", k))
 	}
+}
+
+// seedDemo thêm các lịch canh theo giờ chạy seed cho kịch bản quay video:
+//  1. Nhắc lịch cá nhân của Nga đẩy về điện thoại sau `lead` phút.
+//  2. Nhắc hoạt động nhóm NIC sau `lead`+3 phút, trùng giờ với lịch cá nhân ở (1) để xem
+//     lịch hiển thị cạnh nhau; David đã từ chối nên không nhận nhắc.
+//  3. Một lịch cá nhân đã bắt đầu 10 phút trước mà server "đang tắt" lúc tới giờ nhắc:
+//     bật server lên sẽ có thông báo nhắc bù trong danh sách (không đẩy FCM).
+//  4. Lịch tối nay để thử tạo lịch trùng giờ (bị chặn) và một hoạt động nhóm đang chờ Nga trả lời.
+func seedDemo(ctx context.Context, s *repository.Store, tz map[string]string, now time.Time, lead int) {
+	loc := utils.LoadLocation(tz["nga"])
+	nga := id("user", "nga")
+	base := now.Truncate(time.Minute).Add(time.Minute)
+	personalAt := base.Add(time.Duration(lead) * time.Minute) // mốc đẩy nhắc cá nhân
+	groupAt := personalAt.Add(3 * time.Minute)                // mốc đẩy nhắc nhóm
+
+	addPersonal := func(key, task, desc string, start time.Time, minutes, remind int, color string) {
+		st := start.In(loc)
+		en := st.Add(time.Duration(minutes) * time.Minute)
+		must(s.Timeblocks.InsertOne(ctx, models.Timeblock{
+			ID: id("timeblock", "demo-"+key), UserID: nga, Task: task, Description: utils.TrimPtr(&desc),
+			Date: st.Format(utils.DateLayout), StartTime: st.Format("15:04") + ":00", EndTime: en.Format("15:04") + ":00",
+			ColorCode: color, Remind: remind, CreatedAt: now,
+		}))
+	}
+	// (1) bắt đầu sau 15 phút kể từ mốc nhắc
+	addPersonal("rehearse", "Tập thuyết trình đồ án", "Demo: thông báo nhắc trước 15 phút", personalAt.Add(15*time.Minute), 45, 15, "#FF7F50")
+	// (3) đã bắt đầu 10 phút trước, mốc nhắc rơi vào lúc server còn tắt
+	addPersonal("missed", "Gọi điện cho mẹ", "Demo: nhắc bù khi server tắt lúc tới giờ nhắc", now.Add(-10*time.Minute), 30, 15, "#9B5DE5")
+	// (4) tối nay 19:00-20:30 (giờ của Nga) để thử tạo lịch trùng giờ
+	today := utils.TodayIn(loc)
+	evening := utils.At(today, "19:00:00", loc)
+	if evening.Before(now) {
+		evening = utils.At(utils.AddDays(today, 1), "19:00:00", loc)
+	}
+	addPersonal("english", "Học tiếng Anh", "Demo: thử thêm lịch 19:30 sẽ báo trùng giờ", evening, 90, 15, "#00B894")
+
+	addGroup := func(key, tribe, creator, task, desc string, start time.Time, minutes, remind int, color string, att map[string]string) {
+		st := start.UTC()
+		en := st.Add(time.Duration(minutes) * time.Minute)
+		bid := id("tribe_block", "demo-"+key)
+		must(s.TribeBlocks.InsertOne(ctx, models.TribeBlock{
+			ID: bid, TribeID: id("tribe", tribe), CreatedBy: id("user", creator), Task: task, Description: utils.TrimPtr(&desc),
+			Date: st.Format(utils.DateLayout), StartTime: st.Format(utils.ClockLayout), EndTime: en.Format(utils.ClockLayout),
+			ColorCode: color, Remind: remind, CreatedAt: now,
+		}))
+		for u, status := range att {
+			must(s.TribeBlockAttendance.InsertOne(ctx, models.TribeBlockAttendance{
+				ID: id("attendance", "demo-"+key+"-"+u), TribeBlockID: bid, UserID: id("user", u), Status: status, UpdatedAt: now,
+			}))
+		}
+	}
+	A, D, P := models.AttendanceAccepted, models.AttendanceDeclined, models.AttendancePending
+	// (2) nhắc trước 10 phút, bắt đầu trong lúc Nga đang "Tập thuyết trình" nên trùng giờ
+	addGroup("sync", "nic", "minh", "Chạy thử demo với nhóm", "Demo: thông báo nhắc hoạt động nhóm", groupAt.Add(10*time.Minute), 60, 10, "#3A86FF",
+		map[string]string{"nga": A, "minh": A, "linh": P, "hana": P, "david": D, "an": P})
+	// (4) ngày mai, Nga chưa trả lời để demo nút Tham gia / Từ chối
+	tomorrow := utils.At(utils.AddDays(today, 1), "20:00:00", loc)
+	addGroup("vote", "marketing", "linh", "Chốt nội dung video quảng cáo", "Demo: hoạt động đang chờ bạn xác nhận", tomorrow, 60, 60, "#9B5DE5",
+		map[string]string{"linh": A, "nga": P, "hana": A, "david": P, "khoa": A, "an": P, "mai": P, "minh": A})
+
+	f := func(t time.Time) string { return t.In(loc).Format("15:04 02/01") }
+	fmt.Println("== Kịch bản demo (giờ theo múi giờ", loc.String()+") ==")
+	fmt.Printf("  %s  thông báo đẩy \"Sắp tới giờ: Tập thuyết trình đồ án\" (cá nhân, nhắc trước 15 phút)\n", f(personalAt))
+	fmt.Printf("  %s  thông báo đẩy \"Sắp tới giờ: Chạy thử demo với nhóm\" (nhóm Đồ án NIC, nhắc trước 10 phút)\n", f(groupAt))
+	fmt.Printf("  %s  hai lịch trên trùng giờ, xem lịch hiển thị cạnh nhau\n", f(groupAt.Add(10*time.Minute)))
+	fmt.Printf("  ngay khi bật server  thông báo nhắc bù \"Gọi điện cho mẹ\" (đã bắt đầu lúc %s, không đẩy)\n", f(now.Add(-10*time.Minute)))
+	fmt.Printf("  %s  lịch \"Học tiếng Anh\" để thử tạo lịch trùng giờ\n", f(evening))
+	fmt.Printf("  %s  \"Chốt nội dung video quảng cáo\" (Team Marketing) đang chờ Nga trả lời\n\n", f(tomorrow))
+	fmt.Println("  Lưu ý: bật server trong vòng", lead, "phút và đăng nhập Nga trên điện thoại trước mốc nhắc đầu tiên.")
+	fmt.Println()
 }
 
 // must dừng chương trình ngay nếu có lỗi, cho code seed ngắn gọn.
