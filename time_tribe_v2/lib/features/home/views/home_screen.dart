@@ -58,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     PushService.onMessage = null;
     PushService.onTokenRefresh = null;
+    PushService.onOpenNotifications = null;
     super.dispose();
   }
 
@@ -70,6 +71,16 @@ class _HomeScreenState extends State<HomeScreen> {
       notifications.load(silent: true);
       tribes.load();
     };
+    // Bấm vào thông báo -> mở tab Thông báo (đóng các trang đang mở đè lên trang chủ)
+    final home = context.read<HomeViewModel>();
+    void openNotifications() {
+      if (!mounted) return;
+      Navigator.of(context).popUntil((r) => r.isFirst);
+      home.changeTab(3);
+      notifications.load(silent: true);
+    }
+
+    PushService.onOpenNotifications = openNotifications;
     // Firebase cấp mã FCM mới thì gửi lên server
     PushService.onTokenRefresh = (token) {
       ApiClient.instance
@@ -88,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
           .catchError((_) => null);
     }
     await load;
+    if (await PushService.launchedFromNotification()) openNotifications();
   }
 
   /// Nút "+" giữa thanh điều hướng: hành động theo mục đang mở.

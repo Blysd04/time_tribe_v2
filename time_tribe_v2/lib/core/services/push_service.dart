@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 /// Thông báo đẩy qua Firebase Cloud Messaging.
 ///
@@ -23,6 +24,15 @@ class PushService {
   /// tự hiện banner trong app (tiêu đề, nội dung). iOS đã có banner hệ thống.
   static void Function(String title, String body)? onForeground;
 
+  /// Người dùng bấm vào một thông báo (app đang chạy hoặc vừa được mở từ thông báo).
+  static void Function()? onOpenNotifications;
+
+  /// Kênh sang MainActivity.kt: hiện thông báo hệ thống khi app đang mở.
+  static const _native = MethodChannel('timetribe/notify');
+
+  static bool get _android =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
   /// Gọi khi Firebase cấp mã FCM mới, app cần gửi mã mới lên server.
   static void Function(String token)? onTokenRefresh;
 
@@ -36,14 +46,28 @@ class PushService {
     try {
       await Firebase.initializeApp();
       _ready = true;
+      if (_android) {
+        _native.setMethodCallHandler((call) async {
+          if (call.method == 'openNotifications') onOpenNotifications?.call();
+        });
+      }
       FirebaseMessaging.onMessage.listen((m) {
         onMessage?.call();
         final n = m.notification;
-        if (n != null && defaultTargetPlatform == TargetPlatform.android) {
+        if (n != null && _android) {
+          // Firebase không tự hiện thông báo khi app đang mở: tự hiện ra thanh thông báo
+          // (giống lúc app chạy nền), kèm banner trong app.
+          _native
+              .invokeMethod('show', {'title': n.title ?? '', 'body': n.body ?? ''})
+              .catchError((_) => null);
           onForeground?.call(n.title ?? '', n.body ?? '');
         }
       });
-      FirebaseMessaging.onMessageOpenedApp.listen((_) => onMessage?.call());
+      // Bấm vào thông báo FCM lúc app chạy nền -> mở tab Thông báo
+      FirebaseMessaging.onMessageOpenedApp.listen((_) {
+        onMessage?.call();
+        onOpenNotifications?.call();
+      });
       // iOS: vẫn hiện banner hệ thống khi app đang mở
       await FirebaseMessaging.instance
           .setForegroundNotificationPresentationOptions(
@@ -61,6 +85,21 @@ class PushService {
     } catch (e) {
       debugPrint('không khởi tạo được Firebase: $e');
     }
+  }
+
+  /// App vừa được mở bằng cách bấm vào thông báo (lúc app đã tắt hẳn) hay không.
+  static Future<bool> launchedFromNotification() async {
+    if (!_ready) return false;
+    try {
+      if (await FirebaseMessaging.instance.getInitialMessage() != null) {
+        return true;
+      }
+      if (_android) {
+        return await _native.invokeMethod<bool>('launchedFromNotification') ??
+            false;
+      }
+    } catch (_) {}
+    return false;
   }
 
   /// Xin quyền hiện thông báo (Android 13 trở lên và iOS bắt buộc phải hỏi).

@@ -1,9 +1,14 @@
 package com.example.time_tribe_v2
 
+import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.UiModeManager
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
@@ -25,13 +30,74 @@ class MainActivity : FlutterActivity() {
         private const val KEY_APPLIED = "applied_night_mode"
         /** Trùng với AndroidChannelID bên backend và meta-data trong AndroidManifest.xml. */
         private const val NOTIFICATION_CHANNEL_ID = "timetribe_alerts"
+        /** Kênh nói chuyện với Flutter để hiện thông báo hệ thống khi app đang mở. */
+        private const val NOTIFY_CHANNEL = "timetribe/notify"
+        /** Đánh dấu Intent mở app từ thông báo do app tự hiện -> mở tab Thông báo. */
+        private const val EXTRA_OPEN_NOTIFICATIONS = "timetribe_open_notifications"
     }
+
+    private var notifyChannel: MethodChannel? = null
+
+    /** App được mở bằng cách bấm vào thông báo (Flutter hỏi một lần lúc khởi động). */
+    private var launchedFromNotification = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Phòng khi bản cũ của app chưa kịp báo xuống: đọc lựa chọn Flutter đã lưu
         applyNightMode(readSavedThemeMode())
         super.onCreate(savedInstanceState)
         createNotificationChannel()
+        launchedFromNotification =
+            intent?.getBooleanExtra(EXTRA_OPEN_NOTIFICATIONS, false) == true
+    }
+
+    /** App đang chạy mà người dùng bấm vào thông báo: báo Flutter mở tab Thông báo. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_NOTIFICATIONS, false)) {
+            notifyChannel?.invokeMethod("openNotifications", null)
+        }
+    }
+
+    /**
+     * Hiện thông báo hệ thống (thanh thông báo, màn hình khoá, hiện nổi).
+     * Firebase KHÔNG tự hiện thông báo khi app đang mở, nên Flutter gọi hàm này cho mỗi tin FCM
+     * tới lúc app đang mở. Lúc app chạy nền hoặc đã tắt thì Android tự hiện qua kênh timetribe_alerts.
+     */
+    private fun showNotification(title: String, body: String) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) return
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+        createNotificationChannel()
+        val open = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_OPEN_NOTIFICATIONS, true)
+        }
+        val piFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
+        val contentIntent = PendingIntent.getActivity(this, 0, open, piFlags)
+        @Suppress("DEPRECATION")
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
+        } else {
+            Notification.Builder(this)
+                .setPriority(Notification.PRIORITY_HIGH)
+                .setDefaults(Notification.DEFAULT_ALL)
+        }
+        builder
+            .setSmallIcon(R.drawable.ic_stat_notification)
+            .setColor(0xFF3A86FF.toInt())
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(Notification.BigTextStyle().bigText(body))
+            .setAutoCancel(true)
+            .setShowWhen(true)
+            .setWhen(System.currentTimeMillis())
+            .setContentIntent(contentIntent)
+        manager.notify((System.currentTimeMillis() % Int.MAX_VALUE).toInt(), builder.build())
     }
 
     /**
@@ -66,6 +132,25 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                     else -> result.notImplemented()
+                }
+            }
+        notifyChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NOTIFY_CHANNEL)
+            .also { channel ->
+                channel.setMethodCallHandler { call, result ->
+                    when (call.method) {
+                        "show" -> {
+                            showNotification(
+                                call.argument<String>("title") ?: "",
+                                call.argument<String>("body") ?: "",
+                            )
+                            result.success(null)
+                        }
+                        "launchedFromNotification" -> {
+                            result.success(launchedFromNotification)
+                            launchedFromNotification = false
+                        }
+                        else -> result.notImplemented()
+                    }
                 }
             }
     }
