@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -22,9 +23,21 @@ func Connect(uri, dbName string) (*mongo.Client, *mongo.Database, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := client.Ping(ctx, nil); err != nil {
-		return nil, nil, fmt.Errorf("không ping được MongoDB tại %s: %w", uri, err)
+		return nil, nil, fmt.Errorf("không ping được MongoDB tại %s: %w", redact(uri), err)
 	}
 	return client, client.Database(dbName), nil
+}
+
+// redact che mật khẩu trong chuỗi kết nối trước khi in ra log.
+func redact(uri string) string {
+	u, err := url.Parse(uri)
+	if err != nil || u.User == nil {
+		return uri
+	}
+	if _, ok := u.User.Password(); ok {
+		u.User = url.UserPassword(u.User.Username(), "***")
+	}
+	return u.String()
 }
 
 // EnsureIndexes tạo các index tương đương ràng buộc unique / khoá ngoại trong thiết kế CSDL.

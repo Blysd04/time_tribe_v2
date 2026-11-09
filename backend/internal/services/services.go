@@ -25,7 +25,7 @@ type Services struct {
 func New(cfg *config.Config, store *repository.Store) *Services {
 	s := &Services{Cfg: cfg, Store: store}
 	s.JWT = NewJWTManager(cfg.JWTSecret, cfg.AccessTokenTTL)
-	s.Firebase = NewFirebaseService(cfg.FirebaseCredsFile)
+	s.Firebase = NewFirebaseService(cfg.FirebaseCredsFile, cfg.FirebaseCredsJSON)
 	s.Uploader = NewUploader(cfg.CloudinaryURL)
 	mailer := NewMailer(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom)
 	s.Notifications = NewNotificationService(store, s.Firebase)

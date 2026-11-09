@@ -26,7 +26,7 @@ func main() {
 	if *token == "" {
 		log.Fatal("thiếu -token")
 	}
-	fb := services.NewFirebaseService(*creds)
+	fb := services.NewFirebaseService(*creds, cfg.FirebaseCredsJSON)
 	if !fb.PushEnabled() {
 		log.Fatal("không khởi tạo được Firebase Messaging, kiểm tra file -creds")
 	}

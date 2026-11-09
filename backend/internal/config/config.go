@@ -24,6 +24,9 @@ type Config struct {
 	RememberMeTTL     time.Duration
 	ResetTokenTTL     time.Duration
 	FirebaseCredsFile string
+	// Nội dung file service account (JSON thô hoặc base64), dùng khi deploy lên Zeabur/Docker
+	// không tiện đặt file. Có biến này thì bỏ qua FirebaseCredsFile.
+	FirebaseCredsJSON string
 	CloudinaryURL     string
 
 	// Link mở trang đặt lại mật khẩu (gắn ?token=...)
@@ -58,6 +61,7 @@ func Load() *Config {
 		RememberMeTTL:     days("REMEMBER_ME_TTL_DAYS", 30),
 		ResetTokenTTL:     minutes("RESET_TOKEN_TTL_MINUTES", 30),
 		FirebaseCredsFile: get("FIREBASE_CREDENTIALS", "serviceAccountKey.json"),
+		FirebaseCredsJSON: get("FIREBASE_CREDENTIALS_JSON", ""),
 		CloudinaryURL:     get("CLOUDINARY_URL", ""),
 		ResetPasswordURL:  get("RESET_PASSWORD_URL", "https://timetribe.app/reset-password"),
 		SMTPHost:          get("SMTP_HOST", ""),
@@ -66,6 +70,9 @@ func Load() *Config {
 		SMTPPass:          get("SMTP_PASS", ""),
 		SMTPFrom:          get("SMTP_FROM", ""),
 		EnableReminder:    get("ENABLE_REMINDER", "true") == "true",
+	}
+	if !cfg.IsDev() && (cfg.JWTSecret == "doi-chuoi-nay-truoc-khi-deploy" || len(cfg.JWTSecret) < 32) {
+		log.Fatal("APP_ENV=production cần JWT_SECRET ngẫu nhiên dài ít nhất 32 ký tự")
 	}
 	return cfg
 }

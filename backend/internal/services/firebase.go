@@ -2,8 +2,10 @@ package services
 
 import (
 	"context"
+	"encoding/base64"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	firebase "firebase.google.com/go/v4"
@@ -47,14 +49,30 @@ type FirebaseService struct {
 	Messaging *messaging.Client
 }
 
-// NewFirebaseService đọc file service account để dùng Firebase Admin SDK, thiếu file thì chỉ tắt Google và FCM.
-func NewFirebaseService(credsFile string) *FirebaseService {
-	if _, err := os.Stat(credsFile); err != nil {
-		log.Printf("không thấy file %s, tắt đăng nhập Google và thông báo đẩy", credsFile)
-		return &FirebaseService{}
+// NewFirebaseService khởi tạo Firebase Admin SDK. Ưu tiên credsJSON (biến FIREBASE_CREDENTIALS_JSON,
+// JSON thô hoặc base64, tiện khi deploy), không có thì đọc file credsFile.
+// Không có cả hai thì server vẫn chạy, chỉ tắt đăng nhập Google và FCM.
+func NewFirebaseService(credsFile, credsJSON string) *FirebaseService {
+	var opt option.ClientOption
+	if raw := strings.TrimSpace(credsJSON); raw != "" {
+		if !strings.HasPrefix(raw, "{") {
+			dec, err := base64.StdEncoding.DecodeString(raw)
+			if err != nil {
+				log.Printf("FIREBASE_CREDENTIALS_JSON không phải JSON hay base64 hợp lệ: %v", err)
+				return &FirebaseService{}
+			}
+			raw = string(dec)
+		}
+		opt = option.WithCredentialsJSON([]byte(raw))
+	} else {
+		if _, err := os.Stat(credsFile); err != nil {
+			log.Printf("không thấy file %s, tắt đăng nhập Google và thông báo đẩy", credsFile)
+			return &FirebaseService{}
+		}
+		opt = option.WithCredentialsFile(credsFile)
 	}
 	ctx := context.Background()
-	app, err := firebase.NewApp(ctx, nil, option.WithCredentialsFile(credsFile))
+	app, err := firebase.NewApp(ctx, nil, opt)
 	if err != nil {
 		log.Printf("khởi tạo Firebase lỗi: %v", err)
 		return &FirebaseService{}

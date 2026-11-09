@@ -1,0 +1,10 @@
+# Không đưa bí mật và file thừa vào image
+.env
+.env.*
+!.env.example
+serviceAccountKey.json
+*.json.bak
+bin/
+postman/
+*.md
+.git

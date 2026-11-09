@@ -79,6 +79,11 @@ Build ra file chạy:
 go build -o bin/timetribe ./cmd/server
 ```
 
+## Deploy (Zeabur + MongoDB Atlas)
+
+Xem `docs/DEPLOY.md`. Tóm tắt: `backend/Dockerfile` build image, biến môi trường theo
+`.env.production.example`, service account Firebase truyền qua `FIREBASE_CREDENTIALS_JSON` (base64).
+
 ## Ghi chú
 
 - Không dùng transaction vì MongoDB chạy đơn lẻ (không phải replica set) không hỗ trợ.
