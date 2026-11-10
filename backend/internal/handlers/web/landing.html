@@ -1,271 +1,462 @@
 <title>TimeTribe</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="TimeTribe: lịch cá nhân và lịch nhóm nhiều múi giờ. Tải APK cho Android.">
+<meta name="description" content="TimeTribe: biết ngay giờ cả nhóm cùng rảnh, nhắc lịch đúng giờ cho mọi múi giờ. Tải APK miễn phí cho Android.">
+<link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Mulish:wght@400;600;700&display=swap">
 <style>
-/* Layout: hero chia đôi (lời mời tải + dải ba múi giờ), rồi tính năng, cách cài, câu hỏi. */
+/* Bố cục: hero chia đôi (lời mời + mô phỏng màn hình app), 4 hàng lợi ích so le trái/phải,
+   4 bước cài đặt, hỏi đáp, dải kêu gọi cuối trang màu xanh của logo. */
 :root {
-  --ink: #0F1B33;
-  --muted: #55627A;
-  --paper: #F3F6FB;
-  --card: #FFFFFF;
-  --line: #DCE3EF;
-  --blue: #3A86FF;
-  --blue-ink: #1F5FD1;
-  --busy: #F4A100;
-  --busy-soft: rgba(244, 161, 0, .18);
-  --ok: #00A383;
-  --on-blue: #FFFFFF;
-  --f-display: "Bricolage Grotesque", "Be Vietnam Pro", system-ui, sans-serif;
-  --f-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --bg: #F6F9FE;
+  --surface: #FFFFFF;
+  --ink: #0E2447;
+  --muted: #566781;
+  --line: #DDE6F3;
+  --brand: #1B6FE0;        /* xanh chính trong logo */
+  --brand-deep: #174F9C;   /* xanh đậm của chữ "TimeTribe" */
+  --brand-sky: #4FADE6;    /* xanh nhạt của các "thành viên" quanh đồng hồ */
+  --brand-tint: #E7F0FD;
+  --on-brand: #FFFFFF;
+  --busy: #E9A23B;
+  --busy-tint: rgba(233, 162, 59, .22);
+  --free: #14A37F;
+  --free-tint: rgba(20, 163, 127, .12);
+  --shadow: 0 24px 60px -24px rgba(14, 36, 71, .35);
+  --f-head: "Montserrat", "Segoe UI", Roboto, system-ui, sans-serif;
+  --f-body: "Mulish", "Segoe UI", Roboto, system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ink: #E7EDF8; --muted: #9AA8C0; --paper: #0B1324; --card: #121D33; --line: #24314B;
-    --blue: #5B9BFF; --blue-ink: #8DB8FF; --busy: #FFB733; --busy-soft: rgba(255, 183, 51, .16);
-    --ok: #2BD1AE; --on-blue: #06132B; color-scheme: dark;
+    --bg: #08142A; --surface: #0F1F3B; --ink: #E8EEF9; --muted: #9DAECB; --line: #213456;
+    --brand: #4A90F5; --brand-deep: #8DB9FF; --brand-sky: #66BDF0; --brand-tint: #14294D; --on-brand: #FFFFFF;
+    --busy: #F2B456; --busy-tint: rgba(242, 180, 86, .2); --free: #2CC79E; --free-tint: rgba(44, 199, 158, .14);
+    --shadow: 0 24px 60px -24px rgba(0, 0, 0, .7); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --ink: #E7EDF8; --muted: #9AA8C0; --paper: #0B1324; --card: #121D33; --line: #24314B;
-  --blue: #5B9BFF; --blue-ink: #8DB8FF; --busy: #FFB733; --busy-soft: rgba(255, 183, 51, .16);
-  --ok: #2BD1AE; --on-blue: #06132B; color-scheme: dark;
+  --bg: #08142A; --surface: #0F1F3B; --ink: #E8EEF9; --muted: #9DAECB; --line: #213456;
+  --brand: #4A90F5; --brand-deep: #8DB9FF; --brand-sky: #66BDF0; --brand-tint: #14294D; --on-brand: #FFFFFF;
+  --busy: #F2B456; --busy-tint: rgba(242, 180, 86, .2); --free: #2CC79E; --free-tint: rgba(44, 199, 158, .14);
+  --shadow: 0 24px 60px -24px rgba(0, 0, 0, .7); color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
-body {
-  background: var(--paper); color: var(--ink);
-  font: 400 1rem/1.6 var(--f-body);
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-}
-.wrap { max-width: 1080px; margin-inline: auto; }
-a { color: var(--blue-ink); }
-:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 6px; }
+body { background: var(--bg); color: var(--ink); font: 400 1.0625rem/1.65 var(--f-body); }
+.pad { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1120px; margin-inline: auto; }
+a { color: var(--brand); }
+:focus-visible { outline: 3px solid var(--brand-sky); outline-offset: 3px; border-radius: 8px; }
+h1, h2, h3 { font-family: var(--f-head); text-wrap: balance; margin: 0; }
 
-/* Thanh đầu trang */
-header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; }
-.brand { display: flex; align-items: center; gap: 10px; font: 800 1.25rem/1 var(--f-display); letter-spacing: -.01em; color: var(--ink); text-decoration: none; }
-.mark { width: 30px; height: 30px; border-radius: 9px; background: var(--blue); display: grid; place-items: center; }
-.mark svg { width: 18px; height: 18px; }
-.top nav { display: flex; gap: 20px; font-size: .95rem; }
+/* Logo + chữ TimeTribe giống logo: "Time" đậm, "Tribe" mảnh */
+.logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--brand-deep); }
+.logo img { width: 40px; height: 40px; }
+.word { font: 800 1.35rem/1 var(--f-head); letter-spacing: -.01em; }
+.word span { font-weight: 400; }
+
+/* Đầu trang */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid transparent; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; }
+.top nav { display: flex; align-items: center; gap: 26px; font-weight: 600; font-size: .95rem; }
 .top nav a { color: var(--muted); text-decoration: none; }
 .top nav a:hover { color: var(--ink); }
+.top nav a.btn { color: var(--on-brand); }
+
+/* Nút */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; cursor: pointer;
+  font: 700 1rem/1 var(--f-head); padding: 17px 26px; border-radius: 999px; border: 0;
+  background: var(--brand); color: var(--on-brand); box-shadow: 0 10px 24px -10px var(--brand);
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -10px var(--brand); }
+.btn svg { width: 20px; height: 20px; flex: none; }
+.btn.small { padding: 11px 18px; font-size: .9rem; box-shadow: none; }
+.btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); }
+.btn.ghost:hover { box-shadow: inset 0 0 0 2px var(--brand); }
+.btn.light { background: #FFFFFF; color: #174F9C; box-shadow: 0 10px 24px -12px rgba(0,0,0,.4); }
 
 /* Hero */
-.hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; padding-block: 40px 64px; }
-.hero > * { min-width: 0; }
-.eyebrow { font: 500 .78rem/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--blue-ink); }
-h1 { font: 800 clamp(2.3rem, 5.4vw, 3.9rem)/1.02 var(--f-display); letter-spacing: -.03em; margin: 14px 0 18px; text-wrap: balance; }
-h1 em { font-style: normal; color: var(--blue); }
-.lede { font-size: 1.12rem; color: var(--muted); max-width: 34ch; margin: 0 0 28px; }
-.cta { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
-.btn {
-  display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
-  background: var(--blue); color: var(--on-blue); font: 600 1.05rem/1 var(--f-body);
-  padding: 16px 22px; border-radius: 14px; transition: transform .15s ease, background .15s ease;
+.hero .wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: 56px; align-items: center; padding-block: 56px 88px; }
+.hero .wrap > * { min-width: 0; }
+.kicker { display: inline-flex; align-items: center; gap: 8px; font: 700 .8rem/1 var(--f-head); letter-spacing: .08em; text-transform: uppercase; color: var(--brand); background: var(--brand-tint); padding: 9px 14px; border-radius: 999px; }
+.kicker i { width: 8px; height: 8px; border-radius: 50%; background: var(--free); }
+.hero h1 { font-weight: 800; font-size: clamp(2.4rem, 5.6vw, 4.1rem); line-height: 1.06; letter-spacing: -.025em; margin: 22px 0 20px; }
+.hero h1 .hl { color: var(--brand); }
+.lede { font-size: 1.2rem; color: var(--muted); max-width: 33ch; margin: 0 0 32px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 26px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: .95rem; font-weight: 600; }
+.facts li { display: inline-flex; align-items: center; gap: 8px; }
+.facts svg { width: 18px; height: 18px; color: var(--free); }
+
+/* Mô phỏng màn hình nhóm trong app */
+.stage { position: relative; display: grid; justify-items: center; padding-top: 34px; }
+.stage::before { content: ""; position: absolute; inset: 8% -4% 2% 6%; border-radius: 40px; background: radial-gradient(circle at 30% 30%, var(--brand-sky), var(--brand) 70%); opacity: .16; }
+.phone { position: relative; width: min(330px, 100%); background: var(--surface); border-radius: 38px; padding: 14px; box-shadow: var(--shadow), inset 0 0 0 1px var(--line); }
+.screen { border-radius: 26px; overflow: hidden; background: var(--bg); border: 1px solid var(--line); }
+.sbar { display: flex; justify-content: space-between; padding: 10px 18px 4px; font: 700 .72rem/1 var(--f-head); color: var(--ink); font-variant-numeric: tabular-nums; }
+.app-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px 12px; }
+.app-head b { font: 800 1rem/1.2 var(--f-head); display: block; }
+.app-head small { color: var(--muted); font-size: .72rem; }
+.avs { display: flex; }
+.avs span { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font: 700 .62rem/1 var(--f-head); color: #fff; margin-left: -7px; border: 2px solid var(--bg); }
+.days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 0 12px 12px; text-align: center; font-size: .66rem; color: var(--muted); }
+.days div { padding: 6px 0; border-radius: 10px; }
+.days b { display: block; font: 700 .9rem/1.3 var(--f-head); color: var(--ink); }
+.days .on { background: var(--brand); color: var(--on-brand); }
+.days .on b { color: var(--on-brand); }
+.grid { position: relative; height: 290px; margin: 0 12px 14px; border-top: 1px solid var(--line); }
+.hour { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed var(--line); }
+.hour span { position: absolute; left: 0; top: -8px; font: 600 .62rem/1 var(--f-head); color: var(--muted); background: var(--bg); padding-right: 6px; font-variant-numeric: tabular-nums; }
+.lane { position: absolute; left: 40px; right: 0; border-radius: 10px; font-size: .7rem; padding: 7px 10px; line-height: 1.3; }
+.lane.busy { background: repeating-linear-gradient(135deg, var(--busy-tint) 0 6px, transparent 6px 12px); border: 1.5px solid var(--busy); color: var(--ink); font-weight: 600; }
+.lane.free { background: var(--free-tint); border: 1.5px dashed var(--free); color: var(--free); font-weight: 700; }
+.lane.event { left: 52px; right: 12px; background: var(--brand); color: var(--on-brand); box-shadow: 0 8px 16px -8px var(--brand); }
+.lane.event b { display: block; font: 700 .76rem/1.25 var(--f-head); }
+/* Thông báo nhắc lịch nổi phía trên điện thoại */
+.toast {
+  position: absolute; top: 0; right: -6px; width: min(270px, 86%); z-index: 2;
+  display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start;
+  background: var(--surface); border-radius: 18px; padding: 12px 14px; box-shadow: var(--shadow), inset 0 0 0 1px var(--line);
+  animation: drop .7s cubic-bezier(.2,.9,.3,1.2) .4s both;
 }
-.btn:hover { background: var(--blue-ink); transform: translateY(-1px); }
-.btn svg { width: 20px; height: 20px; }
-.meta { font: 500 .8rem/1.4 var(--f-mono); color: var(--muted); }
+.toast img { width: 34px; height: 34px; }
+.toast b { display: block; font: 700 .82rem/1.3 var(--f-head); }
+.toast span { font-size: .76rem; color: var(--muted); line-height: 1.35; display: block; }
+@keyframes drop { from { transform: translateY(-14px) scale(.96); opacity: .4; } to { transform: none; opacity: 1; } }
 
-/* Dải ba múi giờ: chi tiết riêng của TimeTribe */
-.zones { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 22px 20px 18px; }
-.zones h2 { font: 600 .95rem/1.3 var(--f-body); margin: 0 0 4px; }
-.zones p.small { margin: 0 0 18px; color: var(--muted); font-size: .85rem; }
-.zone { display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: center; margin-bottom: 14px; }
-.zone .city { font-size: .85rem; line-height: 1.2; }
-.zone .city b { display: block; font-weight: 600; }
-.zone .city span { color: var(--muted); font: 500 .72rem/1 var(--f-mono); }
-.track { position: relative; height: 38px; border-radius: 10px; background: var(--paper); border: 1px solid var(--line); overflow: hidden; }
-.busy {
-  position: absolute; top: 0; bottom: 0; border-inline: 1px solid var(--busy);
-  background: repeating-linear-gradient(135deg, var(--busy-soft) 0 6px, transparent 6px 11px);
-}
-.slot {
-  position: absolute; top: 5px; bottom: 5px; border-radius: 7px; background: var(--blue); color: var(--on-blue);
-  font: 500 .72rem/1 var(--f-mono); display: flex; align-items: center; justify-content: center; white-space: nowrap;
-}
-.ticks { display: grid; grid-template-columns: 92px 1fr; gap: 12px; }
-.ticks div { display: flex; justify-content: space-between; font: 500 .68rem/1 var(--f-mono); color: var(--muted); }
-.legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; font-size: .8rem; color: var(--muted); }
-.legend i { display: inline-block; width: 14px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
-.legend .l-slot { background: var(--blue); }
-.legend .l-busy { background: repeating-linear-gradient(135deg, var(--busy) 0 2px, transparent 2px 4px); border: 1px solid var(--busy); }
+/* Các phần */
+section.part .wrap { padding-block: 84px; }
+.part-head { max-width: 640px; margin-bottom: 52px; }
+.eyebrow { font: 700 .8rem/1 var(--f-head); letter-spacing: .1em; text-transform: uppercase; color: var(--brand); }
+.part-head h2 { font-weight: 800; font-size: clamp(1.8rem, 3.6vw, 2.7rem); line-height: 1.12; letter-spacing: -.02em; margin-top: 12px; }
+.part-head p { color: var(--muted); margin: 14px 0 0; font-size: 1.1rem; }
+.alt { background: var(--surface); border-block: 1px solid var(--line); }
 
-/* Các phần dưới */
-section.block { padding-block: 56px; border-top: 1px solid var(--line); }
-h2.title { font: 800 clamp(1.6rem, 3.2vw, 2.2rem)/1.15 var(--f-display); letter-spacing: -.02em; margin: 0 0 28px; text-wrap: balance; }
-.features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 40px; }
-.feature h3 { font: 600 1.08rem/1.35 var(--f-body); margin: 0 0 6px; }
-.feature p { margin: 0; color: var(--muted); max-width: 46ch; }
-.feature .tag { font: 500 .72rem/1 var(--f-mono); color: var(--blue-ink); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 10px; display: block; }
+/* Hàng lợi ích so le */
+.rows { display: grid; gap: 72px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+.row > * { min-width: 0; }
+.row:nth-child(even) .copy { order: 2; }
+.copy h3 { font-weight: 800; font-size: clamp(1.4rem, 2.6vw, 1.85rem); line-height: 1.2; letter-spacing: -.015em; margin-bottom: 12px; }
+.copy p { color: var(--muted); margin: 0; max-width: 46ch; }
+.copy ul { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; font-weight: 600; }
+.copy li { display: flex; gap: 10px; align-items: baseline; }
+.copy li::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--brand-sky); transform: translateY(-2px); }
+.visual { background: var(--bg); border: 1px solid var(--line); border-radius: 26px; padding: 26px; }
+.alt .visual { background: var(--bg); }
 
-.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; counter-reset: step; }
-.steps li { counter-increment: step; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
-.steps li::before { content: counter(step); font: 800 1.6rem/1 var(--f-display); color: var(--blue); display: block; margin-bottom: 10px; }
-.steps b { display: block; margin-bottom: 4px; }
-.steps span { color: var(--muted); font-size: .92rem; }
+/* Visual 1: ai bận, ai rảnh */
+.who { display: grid; gap: 10px; }
+.who-row { display: grid; grid-template-columns: 74px 1fr; gap: 12px; align-items: center; font-weight: 700; font-size: .85rem; }
+.bar { position: relative; height: 26px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
+.bar i { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, var(--busy-tint) 0 5px, transparent 5px 10px); border-inline: 1.5px solid var(--busy); }
+.who-axis { display: grid; grid-template-columns: 74px 1fr; gap: 12px; font: 600 .7rem/1 var(--f-head); color: var(--muted); }
+.who-axis div { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.who-wrap { position: relative; }
+.free-col { position: absolute; top: -8px; bottom: 18px; left: calc(86px + (100% - 86px) * .6875); width: calc((100% - 86px) * .125); border-radius: 10px; border: 2px solid var(--free); background: var(--free-tint); }
+.free-note { margin-top: 18px; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--free); }
 
-.faq { display: grid; gap: 10px; max-width: 760px; }
-.faq details { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; }
-.faq summary { cursor: pointer; font-weight: 600; }
-.faq p { margin: 10px 0 2px; color: var(--muted); }
+/* Visual 2: ba múi giờ */
+.cities { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.city { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px 14px; text-align: center; }
+.city small { display: block; color: var(--muted); font-weight: 600; font-size: .8rem; }
+.city b { display: block; font: 800 1.9rem/1.2 var(--f-head); letter-spacing: -.02em; margin: 6px 0 2px; font-variant-numeric: tabular-nums; }
+.city span { font-size: .78rem; color: var(--muted); }
+.city.me { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+.same { margin-top: 16px; text-align: center; font-weight: 700; color: var(--brand); }
 
-.final { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; }
-.final p { margin: 0; font: 600 1.25rem/1.35 var(--f-display); }
-footer { padding-block: 28px 40px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+/* Visual 3: chồng thông báo */
+.stack { display: grid; gap: 12px; }
+.note { display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+.note img { width: 34px; height: 34px; }
+.note b { display: block; font: 700 .86rem/1.3 var(--f-head); }
+.note span { font-size: .8rem; color: var(--muted); }
+.note time { font-size: .72rem; color: var(--muted); white-space: nowrap; }
+.note.dim { opacity: .65; }
 
-@media (max-width: 860px) {
-  .hero { grid-template-columns: 1fr; gap: 36px; padding-top: 20px; }
+/* Visual 4: lịch mẫu */
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; text-align: center; font: 700 .72rem/1 var(--f-head); color: var(--muted); }
+.week div { display: grid; gap: 8px; }
+.week i { height: 54px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+.week i.on { background: var(--brand); border-color: var(--brand); }
+.week i.on2 { background: var(--brand-sky); border-color: var(--brand-sky); }
+.code { margin-top: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.code b { font: 800 1.25rem/1 var(--f-head); letter-spacing: .18em; background: var(--surface); border: 2px dashed var(--brand); color: var(--brand); padding: 12px 16px; border-radius: 12px; }
+.code span { color: var(--muted); font-size: .9rem; }
+
+/* Bước cài đặt */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; counter-reset: s; }
+.steps li { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--brand-tint); color: var(--brand); font: 800 1.1rem/1 var(--f-head); margin-bottom: 16px; }
+.steps b { display: block; font: 700 1.02rem/1.3 var(--f-head); margin-bottom: 6px; }
+.steps span { color: var(--muted); font-size: .95rem; }
+
+/* Hỏi đáp */
+.faq { display: grid; gap: 12px; max-width: 800px; }
+.faq details { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px; }
+.faq summary { cursor: pointer; font: 700 1.02rem/1.4 var(--f-head); list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--brand); font-size: 1.4rem; line-height: 1; }
+.faq details[open] summary::after { content: "−"; }
+.faq p { margin: 12px 0 0; color: var(--muted); }
+
+/* Dải kêu gọi cuối trang */
+.final { background: linear-gradient(135deg, #1B6FE0, #174F9C); color: #FFFFFF; }
+.final .wrap { display: grid; grid-template-columns: auto 1fr auto; gap: 28px; align-items: center; padding-block: 64px; }
+.final img { width: 88px; height: 88px; background: #FFFFFF; border-radius: 24px; padding: 10px; }
+.final h2 { font-weight: 800; font-size: clamp(1.6rem, 3.2vw, 2.3rem); line-height: 1.15; letter-spacing: -.02em; }
+.final p { margin: 8px 0 0; color: rgba(255,255,255,.82); }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; padding-block: 28px 40px; color: var(--muted); font-size: .9rem; }
+
+@media (max-width: 920px) {
+  .hero .wrap { grid-template-columns: 1fr; gap: 48px; padding-block: 32px 64px; }
+  .stage { max-width: 420px; margin-inline: auto; width: 100%; }
+  .row { grid-template-columns: 1fr; gap: 28px; }
+  .row:nth-child(even) .copy { order: 0; }
   .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .final .wrap { grid-template-columns: 1fr; text-align: left; }
 }
-@media (max-width: 560px) {
-  .top nav { display: none; }
-  .features, .steps { grid-template-columns: 1fr; }
-  .zone, .ticks { grid-template-columns: 72px 1fr; gap: 8px; }
-  .slot { font-size: .62rem; }
+@media (max-width: 640px) {
+  .top nav a:not(.btn) { display: none; }
+  .steps { grid-template-columns: 1fr; }
+  .cities { grid-template-columns: 1fr; }
+  .city { display: grid; grid-template-columns: 1fr auto; text-align: left; align-items: center; }
+  .city b { grid-row: span 2; grid-column: 2; margin: 0; }
+  .visual { padding: 18px; }
+  section.part .wrap { padding-block: 64px; }
 }
-@media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } .btn { transition: none; } }
 </style>
 
-<div class="wrap">
-  <header class="top">
-    <a class="brand" href="#top" id="top">
-      <span class="mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
-      </span>
-      TimeTribe
+<header class="top pad">
+  <div class="wrap">
+    <a class="logo" href="#gioi-thieu" aria-label="TimeTribe">
+      <img src="logo.png" alt="" width="40" height="40">
+      <span class="word">Time<span>Tribe</span></span>
     </a>
     <nav aria-label="Mục lục">
-      <a href="#tinh-nang">Tính năng</a>
+      <a href="#loi-ich">Lợi ích</a>
       <a href="#cai-dat">Cách cài</a>
       <a href="#hoi-dap">Hỏi đáp</a>
+      <a class="btn small" href="https://timetribe-api.onrender.com/download" target="_blank" rel="noopener">Tải APK</a>
     </nav>
-  </header>
+  </div>
+</header>
 
-  <main>
-    <section class="hero">
+<main id="gioi-thieu">
+  <section class="hero pad">
+    <div class="wrap">
       <div>
-        <span class="eyebrow">Ứng dụng Android · miễn phí</span>
-        <h1>Hẹn cả nhóm, <em>khác múi giờ</em> vẫn khớp lịch.</h1>
-        <p class="lede">TimeTribe gom lịch của bạn và cả nhóm vào một chỗ, chỉ ra giờ mọi người cùng rảnh và nhắc đúng giờ ở nơi mỗi người đang sống.</p>
-        <div class="cta">
-          <a class="btn" id="download" href="https://timetribe-api.zeabur.app/download" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+        <span class="kicker"><i></i>Miễn phí cho Android</span>
+        <h1>Hết cảnh nhắn từng người <span class="hl">"tối nay rảnh không?"</span></h1>
+        <p class="lede">TimeTribe xem lịch của cả nhóm và chỉ ra ngay khung giờ mọi người cùng rảnh. Đặt lịch xong, ai cũng được nhắc đúng giờ nơi mình đang sống.</p>
+        <div class="actions">
+          <a class="btn" href="https://timetribe-api.onrender.com/download" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
             Tải APK cho Android
           </a>
-          <span class="meta">Bản 1.0.0<br>Tiếng Việt · English · Français</span>
+          <a class="btn ghost" href="#cai-dat">Xem cách cài</a>
         </div>
+        <ul class="facts">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Không quảng cáo</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Tiếng Việt · English · Français</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Nhóm tới 10 người</li>
+        </ul>
       </div>
 
-      <figure class="zones" aria-label="Ví dụ một buổi họp nhóm ở ba múi giờ">
-        <h2>Họp chốt tiến độ · nhóm Đồ án NIC</h2>
-        <p class="small">Cùng một buổi họp, mỗi người thấy theo giờ địa phương của mình.</p>
-        <!-- Trục 24 giờ theo giờ Hà Nội. Buổi họp 18:00–21:00 Hà Nội = 11:00–14:00 UTC (75% → 87.5%).
-             Vùng sọc: Hà Nội bận 08–12, Tokyo bận 09–18 giờ Tokyo (07–16 HN), London bận 09–10:30 giờ London (16–17:30 HN). -->
-        <div class="zone">
-          <div class="city"><b>Hà Nội</b><span>UTC+7</span></div>
-          <div class="track">
-            <div class="busy" style="left:33.3%;width:16.7%"></div>
-            <div class="slot" style="left:75%;width:12.5%">18:00</div>
+      <div class="stage" aria-label="Màn hình lịch nhóm trong TimeTribe">
+        <div class="toast" role="img" aria-label="Thông báo nhắc lịch">
+          <img src="logo.png" alt="">
+          <div><b>Sắp tới giờ: Họp chốt tiến độ</b><span>Nhóm Đồ án NIC bắt đầu lúc 19:00.</span></div>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="sbar"><span>18:45</span><span>5G ▮▮▮</span></div>
+            <div class="app-head">
+              <div><b>Đồ án NIC</b><small>6 thành viên · 3 múi giờ</small></div>
+              <div class="avs" aria-hidden="true">
+                <span style="background:#1B6FE0">N</span><span style="background:#14A37F">M</span><span style="background:#E9A23B">L</span><span style="background:#8E5BD6">H</span><span style="background:#4FADE6">D</span>
+              </div>
+            </div>
+            <div class="days" aria-hidden="true">
+              <div>T2<b>9</b></div><div class="on">T3<b>10</b></div><div>T4<b>11</b></div><div>T5<b>12</b></div><div>T6<b>13</b></div>
+            </div>
+            <!-- 17:00 → 22:00, mỗi giờ 58px -->
+            <div class="grid" aria-hidden="true">
+              <div class="hour" style="top:0"><span>17:00</span></div>
+              <div class="hour" style="top:58px"><span>18:00</span></div>
+              <div class="hour" style="top:116px"><span>19:00</span></div>
+              <div class="hour" style="top:174px"><span>20:00</span></div>
+              <div class="hour" style="top:232px"><span>21:00</span></div>
+              <div class="lane busy" style="top:6px;height:81px">3 người bận</div>
+              <div class="lane free" style="top:93px;height:191px">Cả nhóm rảnh</div>
+              <div class="lane event" style="top:117px;height:56px"><b>Họp chốt tiến độ</b>19:00 – 20:00</div>
+            </div>
           </div>
-        </div>
-        <div class="zone">
-          <div class="city"><b>Tokyo</b><span>UTC+9</span></div>
-          <div class="track">
-            <div class="busy" style="left:29.2%;width:37.5%"></div>
-            <div class="slot" style="left:75%;width:12.5%">20:00</div>
-          </div>
-        </div>
-        <div class="zone">
-          <div class="city"><b>London</b><span>UTC+0</span></div>
-          <div class="track">
-            <div class="busy" style="left:66.7%;width:6.25%"></div>
-            <div class="slot" style="left:75%;width:12.5%">11:00</div>
-          </div>
-        </div>
-        <div class="ticks" aria-hidden="true"><span></span><div><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></div>
-        <div class="legend"><span><i class="l-slot"></i>Giờ họp</span><span><i class="l-busy"></i>Có người bận</span><span>Trục giờ theo giờ Hà Nội</span></div>
-      </figure>
-    </section>
-
-    <section class="block" id="tinh-nang">
-      <h2 class="title">Một ứng dụng cho lịch riêng và lịch chung</h2>
-      <div class="features">
-        <div class="feature">
-          <span class="tag">Lịch nhóm</span>
-          <h3>Tìm giờ cả nhóm cùng rảnh</h3>
-          <p>Trưởng nhóm thấy khung nào có người bận và được gợi ý những khoảng từ 30 phút trở lên mà mọi người đều trống. Chỉ hiện ai bận, không lộ nội dung lịch riêng.</p>
-        </div>
-        <div class="feature">
-          <span class="tag">Nhiều múi giờ</span>
-          <h3>Mỗi người thấy giờ của mình</h3>
-          <p>Bạn ở Hà Nội, bạn cùng nhóm ở Tokyo hay London đều thấy đúng giờ địa phương. Đổi múi giờ trên điện thoại thì lịch tự cập nhật.</p>
-        </div>
-        <div class="feature">
-          <span class="tag">Nhắc lịch</span>
-          <h3>Thông báo đúng giờ, không trùng lặp</h3>
-          <p>Chọn nhắc trước 5, 10, 15, 30 hay 60 phút. Thông báo hiện cả khi đã tắt ứng dụng, bấm vào là mở ngay danh sách thông báo.</p>
-        </div>
-        <div class="feature">
-          <span class="tag">Lịch mẫu</span>
-          <h3>Dựng tuần mẫu một lần, dùng nhiều tuần</h3>
-          <p>Lưu lịch học, lịch tập gym thành mẫu, chia sẻ bằng mã 8 ký tự và áp dụng cho tối đa 12 tuần. Trùng giờ với lịch cũ thì ứng dụng hỏi trước khi thay.</p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="block" id="cai-dat">
-      <h2 class="title">Cài đặt trong vài phút</h2>
+  <section class="part alt pad" id="loi-ich">
+    <div class="wrap">
+      <div class="part-head">
+        <span class="eyebrow">Vì sao dùng TimeTribe</span>
+        <h2>Ít tin nhắn qua lại, nhiều buổi hẹn diễn ra đúng giờ</h2>
+      </div>
+
+      <div class="rows">
+        <div class="row">
+          <div class="copy">
+            <h3>Biết ngay giờ cả nhóm cùng rảnh</h3>
+            <p>Mở lịch nhóm là thấy khung nào có người bận (vùng sọc) và khung nào cả nhóm đều trống. Bạn chỉ thấy ai bận, không thấy họ bận việc gì.</p>
+            <ul>
+              <li>Gợi ý các khoảng trống từ 30 phút trở lên</li>
+              <li>Cảnh báo trước khi đặt lịch vào giờ có người bận</li>
+            </ul>
+          </div>
+          <div class="visual" role="img" aria-label="Biểu đồ giờ bận của năm thành viên, khung 18:30 đến 21:00 cả nhóm cùng rảnh">
+            <!-- Trục 08:00 → 24:00 (16 giờ). Khung rảnh 19:00–21:00 = 68.75% → 81.25% -->
+            <div class="who-wrap">
+              <div class="free-col"></div>
+              <div class="who">
+                <div class="who-row">Nga<div class="bar"><i style="left:0;width:21.9%"></i><i style="left:56%;width:9.4%"></i></div></div>
+                <div class="who-row">Minh<div class="bar"><i style="left:0;width:59.4%"></i></div></div>
+                <div class="who-row">Linh<div class="bar"><i style="left:0;width:21.9%"></i><i style="left:37.5%;width:25%"></i></div></div>
+                <div class="who-row">Hana<div class="bar"><i style="left:6%;width:18%"></i><i style="left:84%;width:16%"></i></div></div>
+                <div class="who-row">David<div class="bar"><i style="left:0;width:12.5%"></i><i style="left:40%;width:22%"></i></div></div>
+              </div>
+            </div>
+            <div class="who-axis" aria-hidden="true"><span></span><div><span>08</span><span>12</span><span>16</span><span>20</span><span>24</span></div></div>
+            <div class="free-note">● 19:00 – 21:00 · cả 5 người đều rảnh</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="copy">
+            <h3>Mỗi người thấy đúng giờ của mình</h3>
+            <p>Bạn cùng nhóm đang du học hay làm việc ở nước ngoài? TimeTribe tự đổi giờ theo múi giờ của từng người, không ai phải tự cộng trừ.</p>
+            <ul>
+              <li>Tự nhận múi giờ của điện thoại</li>
+              <li>Đi nước khác, lịch tự cập nhật theo</li>
+            </ul>
+          </div>
+          <div class="visual" role="img" aria-label="Cùng một buổi họp: 18:00 ở Hà Nội, 20:00 ở Tokyo, 11:00 ở London">
+            <div class="cities">
+              <div class="city me"><small>Hà Nội</small><b>18:00</b><span>Thứ Ba</span></div>
+              <div class="city"><small>Tokyo</small><b>20:00</b><span>Thứ Ba</span></div>
+              <div class="city"><small>London</small><b>11:00</b><span>Thứ Ba</span></div>
+            </div>
+            <div class="same">Cùng một buổi họp</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="copy">
+            <h3>Nhắc đúng giờ, kể cả khi đã tắt app</h3>
+            <p>Chọn nhắc trước 5, 10, 15, 30 hoặc 60 phút. Thông báo hiện trên màn hình khoá, bấm vào là mở thẳng danh sách thông báo.</p>
+            <ul>
+              <li>Ai từ chối tham gia thì không bị nhắc</li>
+              <li>Trưởng nhóm biết ngay ai tham gia, ai vắng</li>
+            </ul>
+          </div>
+          <div class="visual" role="img" aria-label="Ba thông báo mẫu của TimeTribe">
+            <div class="stack">
+              <div class="note"><img src="logo.png" alt=""><div><b>Sắp tới giờ: Họp chốt tiến độ</b><span>Nhóm Đồ án NIC bắt đầu lúc 19:00.</span></div><time>bây giờ</time></div>
+              <div class="note"><img src="logo.png" alt=""><div><b>Minh Trần sẽ tham gia</b><span>"Code review sprint 3" · Đồ án NIC</span></div><time>5 phút</time></div>
+              <div class="note dim"><img src="logo.png" alt=""><div><b>Hoạt động mới</b><span>Linh Phạm thêm "Đánh cầu tối" lúc 18:30.</span></div><time>1 giờ</time></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="copy">
+            <h3>Lịch mẫu dùng lại cả học kỳ</h3>
+            <p>Lưu một tuần học hay lịch tập gym thành mẫu, rồi áp dụng cho tối đa 12 tuần trong một lần bấm. Chia sẻ cho bạn bè bằng mã 8 ký tự.</p>
+            <ul>
+              <li>Trùng giờ với lịch cũ thì hỏi trước khi thay</li>
+              <li>Lưu tối đa 10 lịch mẫu</li>
+            </ul>
+          </div>
+          <div class="visual" role="img" aria-label="Lịch mẫu tập gym 4 buổi một tuần với mã chia sẻ GYM4DAY">
+            <div class="week">
+              <div>T2<i class="on"></i></div><div>T3<i class="on2"></i></div><div>T4<i></i></div><div>T5<i class="on"></i></div><div>T6<i></i></div><div>T7<i class="on2"></i></div><div>CN<i></i></div>
+            </div>
+            <div class="code"><b>GYM4DAY</b><span>Bạn bè nhập mã này là có ngay lịch tập 4 buổi.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="part pad" id="cai-dat">
+    <div class="wrap">
+      <div class="part-head">
+        <span class="eyebrow">Cài đặt</span>
+        <h2>Dùng được sau 2 phút</h2>
+      </div>
       <ol class="steps">
-        <li><b>Tải file APK</b><span>Bấm nút "Tải APK cho Android" và đợi tải xong.</span></li>
-        <li><b>Cho phép cài đặt</b><span>Mở file vừa tải. Nếu điện thoại hỏi, bật "Cho phép từ nguồn này" cho trình duyệt.</span></li>
-        <li><b>Đăng ký tài khoản</b><span>Dùng email hoặc đăng nhập Google. Lần đầu sẽ có phần hướng dẫn từng bước.</span></li>
-        <li><b>Bật thông báo</b><span>Chọn "Cho phép" khi ứng dụng hỏi để nhận nhắc lịch đúng giờ.</span></li>
+        <li><b>Tải file APK</b><span>Bấm "Tải APK cho Android" và đợi tải xong.</span></li>
+        <li><b>Cho phép cài đặt</b><span>Mở file vừa tải. Nếu máy hỏi, bật "Cho phép từ nguồn này".</span></li>
+        <li><b>Tạo tài khoản</b><span>Đăng ký bằng email hoặc tài khoản Google. Lần đầu có hướng dẫn từng bước.</span></li>
+        <li><b>Bật thông báo</b><span>Chọn "Cho phép" khi app hỏi để không lỡ lịch nào.</span></li>
       </ol>
-    </section>
+    </div>
+  </section>
 
-    <section class="block" id="hoi-dap">
-      <h2 class="title">Câu hỏi thường gặp</h2>
+  <section class="part alt pad" id="hoi-dap">
+    <div class="wrap">
+      <div class="part-head">
+        <span class="eyebrow">Hỏi đáp</span>
+        <h2>Câu hỏi thường gặp</h2>
+      </div>
       <div class="faq">
         <details>
-          <summary>Điện thoại báo "ứng dụng không rõ nguồn gốc", có an toàn không?</summary>
-          <p>Cảnh báo này hiện với mọi ứng dụng không cài từ Google Play. TimeTribe chỉ xin quyền thông báo và quyền chọn ảnh đại diện. Bạn có thể tắt lại "Cho phép từ nguồn này" sau khi cài xong.</p>
+          <summary>Máy báo "ứng dụng không rõ nguồn gốc", có an toàn không?</summary>
+          <p>Android hiện cảnh báo này với mọi app không cài từ Google Play. TimeTribe chỉ xin quyền gửi thông báo và quyền chọn ảnh đại diện. Cài xong, bạn có thể tắt lại "Cho phép từ nguồn này".</p>
         </details>
         <details>
           <summary>Có bản cho iPhone không?</summary>
-          <p>Hiện chỉ có bản Android. Bản iOS đang được chuẩn bị.</p>
+          <p>Hiện mới có bản Android. Bản iOS đang được chuẩn bị.</p>
         </details>
         <details>
-          <summary>Tôi không nhận được thông báo nhắc lịch?</summary>
-          <p>Vào Cài đặt của ứng dụng, mục Trợ giúp, bấm "Gửi thông báo thử". Với máy Xiaomi, Oppo, Vivo, hãy bật "Tự khởi chạy" và chọn "Không hạn chế" pin cho TimeTribe.</p>
+          <summary>Mở app lần đầu trong ngày thấy tải hơi lâu?</summary>
+          <p>Máy chủ tự nghỉ khi lâu không có ai dùng và cần khoảng 30 giây để khởi động lại. Các lần sau sẽ nhanh.</p>
         </details>
         <details>
-          <summary>Làm sao cập nhật lên bản mới?</summary>
-          <p>Tải lại file APK từ trang này và cài đè lên bản cũ. Dữ liệu của bạn lưu trên máy chủ nên không bị mất.</p>
+          <summary>Không nhận được thông báo nhắc lịch?</summary>
+          <p>Vào Cài đặt trong app, mục Trợ giúp, bấm "Gửi thông báo thử". Với máy Xiaomi, Oppo, Vivo, bật thêm "Tự khởi chạy" và chọn "Không hạn chế" pin cho TimeTribe.</p>
         </details>
         <details>
-          <summary>Đổi email đăng nhập thế nào?</summary>
-          <p>Vào Hồ sơ, sửa Email. Chúng tôi gửi link xác nhận tới địa chỉ mới; email chỉ đổi sau khi bạn bấm link đó.</p>
+          <summary>Cập nhật lên bản mới thế nào?</summary>
+          <p>Tải lại APK từ trang này và cài đè lên bản cũ. Dữ liệu lưu trên máy chủ nên không bị mất.</p>
         </details>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="block final">
-      <p>Sẵn sàng xếp lịch cho cả nhóm?</p>
-      <a class="btn" href="https://timetribe-api.zeabur.app/download" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+  <section class="final pad">
+    <div class="wrap">
+      <img src="logo.png" alt="Logo TimeTribe" width="88" height="88">
+      <div>
+        <h2>Hẹn lịch cho cả nhóm, không cần hỏi từng người</h2>
+        <p>Miễn phí, không quảng cáo.</p>
+      </div>
+      <a class="btn light" href="https://timetribe-api.onrender.com/download" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
         Tải APK
       </a>
-    </section>
-  </main>
+    </div>
+  </section>
+</main>
 
-  <footer>
+<footer class="pad">
+  <div class="wrap">
+    <span class="logo"><span class="word" style="font-size:1rem">Time<span>Tribe</span></span></span>
     <span>© 2026 TimeTribe · Đồ án môn học</span>
-    <span>Lịch riêng và lịch nhóm cho mọi múi giờ</span>
-  </footer>
-</div>
+  </div>
+</footer>

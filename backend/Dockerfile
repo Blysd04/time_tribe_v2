@@ -1,5 +1,6 @@
 # Build backend TimeTribe thành file chạy tĩnh rồi chép sang image nhỏ (~25 MB).
-# Zeabur: tạo service từ GitHub, đặt Root Directory = backend, Zeabur tự dùng Dockerfile này.
+# Render: file render.yaml ở gốc repo trỏ tới Dockerfile này (xem docs/DEPLOY.md).
+# Render tự đặt biến PORT, server đọc biến đó nên không cần cấu hình cổng.
 # Chạy thử ở máy:  docker build -t timetribe-api .  &&  docker run --env-file .env -p 8080:8080 timetribe-api
 
 FROM golang:1.23-alpine AS build

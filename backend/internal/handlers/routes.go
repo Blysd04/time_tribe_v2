@@ -25,6 +25,11 @@ func Routes(svc *services.Services) *gin.Engine {
 	})
 
 	r.GET("/", Landing)
+	r.HEAD("/", Landing)
+	r.GET("/reset-password", ResetPasswordPage)
+	r.GET("/logo.png", Logo)
+	r.GET("/favicon.png", Favicon)
+	r.GET("/favicon.ico", Favicon)
 	r.GET("/download", Download(svc.Cfg.APKURL))
 
 	api := r.Group("/api/v1")

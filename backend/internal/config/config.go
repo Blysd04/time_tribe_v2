@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -24,7 +25,7 @@ type Config struct {
 	RememberMeTTL     time.Duration
 	ResetTokenTTL     time.Duration
 	FirebaseCredsFile string
-	// Nội dung file service account (JSON thô hoặc base64), dùng khi deploy lên Zeabur/Docker
+	// Nội dung file service account (JSON thô hoặc base64), dùng khi deploy lên Render/Docker
 	// không tiện đặt file. Có biến này thì bỏ qua FirebaseCredsFile.
 	FirebaseCredsJSON string
 	CloudinaryURL     string
@@ -53,9 +54,10 @@ func Load() *Config {
 	}
 
 	cfg := &Config{
-		AppEnv:            get("APP_ENV", "development"),
-		Port:              get("PORT", "8080"),
-		BaseURL:           get("BASE_URL", "http://localhost:8080"),
+		AppEnv: get("APP_ENV", "development"),
+		Port:   get("PORT", "8080"),
+		// Render tự cấp RENDER_EXTERNAL_URL (VD https://timetribe-api.onrender.com)
+		BaseURL:           get("BASE_URL", get("RENDER_EXTERNAL_URL", "http://localhost:8080")),
 		MongoURI:          get("MONGO_URI", "mongodb://localhost:27017"),
 		DBName:            get("DB_NAME", "timetribe"),
 		JWTSecret:         get("JWT_SECRET", "doi-chuoi-nay-truoc-khi-deploy"),
@@ -66,7 +68,7 @@ func Load() *Config {
 		FirebaseCredsFile: get("FIREBASE_CREDENTIALS", "serviceAccountKey.json"),
 		FirebaseCredsJSON: get("FIREBASE_CREDENTIALS_JSON", ""),
 		CloudinaryURL:     get("CLOUDINARY_URL", ""),
-		ResetPasswordURL:  get("RESET_PASSWORD_URL", "https://timetribe.app/reset-password"),
+		ResetPasswordURL:  get("RESET_PASSWORD_URL", ""),
 		SMTPHost:          get("SMTP_HOST", ""),
 		SMTPPort:          get("SMTP_PORT", "587"),
 		SMTPUser:          get("SMTP_USER", ""),
@@ -74,6 +76,10 @@ func Load() *Config {
 		SMTPFrom:          get("SMTP_FROM", ""),
 		EnableReminder:    get("ENABLE_REMINDER", "true") == "true",
 		APKURL:            get("APK_URL", ""),
+	}
+	// Mặc định dùng trang đặt lại mật khẩu do chính backend phục vụ (GET /reset-password)
+	if cfg.ResetPasswordURL == "" {
+		cfg.ResetPasswordURL = strings.TrimRight(cfg.BaseURL, "/") + "/reset-password"
 	}
 	if !cfg.IsDev() && (cfg.JWTSecret == "doi-chuoi-nay-truoc-khi-deploy" || len(cfg.JWTSecret) < 32) {
 		log.Fatal("APP_ENV=production cần JWT_SECRET ngẫu nhiên dài ít nhất 32 ký tự")
