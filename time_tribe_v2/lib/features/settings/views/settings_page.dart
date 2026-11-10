@@ -13,6 +13,8 @@ import '../../auth/viewmodels/auth_viewmodel.dart';
 import '../../auth/views/login_screen.dart';
 import '../../home/viewmodels/home_viewmodel.dart';
 import '../../onboarding/onboarding_service.dart';
+import '../../profile/viewmodels/profile_viewmodel.dart';
+import 'change_password_screen.dart';
 import 'delete_account_screen.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -176,6 +178,27 @@ class SettingsPage extends StatelessWidget {
           AppSection(
             title: l.account,
             children: [
+              // Tài khoản Google chưa có mật khẩu thì hiện "Tạo mật khẩu"
+              Builder(
+                builder: (context) {
+                  final hasPassword = context.select<ProfileViewModel, bool>(
+                    (vm) => vm.hasPassword,
+                  );
+                  return AppListTile(
+                    icon: Icons.lock_reset_outlined,
+                    title: hasPassword ? l.changePassword : l.setPassword,
+                    subtitle: hasPassword
+                        ? l.changePasswordSubtitle
+                        : l.setPasswordSubtitle,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ChangePasswordScreen(),
+                      ),
+                    ),
+                  );
+                },
+              ),
               AppListTile(
                 icon: Icons.logout,
                 color: AppColors.warning,

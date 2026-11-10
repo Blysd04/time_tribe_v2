@@ -1396,4 +1396,42 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get emailPendingHint => 'Email chỉ thay đổi sau khi bạn bấm link xác nhận gửi tới địa chỉ mới.';
+
+  @override
+  String get changePassword => 'Đổi mật khẩu';
+
+  @override
+  String get changePasswordSubtitle => 'Đổi mật khẩu đăng nhập bằng email';
+
+  @override
+  String get setPassword => 'Tạo mật khẩu';
+
+  @override
+  String get setPasswordSubtitle => 'Tài khoản Google: tạo mật khẩu để đăng nhập bằng email';
+
+  @override
+  String get currentPassword => 'Mật khẩu hiện tại';
+
+  @override
+  String get newPassword => 'Mật khẩu mới';
+
+  @override
+  String get confirmNewPassword => 'Nhập lại mật khẩu mới';
+
+  @override
+  String get errorWrongCurrentPassword => 'Mật khẩu hiện tại không đúng';
+
+  @override
+  String get errorSamePassword => 'Mật khẩu mới phải khác mật khẩu hiện tại';
+
+  @override
+  String get changePasswordNote => 'Sau khi đổi, mọi thiết bị sẽ được đăng xuất và bạn cần đăng nhập lại bằng mật khẩu mới.';
+
+  @override
+  String changePasswordPendingEmail(String email) {
+    return 'Yêu cầu đổi email sang $email đang chờ xác nhận sẽ bị huỷ. Bạn có thể gửi lại yêu cầu sau khi đăng nhập.';
+  }
+
+  @override
+  String get passwordChangedRelogin => 'Đã đổi mật khẩu. Hãy đăng nhập lại bằng mật khẩu mới.';
 }

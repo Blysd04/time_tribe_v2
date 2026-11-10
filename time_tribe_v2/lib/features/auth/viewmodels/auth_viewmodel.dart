@@ -304,6 +304,36 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// AU-05: đổi mật khẩu (hoặc tạo mật khẩu lần đầu cho tài khoản Google, khi đó [current] để null).
+  /// Thành công thì server đăng xuất mọi thiết bị, máy này cũng xoá phiên để người dùng đăng nhập lại.
+  /// Trả về null nếu thành công, ngược lại là lỗi để hiện dưới ô nhập tương ứng.
+  Future<ChangePasswordError?> changePassword({
+    String? current,
+    required String next,
+    required String confirm,
+  }) async {
+    _setLoading(true);
+    try {
+      await _api.put('/auth/change-password', {
+        'current_password': ?current,
+        'new_password': next,
+        'confirm_password': confirm,
+      });
+      await clearDeviceData(_api);
+      return null;
+    } on ApiException catch (e) {
+      if (e.code == 'wrong_current_password') return ChangePasswordError.wrongCurrent;
+      if (e.code == 'same_password') return ChangePasswordError.samePassword;
+      final d = e.details is Map ? e.details as Map : const {};
+      if (d['current_password'] != null) return ChangePasswordError.currentRequired;
+      if (d['new_password'] != null) return ChangePasswordError.tooShort;
+      if (d['confirm_password'] != null) return ChangePasswordError.mismatch;
+      return e.isNetwork ? ChangePasswordError.network : ChangePasswordError.server;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   /// AU-07: xoá tài khoản vĩnh viễn với lý do người dùng chọn.
   Future<bool> deleteAccount(String reason) async {
     _clearErrors();
@@ -337,4 +367,15 @@ class AuthViewModel extends ChangeNotifier {
       }
     } catch (_) {}
   }
+}
+
+/// Lỗi khi đổi mật khẩu, để màn hình hiện đúng câu dưới đúng ô.
+enum ChangePasswordError {
+  currentRequired,
+  wrongCurrent,
+  samePassword,
+  tooShort,
+  mismatch,
+  network,
+  server,
 }

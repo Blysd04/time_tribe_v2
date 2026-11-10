@@ -394,5 +394,17 @@
   "emailVerifySent": "Un lien de confirmation a été envoyé à {email}. Ouvrez-le pour terminer le changement d'e-mail.",
   "emailPendingCancel": "Annuler le changement d'e-mail",
   "emailPendingCancelled": "Changement d'e-mail annulé",
-  "emailPendingHint": "L'e-mail ne change qu'après avoir ouvert le lien envoyé à la nouvelle adresse."
+  "emailPendingHint": "L'e-mail ne change qu'après avoir ouvert le lien envoyé à la nouvelle adresse.",
+  "changePassword": "Changer le mot de passe",
+  "changePasswordSubtitle": "Modifier le mot de passe de connexion",
+  "setPassword": "Créer un mot de passe",
+  "setPasswordSubtitle": "Compte Google : ajoutez un mot de passe pour vous connecter par e-mail",
+  "currentPassword": "Mot de passe actuel",
+  "newPassword": "Nouveau mot de passe",
+  "confirmNewPassword": "Confirmer le nouveau mot de passe",
+  "errorWrongCurrentPassword": "Le mot de passe actuel est incorrect",
+  "errorSamePassword": "Le nouveau mot de passe doit être différent de l'actuel",
+  "changePasswordNote": "Après le changement, tous les appareils sont déconnectés et vous devez vous reconnecter avec le nouveau mot de passe.",
+  "changePasswordPendingEmail": "La demande en attente de changement d'e-mail vers {email} sera annulée. Vous pourrez la refaire après connexion.",
+  "passwordChangedRelogin": "Mot de passe modifié. Reconnectez-vous avec le nouveau mot de passe."
 }

@@ -522,9 +522,13 @@ func (s *AuthService) ResetPassword(ctx context.Context, in ResetPasswordInput) 
 		return err
 	}
 	_, err = s.store.UserTokens.DeleteMany(ctx, bson.M{
-		"user_id": tok.UserID, "token_type": bson.M{"$in": bson.A{models.TokenResetPassword, models.TokenRefresh}},
+		"user_id": tok.UserID, "token_type": bson.M{"$in": bson.A{models.TokenResetPassword, models.TokenRefresh, models.TokenChangeEmail}},
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	s.afterPasswordChanged(ctx, tok.UserID)
+	return nil
 }
 
 type ChangePasswordInput struct {
@@ -560,8 +564,34 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID string, in Chan
 	if err := s.setPassword(ctx, userID, in.NewPassword); err != nil {
 		return err
 	}
-	_, err = s.store.UserTokens.DeleteMany(ctx, bson.M{"user_id": userID, "token_type": models.TokenRefresh})
-	return err
+	// Đăng xuất mọi thiết bị và huỷ yêu cầu đổi email đang chờ (xem afterPasswordChanged)
+	_, err = s.store.UserTokens.DeleteMany(ctx, bson.M{
+		"user_id": userID, "token_type": bson.M{"$in": bson.A{models.TokenRefresh, models.TokenChangeEmail}},
+	})
+	if err != nil {
+		return err
+	}
+	s.afterPasswordChanged(ctx, userID)
+	return nil
+}
+
+// afterPasswordChanged gửi email báo mật khẩu vừa đổi tới email hiện tại của tài khoản.
+//
+// Đổi hoặc đặt lại mật khẩu cũng huỷ luôn yêu cầu đổi email đang chờ xác nhận (token change_email):
+// người đổi mật khẩu thường là vì nghi tài khoản bị lộ, mà yêu cầu đổi email kia có thể do kẻ xấu tạo
+// lúc còn giữ phiên đăng nhập. Nếu chính chủ vẫn muốn đổi email thì đăng nhập lại và gửi yêu cầu mới.
+func (s *AuthService) afterPasswordChanged(ctx context.Context, userID string) {
+	u, err := s.store.UserByID(ctx, userID)
+	if err != nil || u == nil {
+		return
+	}
+	body := fmt.Sprintf("Chào %s,\n\nMật khẩu tài khoản TimeTribe của bạn vừa được thay đổi lúc %s (UTC).\n"+
+		"Mọi thiết bị đã được đăng xuất, yêu cầu đổi email đang chờ (nếu có) đã bị huỷ.\n\n"+
+		"Nếu không phải bạn, hãy dùng chức năng Quên mật khẩu để lấy lại tài khoản ngay.\n\nTimeTribe",
+		u.NickName, time.Now().UTC().Format("15:04 02/01/2006"))
+	if err := s.mailer.Send(u.Email, "Mật khẩu TimeTribe đã thay đổi", body); err != nil {
+		log.Println(err)
+	}
 }
 
 // validateNewPassword kiểm tra mật khẩu mới đủ dài và khớp với ô xác nhận.

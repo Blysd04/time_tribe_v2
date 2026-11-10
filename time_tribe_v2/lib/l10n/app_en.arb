@@ -394,5 +394,17 @@
   "emailVerifySent": "A confirmation link was sent to {email}. Open it to finish changing your email.",
   "emailPendingCancel": "Cancel email change",
   "emailPendingCancelled": "Email change cancelled",
-  "emailPendingHint": "Your email only changes after you open the confirmation link sent to the new address."
+  "emailPendingHint": "Your email only changes after you open the confirmation link sent to the new address.",
+  "changePassword": "Change password",
+  "changePasswordSubtitle": "Change the password you sign in with",
+  "setPassword": "Create a password",
+  "setPasswordSubtitle": "Google account: add a password to sign in with email",
+  "currentPassword": "Current password",
+  "newPassword": "New password",
+  "confirmNewPassword": "Confirm new password",
+  "errorWrongCurrentPassword": "Current password is incorrect",
+  "errorSamePassword": "The new password must differ from the current one",
+  "changePasswordNote": "After the change, every device is signed out and you need to sign in again with the new password.",
+  "changePasswordPendingEmail": "The pending change of your email to {email} will be cancelled. You can request it again after signing in.",
+  "passwordChangedRelogin": "Password changed. Sign in again with your new password."
 }

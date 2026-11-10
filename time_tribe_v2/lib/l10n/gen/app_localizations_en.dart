@@ -1475,4 +1475,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emailPendingHint => 'Your email only changes after you open the confirmation link sent to the new address.';
+
+  @override
+  String get changePassword => 'Change password';
+
+  @override
+  String get changePasswordSubtitle => 'Change the password you sign in with';
+
+  @override
+  String get setPassword => 'Create a password';
+
+  @override
+  String get setPasswordSubtitle => 'Google account: add a password to sign in with email';
+
+  @override
+  String get currentPassword => 'Current password';
+
+  @override
+  String get newPassword => 'New password';
+
+  @override
+  String get confirmNewPassword => 'Confirm new password';
+
+  @override
+  String get errorWrongCurrentPassword => 'Current password is incorrect';
+
+  @override
+  String get errorSamePassword => 'The new password must differ from the current one';
+
+  @override
+  String get changePasswordNote => 'After the change, every device is signed out and you need to sign in again with the new password.';
+
+  @override
+  String changePasswordPendingEmail(String email) {
+    return 'The pending change of your email to $email will be cancelled. You can request it again after signing in.';
+  }
+
+  @override
+  String get passwordChangedRelogin => 'Password changed. Sign in again with your new password.';
 }

@@ -1481,4 +1481,42 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get emailPendingHint => 'L\'e-mail ne change qu\'après avoir ouvert le lien envoyé à la nouvelle adresse.';
+
+  @override
+  String get changePassword => 'Changer le mot de passe';
+
+  @override
+  String get changePasswordSubtitle => 'Modifier le mot de passe de connexion';
+
+  @override
+  String get setPassword => 'Créer un mot de passe';
+
+  @override
+  String get setPasswordSubtitle => 'Compte Google : ajoutez un mot de passe pour vous connecter par e-mail';
+
+  @override
+  String get currentPassword => 'Mot de passe actuel';
+
+  @override
+  String get newPassword => 'Nouveau mot de passe';
+
+  @override
+  String get confirmNewPassword => 'Confirmer le nouveau mot de passe';
+
+  @override
+  String get errorWrongCurrentPassword => 'Le mot de passe actuel est incorrect';
+
+  @override
+  String get errorSamePassword => 'Le nouveau mot de passe doit être différent de l\'actuel';
+
+  @override
+  String get changePasswordNote => 'Après le changement, tous les appareils sont déconnectés et vous devez vous reconnecter avec le nouveau mot de passe.';
+
+  @override
+  String changePasswordPendingEmail(String email) {
+    return 'La demande en attente de changement d\'e-mail vers $email sera annulée. Vous pourrez la refaire après connexion.';
+  }
+
+  @override
+  String get passwordChangedRelogin => 'Mot de passe modifié. Reconnectez-vous avec le nouveau mot de passe.';
 }

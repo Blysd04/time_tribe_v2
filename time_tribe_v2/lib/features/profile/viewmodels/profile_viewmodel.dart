@@ -26,6 +26,7 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
   String _name = '';
   String _email = '';
   String? _pendingEmail;
+  bool _hasPassword = true;
   String? _avatarUrl;
   bool _uploadingAvatar = false;
 
@@ -70,6 +71,9 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
 
   /// Email mới đang chờ xác nhận qua link gửi tới hộp thư mới.
   String? get pendingEmail => _pendingEmail;
+
+  /// Tài khoản đã có mật khẩu chưa (tài khoản Google có thể chưa có).
+  bool get hasPassword => _hasPassword;
 
   /// Link ảnh đại diện trên Cloudinary, chưa có ảnh thì null.
   String? get avatarUrl => _avatarUrl;
@@ -175,6 +179,7 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
     _name = user.nickName;
     _email = user.email;
     _pendingEmail = user.pendingEmail;
+    _hasPassword = user.hasPassword;
     _avatarUrl = user.avatarUrl;
     Session.start(user);
     notifyListeners();
@@ -185,6 +190,7 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
     _name = '';
     _email = '';
     _pendingEmail = null;
+    _hasPassword = true;
     _avatarUrl = null;
     _isAutoTimezone = true;
     _manualTimezoneId = null;

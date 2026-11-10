@@ -2469,6 +2469,78 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Email chỉ thay đổi sau khi bạn bấm link xác nhận gửi tới địa chỉ mới.'**
   String get emailPendingHint;
+
+  /// No description provided for @changePassword.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi mật khẩu'**
+  String get changePassword;
+
+  /// No description provided for @changePasswordSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi mật khẩu đăng nhập bằng email'**
+  String get changePasswordSubtitle;
+
+  /// No description provided for @setPassword.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo mật khẩu'**
+  String get setPassword;
+
+  /// No description provided for @setPasswordSubtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tài khoản Google: tạo mật khẩu để đăng nhập bằng email'**
+  String get setPasswordSubtitle;
+
+  /// No description provided for @currentPassword.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu hiện tại'**
+  String get currentPassword;
+
+  /// No description provided for @newPassword.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu mới'**
+  String get newPassword;
+
+  /// No description provided for @confirmNewPassword.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập lại mật khẩu mới'**
+  String get confirmNewPassword;
+
+  /// No description provided for @errorWrongCurrentPassword.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu hiện tại không đúng'**
+  String get errorWrongCurrentPassword;
+
+  /// No description provided for @errorSamePassword.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu mới phải khác mật khẩu hiện tại'**
+  String get errorSamePassword;
+
+  /// No description provided for @changePasswordNote.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sau khi đổi, mọi thiết bị sẽ được đăng xuất và bạn cần đăng nhập lại bằng mật khẩu mới.'**
+  String get changePasswordNote;
+
+  /// No description provided for @changePasswordPendingEmail.
+  ///
+  /// In vi, this message translates to:
+  /// **'Yêu cầu đổi email sang {email} đang chờ xác nhận sẽ bị huỷ. Bạn có thể gửi lại yêu cầu sau khi đăng nhập.'**
+  String changePasswordPendingEmail(String email);
+
+  /// No description provided for @passwordChangedRelogin.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã đổi mật khẩu. Hãy đăng nhập lại bằng mật khẩu mới.'**
+  String get passwordChangedRelogin;
 }
 
 class _AppLocalizationsDelegate
