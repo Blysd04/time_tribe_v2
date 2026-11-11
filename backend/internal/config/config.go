@@ -42,7 +42,9 @@ type Config struct {
 	BrevoAPIKey  string
 	MailFromName string
 
-	// Link file APK mới nhất, /download chuyển hướng tới đây
+	// File APK gửi thẳng cho người dùng ở GET /download (đường dẫn trên server)
+	APKPath string
+	// Không có file ở APKPath thì server tải từ link này rồi chuyển tiếp (không redirect)
 	APKURL string
 
 	// Bật bộ quét gửi nhắc lịch mỗi phút
@@ -80,6 +82,7 @@ func Load() *Config {
 		BrevoAPIKey:       get("BREVO_API_KEY", ""),
 		MailFromName:      get("MAIL_FROM_NAME", "TimeTribe"),
 		EnableReminder:    get("ENABLE_REMINDER", "true") == "true",
+		APKPath:           get("APK_PATH", "public/timetribe.apk"),
 		APKURL:            get("APK_URL", ""),
 	}
 	// Mặc định dùng trang đặt lại mật khẩu do chính backend phục vụ (GET /reset-password)

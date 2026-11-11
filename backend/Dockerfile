@@ -9,6 +9,7 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
+RUN mkdir -p public
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server \
  && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/seed ./cmd/seed
 
@@ -18,6 +19,8 @@ RUN apk add --no-cache ca-certificates \
  && adduser -D -H -u 10001 app
 WORKDIR /app
 COPY --from=build /out/server /out/seed /app/
+# File APK cho GET /download: đặt ở backend/public/timetribe.apk trước khi build (không có cũng được)
+COPY --from=build /src/public/ /app/public/
 USER app
 ENV APP_ENV=production \
     PORT=8080 \

@@ -4,7 +4,7 @@ Backend lên **Render**, database **MongoDB Atlas**, app Android phát hành d�
 
 ```
 Người dùng ──> https://timetribe-api.onrender.com/            Landing page, nút "Tải APK"
-                                              /download        ──> APK_URL (GitHub Releases)
+                                              /download        ──> gửi thẳng file timetribe.apk
 App Android ──> https://timetribe-api.onrender.com/api/v1/... ──> MongoDB Atlas
                          │
                          ├──> Firebase  (đăng nhập Google, thông báo đẩy FCM)
@@ -50,7 +50,7 @@ Làm lần lượt từ bước 0 đến bước 10. Mỗi bước có phần **
 | `FIREBASE_CREDENTIALS_JSON` | 2.2 | Service account dạng base64 |
 | `CLOUDINARY_URL` | 2.4 | `cloudinary://...` |
 | `BREVO_API_KEY`, `SMTP_FROM` | 2.5 | Gửi email qua Brevo |
-| `APK_URL` | 8 | Link file APK |
+| `APK_URL` | 8 | Không bắt buộc: link APK, chỉ dùng khi không để file trong image |
 
 ---
 
@@ -306,7 +306,7 @@ Repo đã có sẵn `render.yaml` khai báo toàn bộ service.
 4. Render hỏi các biến `sync: false`. Điền theo bảng ở mục 0.3:
    - `MONGO_URI`, `FIREBASE_CREDENTIALS_JSON`, `CLOUDINARY_URL`
    - `BREVO_API_KEY`, `SMTP_FROM` (các biến `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` để trống)
-   - `APK_URL`: chưa có thì tạm điền `https://github.com`, sửa lại ở bước 8.
+   - `APK_URL`: để trống nếu để file APK trong repo (bước 8.1).
 5. **Apply**. Render build Docker image (lần đầu 3–6 phút) rồi chạy.
 
 ### Cách B: tạo tay (nếu không dùng Blueprint)
@@ -402,7 +402,31 @@ keytool -printcert -jarfile build/app/outputs/flutter-apk/app-release.apk
 
 ## Bước 8. Phát hành file APK
 
-### 8.1. GitHub Releases (repo public)
+`/download` **gửi thẳng file APK trong response** (không chuyển hướng sang trang khác), trình duyệt hiện
+tên `timetribe.apk`, hỗ trợ tải tiếp khi rớt mạng. Server tìm file theo thứ tự:
+
+1. File ở `APK_PATH` (mặc định `public/timetribe.apk`, tức `backend/public/timetribe.apk` trong repo).
+2. Không có file thì server tự tải từ `APK_URL` rồi chuyển tiếp từng phần cho người dùng.
+
+### 8.1. Để file APK trong repo (khuyên dùng, repo private cũng được)
+
+1. Chép file đã build ở bước 7 vào `backend/public/timetribe.apk`.
+2. Commit và push:
+
+```bash
+git add backend/public/timetribe.apk
+```
+
+```bash
+git commit -m "Phát hành APK 1.0.0" && git push
+```
+
+3. Render tự build lại, `Dockerfile` chép thư mục `public/` vào image. `APK_URL` để trống.
+
+> GitHub chặn file trên 100 MB. APK bản release thường 20–60 MB nên không sao. Mỗi lần thay APK repo nặng thêm
+> chừng đó dung lượng; nếu lo thì dùng 8.2.
+
+### 8.2. GitHub Releases (repo public)
 
 1. Trên GitHub: repo → **Releases** → **Draft a new release**.
 2. **Choose a tag** → gõ `v1.0.0` → **Create new tag**. Title: `TimeTribe 1.0.0`. Ghi chú: các thay đổi chính.
@@ -414,7 +438,7 @@ keytool -printcert -jarfile build/app/outputs/flutter-apk/app-release.apk
 https://github.com/<owner>/time_tribe_v2/releases/latest/download/timetribe.apk
 ```
 
-### 8.2. Google Drive (repo private)
+### 8.3. Google Drive
 
 1. Tải APK lên Drive → chuột phải → **Chia sẻ** → *Bất kỳ ai có đường liên kết* → **Người xem**.
 2. Link chia sẻ có dạng `https://drive.google.com/file/d/<ID>/view`. Lấy phần `<ID>` và ghép thành:
@@ -425,12 +449,15 @@ https://drive.google.com/uc?export=download&id=<ID>
 
    File lớn, nên Drive sẽ hiện thêm trang "không quét được virus", người dùng bấm **Vẫn tải xuống**.
 
-### 8.3. Gắn link vào server
+### 8.4. Gắn link vào server (chỉ khi dùng 8.2 hoặc 8.3)
 
-Render → service `timetribe-api` → **Environment** → sửa `APK_URL` thành link ở 8.1 hoặc 8.2 → **Save Changes**.
+Không có file `backend/public/timetribe.apk`, thì Render → service `timetribe-api` → **Environment** → sửa `APK_URL`
+thành link ở 8.2 hoặc 8.3 → **Save Changes**. Server tải file từ link đó rồi gửi lại cho người dùng, nên người dùng
+không thấy trang Drive/GitHub. Lưu ý link Drive cho file lớn có thể trả về trang cảnh báo virus thay vì file,
+nên dùng 8.1 hoặc 8.2 thì chắc hơn.
 Render tự khởi động lại.
 
-**Kiểm tra:** mở `https://timetribe-api.onrender.com/download`, file APK phải bắt đầu tải.
+**Kiểm tra:** mở `https://timetribe-api.onrender.com/download`, file `timetribe.apk` phải bắt đầu tải ngay, thanh địa chỉ không đổi.
 
 ---
 
@@ -441,8 +468,8 @@ Landing page đi kèm backend, không cần deploy riêng.
 - Địa chỉ: `https://timetribe-api.onrender.com/`. Gửi link này cho người dùng.
 - Nội dung trang ở `backend/internal/handlers/web/landing.html`; logo ở `logo.png` và `favicon.png` cùng thư mục.
   Sửa xong thì push, Render tự cập nhật.
-- Nút "Tải APK" trỏ tới `/download`, server chuyển tiếp tới `APK_URL`. Ra bản mới chỉ cần đổi `APK_URL`
-  (hoặc giữ nguyên nếu dùng link `releases/latest`), không phải sửa trang.
+- Nút "Tải APK" trỏ tới `/download`, server gửi thẳng file APK (bước 8). Ra bản mới chỉ cần thay file
+  `backend/public/timetribe.apk` rồi push, không phải sửa trang.
 - Trang **đặt lại mật khẩu** cũng do backend phục vụ ở `/reset-password`; link trong email quên mật khẩu tự trỏ về đây.
 - Bản xem trước trên claude.ai (https://claude.ai/artifact/MdmumehXtbCVBhccrNpYZD) là riêng tư. Muốn người khác xem
   thì bật chia sẻ trong menu Share, nhưng nên dùng link Render ở trên.
@@ -475,7 +502,7 @@ Landing page đi kèm backend, không cần deploy riêng.
 | Thay đổi | Làm gì |
 |---|---|
 | Sửa backend hoặc landing page | Push lên `main`, Render tự deploy (xem tab **Events**) |
-| Sửa app | Tăng `version` trong `pubspec.yaml` → build APK → tạo Release mới, tên file vẫn là `timetribe.apk` |
+| Sửa app | Tăng `version` trong `pubspec.yaml` → build APK → thay `backend/public/timetribe.apk` rồi push |
 | Đổi key | Render → **Environment** → sửa → **Save Changes** (service tự khởi động lại) |
 | Xem lỗi | Render → **Logs** |
 
@@ -493,6 +520,6 @@ Landing page đi kèm backend, không cần deploy riêng.
 | Đăng nhập Google báo lỗi (mã 10 / `DEVELOPER_ERROR`) | Chưa thêm SHA-1/SHA-256 của khoá phát hành (2.3), hoặc chưa chép `google-services.json` mới rồi build lại |
 | Không nhận email | Thiếu `BREVO_API_KEY`/`SMTP_FROM`, người gửi chưa xác minh trên Brevo, hoặc thư nằm trong Spam. Log ghi lý do. Dùng Gmail SMTP trên Render gói Free sẽ luôn lỗi vì bị chặn cổng |
 | Không có thông báo đẩy khi tắt app | Server ngủ (bước 6). Máy Xiaomi/Oppo/Vivo: bật **Tự khởi chạy**, pin **Không hạn chế** |
-| `/download` báo "Chưa có file APK" | Chưa đặt `APK_URL` |
+| `/download` báo "Chưa có file APK" | Thiếu `backend/public/timetribe.apk` (sai tên hoặc chưa commit) và `APK_URL` trống hoặc link lỗi. Log ghi `download apk: ...` |
 | Cài APK báo "Ứng dụng chưa được cài đặt" | Đang có bản ký khác (bản debug), gỡ bản cũ rồi cài lại |
 | Người dùng cập nhật không cài đè được | Quên tăng số sau dấu `+` trong `version`, hoặc ký bằng khoá khác (mất file `.jks`) |
