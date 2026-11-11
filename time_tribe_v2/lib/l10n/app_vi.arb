@@ -1044,5 +1044,23 @@
       }
     }
   },
-  "passwordChangedRelogin": "Đã đổi mật khẩu. Hãy đăng nhập lại bằng mật khẩu mới."
+  "passwordChangedRelogin": "Đã đổi mật khẩu. Hãy đăng nhập lại bằng mật khẩu mới.",
+  "errorEmailTypo": "Email có vẻ bị gõ nhầm. Có phải ý bạn là {email}?",
+  "@errorEmailTypo": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "errorEmailDomainInvalid": "Tên miền của email này không nhận được thư, hãy kiểm tra lại",
+  "errorEmailUnavailable": "Máy chủ chưa gửi được email lúc này, vui lòng thử lại sau",
+  "useSuggestion": "Dùng {email}",
+  "@useSuggestion": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }

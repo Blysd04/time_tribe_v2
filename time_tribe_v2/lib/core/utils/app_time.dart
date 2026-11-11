@@ -27,6 +27,10 @@ class AppTime {
   /// Tăng giá trị mỗi khi cấu hình múi giờ thay đổi.
   static final ValueNotifier<int> changes = ValueNotifier<int>(0);
 
+  /// Tăng giá trị khi server vừa đổi múi giờ của tài khoản: server đã tính lại ngày giờ
+  /// của lịch cá nhân theo múi giờ mới, lịch trên máy cần tải lại.
+  static final ValueNotifier<int> scheduleShifted = ValueNotifier<int>(0);
+
   /// Nạp cơ sở dữ liệu múi giờ IANA. Gọi 1 lần trong `main()`.
   static void ensureInitialized() {
     if (_tzDataLoaded) return;

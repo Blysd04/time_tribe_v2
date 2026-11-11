@@ -84,7 +84,7 @@ go run ./cmd/server
 
 2. Đăng nhập lại trên điện thoại và máy ảo. Seed đã xoá phiên đăng nhập và `fcm_token` cũ;
    app tự gửi `fcm_token` mới khi vào trang chủ.
-3. Kiểm tra push. Trên điện thoại vào Cài đặt → Trợ giúp → **Gửi thông báo thử**. Phải thấy thông báo hiện trên thanh thông báo.
+3. Kiểm tra push: tạo một lịch nhắc trước 5 phút, tới giờ phải thấy thông báo trên thanh thông báo.
 
 ### 1.3. Dữ liệu demo gồm những gì
 
@@ -333,7 +333,7 @@ Lý do: dữ liệu múi giờ đi kèm Go đã cũ, tính sai giờ Vancouver 1
    - Bật tối rồi tắt.
    - Đóng hẳn app, mở lại → **màn hình khởi động theo đúng giao diện đã chọn**, kể cả khi điện thoại đang ở chế độ tối.
 3. **Ngôn ngữ** (SET-02): Tiếng Việt → English → Français. Mọi chữ đổi, cả thông báo lỗi từ server.
-4. Trợ giúp: **Gửi thông báo thử**, **Xem lại hướng dẫn**.
+4. Trợ giúp: **Xem lại hướng dẫn**. Tài khoản: **Đổi mật khẩu**.
 5. Đổi mật khẩu (AU-05): sai mật khẩu cũ → báo lỗi. Đổi xong thì các phiên khác bị đăng xuất.
 6. **Xoá tài khoản** (AU-07): mở màn hình xem trước "chuyện gì sẽ xảy ra với từng nhóm"
    (rời nhóm, chuyển quyền trưởng, hoặc giải tán). Làm với tài khoản `demo1` vừa tạo, **không xoá Nga**.
@@ -561,7 +561,7 @@ Lịch mẫu chia sẻ: `GYM4DAY` (của Nga), `STUDYWEEK` (của Linh).
 - [ ] MongoDB đang chạy.
 - [ ] Đã chạy `go run ./cmd/seed -demo -tz <múi giờ điện thoại> -lead 12` và chụp lịch trình demo.
 - [ ] `go run ./cmd/server` đang chạy. Mở `http://localhost:8080/health`: `firebase_push: true`.
-- [ ] Điện thoại: đăng nhập Tuyết Nga, "Gửi thông báo thử" đã hiện ra.
+- [ ] Điện thoại: đăng nhập Tuyết Nga, đã cho phép thông báo.
 - [ ] Máy ảo: đã đăng xuất, sẵn sàng đăng ký tài khoản mới.
 - [ ] Postman: đã đăng nhập admin.
 - [ ] Đã tắt thông báo của các app khác (chế độ không làm phiền trừ TimeTribe). Âm lượng thông báo bật.

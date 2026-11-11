@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/utils/email_check.dart';
 import '../../../core/services/google_auth_service.dart';
 import '../../../core/services/push_service.dart';
 import '../../../core/session/session.dart';
@@ -18,6 +19,8 @@ enum AuthError {
   passwordMismatch,
   nameLength,
   emailInvalid,
+  emailTypo,
+  emailDomainInvalid,
   passwordTooShort,
   emailTaken,
   nameTaken,
@@ -48,6 +51,18 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Lỗi của ô email hoặc tên đăng nhập.
   AuthError? get emailError => _identifierError;
+
+  String? _emailSuggestion;
+
+  /// Xoá lỗi ô email (sau khi người dùng bấm dùng email gợi ý).
+  void clearEmailError() {
+    _identifierError = null;
+    _emailSuggestion = null;
+    notifyListeners();
+  }
+
+  /// Email gợi ý khi email đăng ký có vẻ gõ nhầm tên miền (VD gmial.com -> gmail.com).
+  String? get emailSuggestion => _emailSuggestion;
 
   /// Lỗi của ô mật khẩu.
   AuthError? get passwordError => _passwordError;
@@ -194,7 +209,15 @@ class AuthViewModel extends ChangeNotifier {
   ) async {
     _clearErrors();
     if (name.trim().isEmpty) _nameError = AuthError.nameRequired;
-    if (email.trim().isEmpty) _identifierError = AuthError.emailRequired;
+    _emailSuggestion = null;
+    if (email.trim().isEmpty) {
+      _identifierError = AuthError.emailRequired;
+    } else if (!EmailCheck.isValid(email)) {
+      _identifierError = AuthError.emailInvalid;
+    } else if (EmailCheck.suggest(email) != null) {
+      _emailSuggestion = EmailCheck.suggest(email);
+      _identifierError = AuthError.emailTypo;
+    }
     if (password.trim().isEmpty) {
       _passwordError = AuthError.createPasswordRequired;
     }
@@ -237,9 +260,12 @@ class AuthViewModel extends ChangeNotifier {
       'already_taken' => AuthError.nameTaken,
       _ => null,
     };
+    _emailSuggestion = details['email_suggestion'] as String?;
     _identifierError = switch (details['email']) {
       'email_required' => AuthError.emailRequired,
       'email_invalid' => AuthError.emailInvalid,
+      'email_typo' => AuthError.emailTypo,
+      'email_domain_invalid' => AuthError.emailDomainInvalid,
       'already_taken' => AuthError.emailTaken,
       _ => null,
     };

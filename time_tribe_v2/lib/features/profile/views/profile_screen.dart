@@ -23,8 +23,12 @@ extension ProfileTextsX on AppLocalizations {
   }
 
   /// Câu báo lỗi khi sửa hồ sơ.
-  String profileError(ProfileError e) => switch (e) {
+  String profileError(ProfileError e, {String? suggestion}) => switch (e) {
     ProfileError.emailInvalid => errorEmailInvalid,
+    ProfileError.emailTypo =>
+      suggestion == null ? errorEmailInvalid : errorEmailTypo(suggestion),
+    ProfileError.emailDomainInvalid => errorEmailDomainInvalid,
+    ProfileError.emailUnavailable => errorEmailUnavailable,
     ProfileError.emailTaken => errorEmailTaken,
     ProfileError.nameLength => errorNameLength,
     ProfileError.nameTaken => errorNameTaken,

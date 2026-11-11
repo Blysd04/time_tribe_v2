@@ -2541,6 +2541,30 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Đã đổi mật khẩu. Hãy đăng nhập lại bằng mật khẩu mới.'**
   String get passwordChangedRelogin;
+
+  /// No description provided for @errorEmailTypo.
+  ///
+  /// In vi, this message translates to:
+  /// **'Email có vẻ bị gõ nhầm. Có phải ý bạn là {email}?'**
+  String errorEmailTypo(String email);
+
+  /// No description provided for @errorEmailDomainInvalid.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên miền của email này không nhận được thư, hãy kiểm tra lại'**
+  String get errorEmailDomainInvalid;
+
+  /// No description provided for @errorEmailUnavailable.
+  ///
+  /// In vi, this message translates to:
+  /// **'Máy chủ chưa gửi được email lúc này, vui lòng thử lại sau'**
+  String get errorEmailUnavailable;
+
+  /// No description provided for @useSuggestion.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng {email}'**
+  String useSuggestion(String email);
 }
 
 class _AppLocalizationsDelegate

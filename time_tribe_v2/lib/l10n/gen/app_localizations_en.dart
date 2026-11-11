@@ -1513,4 +1513,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passwordChangedRelogin => 'Password changed. Sign in again with your new password.';
+
+  @override
+  String errorEmailTypo(String email) {
+    return 'This email looks mistyped. Did you mean $email?';
+  }
+
+  @override
+  String get errorEmailDomainInvalid => 'This email\'s domain can\'t receive mail, please check it';
+
+  @override
+  String get errorEmailUnavailable => 'The server can\'t send email right now, please try again later';
+
+  @override
+  String useSuggestion(String email) {
+    return 'Use $email';
+  }
 }

@@ -38,6 +38,9 @@ type Config struct {
 	SMTPUser string
 	SMTPPass string
 	SMTPFrom string
+	// Gửi email qua Brevo HTTP API (khuyên dùng trên Render vì gói Free chặn cổng SMTP)
+	BrevoAPIKey  string
+	MailFromName string
 
 	// Link file APK mới nhất, /download chuyển hướng tới đây
 	APKURL string
@@ -74,6 +77,8 @@ func Load() *Config {
 		SMTPUser:          get("SMTP_USER", ""),
 		SMTPPass:          get("SMTP_PASS", ""),
 		SMTPFrom:          get("SMTP_FROM", ""),
+		BrevoAPIKey:       get("BREVO_API_KEY", ""),
+		MailFromName:      get("MAIL_FROM_NAME", "TimeTribe"),
 		EnableReminder:    get("ENABLE_REMINDER", "true") == "true",
 		APKURL:            get("APK_URL", ""),
 	}

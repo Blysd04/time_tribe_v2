@@ -374,18 +374,36 @@ func (s *TribeService) Join(ctx context.Context, me, rawCode string) (*TribeDTO,
 		return nil, err
 	}
 	// Thành viên mới cần trả lời các hoạt động sắp tới của nhóm
-	if err := s.addPendingForUpcoming(ctx, tribe.ID, me); err != nil {
+	upcoming, err := s.addPendingForUpcoming(ctx, tribe.ID, me)
+	if err != nil {
 		return nil, err
 	}
 	s.notify(ctx, tribe, userIDsOf(members), me, models.KindTribeMemberJoined, models.NotiTribeJoin, nil, tribe.ID, models.RefTribe)
+	// Báo cho người mới các hoạt động sắp tới (giống lúc hoạt động được tạo), để họ biết mà trả lời.
+	// Từ đây họ cũng nằm trong danh sách nhắc lịch vì đã có dòng điểm danh "đang chờ".
+	sort.Slice(upcoming, func(i, j int) bool {
+		return utils.UTCRange(upcoming[i].Date, upcoming[i].StartTime, upcoming[i].EndTime).Start.
+			Before(utils.UTCRange(upcoming[j].Date, upcoming[j].StartTime, upcoming[j].EndTime).Start)
+	})
+	for i, b := range upcoming {
+		if i >= maxJoinNotices {
+			break
+		}
+		s.notify(ctx, tribe, []string{me}, b.CreatedBy, models.KindTribeNewBlock, models.NotiGroupSchedule,
+			map[string]string{"task": b.Task}, b.ID, models.RefTribeBlock)
+	}
 	return s.detail(ctx, tribe, me)
 }
 
-// addPendingForUpcoming tạo dòng điểm danh "đang chờ" cho người mới vào nhóm ở các hoạt động sắp tới.
-func (s *TribeService) addPendingForUpcoming(ctx context.Context, tribeID, userID string) error {
+// maxJoinNotices: người mới vào nhóm nhận tối đa chừng này thông báo về các hoạt động sắp tới.
+const maxJoinNotices = 5
+
+// addPendingForUpcoming tạo dòng điểm danh "đang chờ" cho người mới vào nhóm ở các hoạt động sắp tới,
+// trả về các hoạt động đó.
+func (s *TribeService) addPendingForUpcoming(ctx context.Context, tribeID, userID string) ([]models.TribeBlock, error) {
 	blocks, err := s.upcomingBlocks(ctx, tribeID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	now := time.Now().UTC()
 	for _, b := range blocks {
@@ -393,10 +411,10 @@ func (s *TribeService) addPendingForUpcoming(ctx context.Context, tribeID, userI
 			ID: uuid.NewString(), TribeBlockID: b.ID, UserID: userID, Status: models.AttendancePending, UpdatedAt: now,
 		})
 		if err != nil && !repository.IsDuplicateKey(err) {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return blocks, nil
 }
 
 // upcomingBlocks trả các hoạt động chưa kết thúc của nhóm.

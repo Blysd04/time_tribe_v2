@@ -6,6 +6,9 @@ class UserModel {
   final String? avatarUrl;
   final String timezone;
   final String? fcmToken;
+
+  /// Ngôn ngữ app lưu trên server (vi, en, fr) để gửi thông báo đẩy đúng ngôn ngữ.
+  final String language;
   final String role;
   final String authProvider;
   final bool hasPassword;
@@ -32,6 +35,7 @@ class UserModel {
     this.avatarUrl,
     this.timezone = 'Asia/Ho_Chi_Minh',
     this.fcmToken,
+    this.language = 'vi',
     this.role = 'customer',
     this.authProvider = 'local',
     this.hasPassword = true,
@@ -54,6 +58,7 @@ class UserModel {
       avatarUrl: json['avatar_url'],
       timezone: json['timezone'] ?? 'Asia/Ho_Chi_Minh',
       fcmToken: json['fcm_token'],
+      language: json['language'] ?? 'vi',
       role: json['role'] ?? 'customer',
       authProvider: json['auth_provider'] ?? 'local',
       hasPassword: json['has_password'] ?? true,

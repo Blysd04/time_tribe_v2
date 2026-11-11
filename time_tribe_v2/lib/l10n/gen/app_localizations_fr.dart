@@ -1519,4 +1519,20 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get passwordChangedRelogin => 'Mot de passe modifié. Reconnectez-vous avec le nouveau mot de passe.';
+
+  @override
+  String errorEmailTypo(String email) {
+    return 'Cet e-mail semble mal saisi. Vouliez-vous dire $email ?';
+  }
+
+  @override
+  String get errorEmailDomainInvalid => 'Le domaine de cet e-mail ne reçoit pas de courrier, vérifiez-le';
+
+  @override
+  String get errorEmailUnavailable => 'Le serveur ne peut pas envoyer d\'e-mail pour l\'instant, réessayez plus tard';
+
+  @override
+  String useSuggestion(String email) {
+    return 'Utiliser $email';
+  }
 }

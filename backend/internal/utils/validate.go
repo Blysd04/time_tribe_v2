@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"math/big"
-	"net/mail"
 	"net/url"
 	"regexp"
 	"strings"
@@ -16,12 +15,6 @@ var hexColor = regexp.MustCompile(`^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$`)
 
 // IsHexColor kiểm tra mã màu dạng #RRGGBB hoặc #AARRGGBB.
 func IsHexColor(s string) bool { return hexColor.MatchString(s) }
-
-// IsEmail kiểm tra chuỗi có đúng dạng email không.
-func IsEmail(s string) bool {
-	addr, err := mail.ParseAddress(s)
-	return err == nil && addr.Address == s && strings.Contains(s, ".")
-}
 
 // Len đếm số ký tự (không phải số byte) để tiếng Việt có dấu tính đúng.
 func Len(s string) int { return utf8.RuneCountInString(s) }

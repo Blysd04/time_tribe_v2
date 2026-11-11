@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../api/api_client.dart';
+import '../../features/profile/models/user_model.dart';
+import '../session/session.dart';
+
 /// Ngôn ngữ của app (Tiếng Việt / English / Français), có lưu lại.
 class LocaleProvider extends ChangeNotifier {
   static const _key = 'settings.locale';
@@ -32,8 +36,23 @@ class LocaleProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_key, locale.languageCode);
     } catch (_) {}
-    // Ngôn ngữ chỉ lưu trên máy (bảng users chưa có cột ngôn ngữ), nên thông báo đẩy
-    // từ server là tiếng Việt, còn danh sách thông báo trong app vẫn dịch theo ngôn ngữ đang chọn.
+    await syncToServer();
+  }
+
+  /// Gửi ngôn ngữ đang dùng lên server (users.language) để thông báo đẩy trên khay hệ thống
+  /// dùng đúng ngôn ngữ của app. Gọi khi đổi ngôn ngữ và sau khi đăng nhập. Lỗi mạng thì bỏ qua,
+  /// lần mở app sau sẽ gửi lại.
+  Future<void> syncToServer() async {
+    final user = Session.currentUser;
+    if (user == null || user.language == _locale.languageCode) return;
+    try {
+      final data = await ApiClient.instance.patch('/users/me', {
+        'language': _locale.languageCode,
+      });
+      Session.start(UserModel.fromJson(data));
+    } on ApiException {
+      // Bỏ qua
+    }
   }
 
   /// Tên ngôn ngữ hiển thị bằng chính ngôn ngữ đó.

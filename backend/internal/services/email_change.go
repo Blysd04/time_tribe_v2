@@ -44,6 +44,11 @@ func (s *UserService) requestEmailChange(ctx context.Context, u *models.User, ne
 		return utils.NewError(http.StatusTooManyRequests, "too_many_requests",
 			"Vừa gửi email xác nhận, vui lòng đợi một phút rồi thử lại")
 	}
+	// Bản chạy thật mà chưa cấu hình gửi email thì báo lỗi rõ ràng, thay vì báo "đã gửi" mà không ai nhận được
+	if !s.auth.mailer.Enabled() && !s.auth.cfg.IsDev() {
+		return utils.NewError(http.StatusServiceUnavailable, "email_disabled",
+			"Máy chủ chưa cấu hình gửi email nên chưa đổi email được, vui lòng thử lại sau")
+	}
 	// Mỗi người chỉ giữ một yêu cầu đổi email, yêu cầu mới thay yêu cầu cũ
 	if _, err := s.store.UserTokens.DeleteMany(ctx, bson.M{"user_id": u.ID, "token_type": models.TokenChangeEmail}); err != nil {
 		return err

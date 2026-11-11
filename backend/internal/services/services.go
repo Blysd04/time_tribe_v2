@@ -1,6 +1,7 @@
 package services
 
 import (
+	"log"
 	"timetribe-backend/internal/config"
 	"timetribe-backend/internal/repository"
 )
@@ -27,7 +28,8 @@ func New(cfg *config.Config, store *repository.Store) *Services {
 	s.JWT = NewJWTManager(cfg.JWTSecret, cfg.AccessTokenTTL)
 	s.Firebase = NewFirebaseService(cfg.FirebaseCredsFile, cfg.FirebaseCredsJSON)
 	s.Uploader = NewUploader(cfg.CloudinaryURL)
-	mailer := NewMailer(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom)
+	mailer := NewMailer(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.BrevoAPIKey, cfg.MailFromName)
+	log.Println("gửi email:", mailer.Describe())
 	s.Notifications = NewNotificationService(store, s.Firebase)
 	s.Auth = NewAuthService(cfg, store, s.JWT, s.Firebase, mailer, s.Notifications)
 	s.Tribes = NewTribeService(cfg, store, s.Notifications)

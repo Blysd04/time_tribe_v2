@@ -95,6 +95,9 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*MeRespon
 	if len(fields) > 0 {
 		return nil, utils.BadRequest("validation_error", "Thông tin đăng ký chưa hợp lệ").WithDetails(fields)
 	}
+	if err := emailDomainError(email); err != nil {
+		return nil, err
+	}
 
 	if err := s.ensureUnique(ctx, "", email, nick); err != nil {
 		return nil, err
@@ -592,6 +595,21 @@ func (s *AuthService) afterPasswordChanged(ctx context.Context, userID string) {
 	if err := s.mailer.Send(u.Email, "Mật khẩu TimeTribe đã thay đổi", body); err != nil {
 		log.Println(err)
 	}
+}
+
+// emailDomainError bắt lỗi gõ nhầm tên miền email (VD gmial.com) hoặc tên miền không nhận thư.
+// Lỗi trả về có details {"email": mã lỗi, "email_suggestion": email gợi ý} để app hiện "Có phải ý bạn là ...?".
+func emailDomainError(email string) error {
+	code, suggestion := utils.CheckEmailDomain(email)
+	switch code {
+	case utils.EmailTypo:
+		return utils.BadRequest("validation_error", "Email có vẻ bị gõ nhầm, có phải ý bạn là "+suggestion+"?").
+			WithDetails(map[string]string{"email": code, "email_suggestion": suggestion})
+	case utils.EmailDomainInvalid:
+		return utils.BadRequest("validation_error", "Tên miền của email không nhận được thư, vui lòng kiểm tra lại").
+			WithDetails(map[string]string{"email": code})
+	}
+	return nil
 }
 
 // validateNewPassword kiểm tra mật khẩu mới đủ dài và khớp với ô xác nhận.

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
 import '../../features/home/viewmodels/home_viewmodel.dart';
+import '../l10n/locale_provider.dart';
 import '../../features/notifications/viewmodels/notification_viewmodel.dart';
 import '../../features/profile/viewmodels/profile_viewmodel.dart';
 import '../../features/template/viewmodels/template_viewmodel.dart';
@@ -14,6 +17,7 @@ class AppData {
 
   /// Sau khi đăng nhập (hoặc mở app đã có phiên): tải hồ sơ, nhóm, lịch, lịch mẫu, thông báo.
   static Future<void> loadAll(BuildContext context) async {
+    final locale = context.read<LocaleProvider>();
     final profile = context.read<ProfileViewModel>();
     final tribes = context.read<TribeViewModel>();
     final timeblocks = context.read<TimeblockViewModel>();
@@ -21,6 +25,8 @@ class AppData {
     final notifications = context.read<NotificationViewModel>();
     // Gửi múi giờ trước để các API sau tính ngày theo đúng múi giờ
     await profile.loadFromSession();
+    // Gửi ngôn ngữ đang dùng để thông báo đẩy đúng ngôn ngữ của app
+    unawaited(locale.syncToServer());
     await Future.wait([
       tribes.load(),
       timeblocks.load(),

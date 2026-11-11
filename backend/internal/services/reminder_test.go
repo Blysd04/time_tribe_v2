@@ -63,3 +63,16 @@ func TestPersonalReminderVancouver(t *testing.T) {
 		t.Fatalf("at=%v ok=%v late=%v, muốn %v", at.UTC(), ok, late, want)
 	}
 }
+
+func TestShiftKeepsInstant(t *testing.T) {
+	from := utils.LoadLocation("America/Vancouver")
+	to := utils.LoadLocation("Asia/Ho_Chi_Minh")
+	r := utils.LocalRange("2026-11-10", "17:01:00", "18:55:00", from)
+	st := r.Start.In(to)
+	if got := st.Format("2006-01-02 15:04"); got != "2026-11-11 07:01" {
+		t.Fatalf("đổi múi giờ sai: %s", got)
+	}
+	if dayDiff("2026-11-10", "2026-11-11") != 1 || dayDiff("2026-11-11", "2026-11-10") != -1 {
+		t.Fatal("dayDiff sai")
+	}
+}

@@ -296,17 +296,31 @@ class TribeViewModel extends ChangeNotifier {
         !to.isAfter(_blocksTo!)) {
       return;
     }
-    // Server giới hạn mỗi lần hỏi tối đa 62 ngày nên chia làm hai lần
-    final mid = DateTime(date.year, date.month, 15);
+    // Server giới hạn mỗi lần hỏi tối đa 62 ngày nên chia nhỏ
     for (final t in _tribes.toList()) {
-      await _fetchBlocks(t.id, from, mid);
-      await _fetchBlocks(t.id, mid.add(const Duration(days: 1)), to);
+      await _fetchBlocksRange(t.id, from, to);
     }
     _blocksFrom = _blocksFrom == null || from.isBefore(_blocksFrom!)
         ? from
         : _blocksFrom;
     _blocksTo = _blocksTo == null || to.isAfter(_blocksTo!) ? to : _blocksTo;
     notifyListeners();
+  }
+
+  /// Tải hoạt động của một nhóm trong khoảng ngày bất kỳ, chia thành từng đoạn tối đa 60 ngày.
+  Future<void> _fetchBlocksRange(
+    String tribeId,
+    DateTime from,
+    DateTime to,
+  ) async {
+    var start = DateTime(from.year, from.month, from.day);
+    final last = DateTime(to.year, to.month, to.day);
+    while (!start.isAfter(last)) {
+      var end = DateTime(start.year, start.month, start.day + 59);
+      if (end.isAfter(last)) end = last;
+      await _fetchBlocks(tribeId, start, end);
+      start = DateTime(end.year, end.month, end.day + 1);
+    }
   }
 
   /// Gọi GET /tribes/:id/blocks?from=&to= rồi thay vào danh sách đang có.
@@ -444,11 +458,14 @@ class TribeViewModel extends ChangeNotifier {
       });
       final tribe = TribeModel.fromJson(data);
       _upsertTribe(tribe);
+      // Tải hoạt động của nhóm vừa vào cho đúng khoảng ngày đang có của các nhóm khác.
+      // Khoảng này thường dài ~3 tháng, server chỉ nhận tối đa 62 ngày một lần nên phải chia nhỏ
+      // (trước đây gọi một lần cả khoảng nên bị từ chối, người mới vào không thấy hoạt động nào).
       final now = AppTime.today();
-      await _fetchBlocks(
+      await _fetchBlocksRange(
         tribe.id,
-        _blocksFrom ?? now,
-        _blocksTo ?? now.add(const Duration(days: 30)),
+        _blocksFrom ?? DateTime(now.year, now.month - 1, 1),
+        _blocksTo ?? DateTime(now.year, now.month + 2, 0),
       );
       notifyListeners();
       return (result: TribeResult.success, tribe: tribe);

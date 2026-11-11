@@ -313,14 +313,26 @@ class MonthCalendar extends StatelessWidget {
   /// Dựng giao diện lịch tháng.
   @override
   Widget build(BuildContext context) {
-    final last = DateTime(AppTime.now().year + 10);
+    // Chỉ lấy ngày/tháng/năm (bỏ giờ, bỏ cờ UTC): so sánh DateTime có giờ hoặc khác múi
+    // làm "ngày đang chọn" bị coi là trước firstDate, CalendarDatePicker báo lỗi assert
+    // (xảy ra khi đổi múi giờ làm "hôm nay"/ngày tạo tài khoản nhảy sang ngày khác).
+    DateTime day(DateTime d) => DateTime(d.year, d.month, d.day);
+    final sel = day(selected);
+    final today = day(AppTime.today());
+    var first = day(firstDate);
+    if (sel.isBefore(first)) first = sel;
+    if (today.isBefore(first)) first = today;
+    var last = DateTime(today.year + 10, 12, 31);
+    if (sel.isAfter(last)) last = sel;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: CalendarDatePicker(
-        initialDate: selected.isBefore(firstDate) ? firstDate : selected,
-        firstDate: firstDate,
+        // Đổi khoảng ngày thì dựng lại picker, tránh giữ trạng thái cũ nằm ngoài khoảng mới
+        key: ValueKey('${first.toIso8601String()}|${sel.toIso8601String()}'),
+        initialDate: sel,
+        firstDate: first,
         lastDate: last,
-        currentDate: AppTime.today(),
+        currentDate: today,
         onDateChanged: onSelected,
       ),
     );

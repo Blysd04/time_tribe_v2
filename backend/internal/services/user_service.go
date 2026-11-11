@@ -54,6 +54,8 @@ type UpdateMeInput struct {
 	TimezoneAuto    *bool   `json:"timezone_auto"`
 	TimezoneCity    *string `json:"timezone_city"`
 	TimezoneCountry *string `json:"timezone_country"`
+	// Ngôn ngữ app (vi, en, fr) để gửi thông báo đẩy đúng ngôn ngữ
+	Language *string `json:"language"`
 }
 
 // UpdateMe (INFO-01, INFO-04): sửa tên hiển thị, email, múi giờ IANA.
@@ -103,6 +105,9 @@ func (s *UserService) UpdateMe(ctx context.Context, userID string, in UpdateMeIn
 			}
 		}
 	}
+	if in.Language != nil {
+		set["language"] = NormalizeLang(*in.Language)
+	}
 	if in.NeedsOnboarding != nil && !*in.NeedsOnboarding {
 		set["needs_onboarding"] = false
 	}
@@ -118,6 +123,11 @@ func (s *UserService) UpdateMe(ctx context.Context, userID string, in UpdateMeIn
 	}
 	if newEmail == current.Email {
 		newEmail, email = "", "" // giữ nguyên email thì bỏ qua
+	}
+	if newEmail != "" {
+		if err := emailDomainError(newEmail); err != nil {
+			return nil, err
+		}
 	}
 	if len(set) == 0 && newEmail == "" {
 		if in.Email != nil {
@@ -146,6 +156,10 @@ func (s *UserService) UpdateMe(ctx context.Context, userID string, in UpdateMeIn
 			return nil, utils.Conflict("account_exists", "Email hoặc tên hiển thị đã được sử dụng")
 		}
 		return nil, err
+	}
+	// Đổi múi giờ: tính lại lịch cá nhân để giữ đúng thời điểm thực (xem timezone_shift.go)
+	if tz, ok := set["timezone"].(string); ok && tz != current.Timezone {
+		s.shiftTimeblocks(ctx, userID, utils.LoadLocation(current.Timezone), utils.LoadLocation(tz))
 	}
 	return s.Me(ctx, userID)
 }

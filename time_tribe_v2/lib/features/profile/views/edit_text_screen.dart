@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/email_check.dart';
 import '../../../core/widgets/app_dialogs.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import 'profile_screen.dart';
@@ -30,6 +31,8 @@ class _EditTextScreenState extends State<EditTextScreen> {
     text: widget.initialValue,
   );
   String? _error;
+  // Email gợi ý khi phát hiện gõ nhầm tên miền, hiện nút "Dùng ..." để sửa nhanh
+  String? _suggestion;
   bool _saving = false;
 
   /// Màn hình này đang sửa email (true) hay tên hiển thị (false).
@@ -54,9 +57,19 @@ class _EditTextScreenState extends State<EditTextScreen> {
       );
       return;
     }
-    if (_isEmail && !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value)) {
-      setState(() => _error = l.errorEmailInvalid);
-      return;
+    if (_isEmail) {
+      if (!EmailCheck.isValid(value)) {
+        setState(() => _error = l.errorEmailInvalid);
+        return;
+      }
+      final suggestion = EmailCheck.suggest(value);
+      if (suggestion != null) {
+        setState(() {
+          _suggestion = suggestion;
+          _error = l.errorEmailTypo(suggestion);
+        });
+        return;
+      }
     }
     final ok = await AppDialogs.confirm(
       context,
@@ -74,7 +87,10 @@ class _EditTextScreenState extends State<EditTextScreen> {
     setState(() => _saving = false);
     if (err != null) {
       // Lỗi trùng email/tên thì hiện ngay dưới ô nhập để người dùng sửa
-      setState(() => _error = l.profileError(err));
+      setState(() {
+        _suggestion = err == ProfileError.emailTypo ? vm.emailSuggestion : null;
+        _error = l.profileError(err, suggestion: _suggestion);
+      });
       return;
     }
     Navigator.pop(context);
@@ -106,23 +122,51 @@ class _EditTextScreenState extends State<EditTextScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.page),
-        child: TextField(
-          controller: _controller,
-          autofocus: true,
-          keyboardType: _isEmail
-              ? TextInputType.emailAddress
-              : TextInputType.name,
-          onChanged: (_) {
-            if (_error != null) setState(() => _error = null);
-          },
-          onSubmitted: (_) => _save(),
-          decoration: InputDecoration(
-            labelText: label,
-            errorText: _error,
-            prefixIcon: Icon(
-              _isEmail ? Icons.email_outlined : Icons.badge_outlined,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              autocorrect: false,
+              keyboardType: _isEmail
+                  ? TextInputType.emailAddress
+                  : TextInputType.name,
+              onChanged: (_) {
+                if (_error != null || _suggestion != null) {
+                  setState(() {
+                    _error = null;
+                    _suggestion = null;
+                  });
+                }
+              },
+              onSubmitted: (_) => _save(),
+              decoration: InputDecoration(
+                labelText: label,
+                errorText: _error,
+                errorMaxLines: 3,
+                prefixIcon: Icon(
+                  _isEmail ? Icons.email_outlined : Icons.badge_outlined,
+                ),
+              ),
             ),
-          ),
+            if (_suggestion != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.auto_fix_high_outlined, size: 18),
+                  label: Text(l.useSuggestion(_suggestion!)),
+                  onPressed: () => setState(() {
+                    _controller.text = _suggestion!;
+                    _controller.selection = TextSelection.collapsed(
+                      offset: _suggestion!.length,
+                    );
+                    _error = null;
+                    _suggestion = null;
+                  }),
+                ),
+              ),
+          ],
         ),
       ),
     );

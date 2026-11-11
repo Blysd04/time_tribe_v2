@@ -10,6 +10,9 @@ import '../models/user_model.dart';
 /// Lỗi khi sửa hồ sơ, giao diện đổi ra câu chữ theo ngôn ngữ.
 enum ProfileError {
   emailInvalid,
+  emailTypo,
+  emailDomainInvalid,
+  emailUnavailable,
   emailTaken,
   nameLength,
   nameTaken,
@@ -27,6 +30,10 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
   String _email = '';
   String? _pendingEmail;
   bool _hasPassword = true;
+  String? _emailSuggestion;
+
+  /// Email gợi ý khi server báo email mới có vẻ gõ nhầm tên miền (VD gmial.com -> gmail.com).
+  String? get emailSuggestion => _emailSuggestion;
   String? _avatarUrl;
   bool _uploadingAvatar = false;
 
@@ -205,6 +212,14 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
   /// Đổi lỗi server thành lỗi của màn hình hồ sơ.
   ProfileError _errorFrom(ApiException e) {
     final details = e.details is Map ? e.details as Map : const {};
+    _emailSuggestion = details['email_suggestion'] as String?;
+    if (details['email'] == 'email_typo') return ProfileError.emailTypo;
+    if (details['email'] == 'email_domain_invalid') {
+      return ProfileError.emailDomainInvalid;
+    }
+    if (e.code == 'email_disabled' || e.code == 'email_send_failed') {
+      return ProfileError.emailUnavailable;
+    }
     if (details['email'] == 'already_taken') return ProfileError.emailTaken;
     if (details['nick_name'] == 'already_taken') return ProfileError.nameTaken;
     if (details['email'] == 'email_invalid') return ProfileError.emailInvalid;
@@ -278,6 +293,7 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
   /// INFO-04: gửi múi giờ đang dùng lên server. Lỗi mạng thì bỏ qua, lần mở app sau sẽ gửi lại.
   Future<void> _syncTimezone() async {
     if (Session.currentUserId.isEmpty) return;
+    final before = Session.currentUser?.timezone;
     try {
       final data = await _api.patch('/users/me', {
         'timezone': timezone,
@@ -285,7 +301,12 @@ class ProfileViewModel extends ChangeNotifier with WidgetsBindingObserver {
         if (!_isAutoTimezone) 'timezone_city': _manualCity,
         if (!_isAutoTimezone) 'timezone_country': _manualCountry,
       });
-      _applyUser(UserModel.fromJson(data));
+      final user = UserModel.fromJson(data);
+      _applyUser(user);
+      // Server đã đổi lịch cá nhân sang múi giờ mới (giữ đúng thời điểm), báo lịch tải lại
+      if (before != null && before != user.timezone) {
+        AppTime.scheduleShifted.value++;
+      }
     } on ApiException {
       // Bỏ qua
     }

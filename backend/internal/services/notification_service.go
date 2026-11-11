@@ -82,7 +82,6 @@ func (s *NotificationService) Notify(ctx context.Context, in NotifyInput) {
 	for uid := range seen {
 		recipients = append(recipients, uid)
 	}
-	title, body := PushText(in.Kind, in.Args)
 	data := map[string]string{
 		"kind": in.Kind,
 		"type": in.Type,
@@ -97,7 +96,8 @@ func (s *NotificationService) Notify(ctx context.Context, in NotifyInput) {
 	if in.SkipPush {
 		return
 	}
-	go s.pushToUsers(recipients, title, body, data)
+	kind, args := in.Kind, in.Args
+	go s.pushToUsers(recipients, func(lang string) (string, string) { return PushText(lang, kind, args) }, data)
 }
 
 // TestPush gửi một thông báo đẩy thử tới máy của chính người dùng, để kiểm tra
@@ -127,7 +127,8 @@ func (s *NotificationService) TestPush(ctx context.Context, userID string) error
 }
 
 // pushToUsers lấy users.fcm_token của người nhận rồi gửi, mã nào đã chết thì đặt lại null.
-func (s *NotificationService) pushToUsers(userIDs []string, title, body string, data map[string]string) {
+// text dựng tiêu đề + nội dung theo ngôn ngữ từng người (users.language), nên gửi theo từng nhóm ngôn ngữ.
+func (s *NotificationService) pushToUsers(userIDs []string, text func(lang string) (string, string), data map[string]string) {
 	if !s.firebase.PushEnabled() {
 		return
 	}
@@ -140,7 +141,19 @@ func (s *NotificationService) pushToUsers(userIDs []string, title, body string, 
 	if err != nil || len(users) == 0 {
 		return
 	}
-	// Mỗi lần gửi tối đa 500 thiết bị theo giới hạn của FCM
+	byLang := map[string][]models.User{}
+	for _, u := range users {
+		lang := NormalizeLang(u.Language)
+		byLang[lang] = append(byLang[lang], u)
+	}
+	for lang, group := range byLang {
+		title, body := text(lang)
+		s.sendMulticast(ctx, group, title, body, data)
+	}
+}
+
+// sendMulticast gửi cùng một nội dung tới nhiều máy, mỗi lần tối đa 500 máy theo giới hạn của FCM.
+func (s *NotificationService) sendMulticast(ctx context.Context, users []models.User, title, body string, data map[string]string) {
 	for start := 0; start < len(users); start += 500 {
 		end := min(start+500, len(users))
 		batch := users[start:end]

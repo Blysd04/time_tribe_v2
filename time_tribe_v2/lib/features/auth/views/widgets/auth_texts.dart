@@ -14,6 +14,9 @@ extension AuthTextsX on AppLocalizations {
     AuthError.passwordMismatch => errorPasswordMismatch,
     AuthError.nameLength => errorNameLength,
     AuthError.emailInvalid => errorEmailInvalid,
+    // Câu có gợi ý email đúng do màn hình tự dựng (cần vm.emailSuggestion)
+    AuthError.emailTypo => errorEmailInvalid,
+    AuthError.emailDomainInvalid => errorEmailDomainInvalid,
     AuthError.passwordTooShort => errorPasswordTooShort,
     AuthError.emailTaken => errorEmailTaken,
     AuthError.nameTaken => errorNameTaken,

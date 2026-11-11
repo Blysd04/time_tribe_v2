@@ -31,6 +31,8 @@ type User struct {
 	AvatarURL *string `bson:"avatar_url" json:"avatar_url"`
 	Timezone  string  `bson:"timezone" json:"timezone"`
 	FCMToken  *string `bson:"fcm_token" json:"fcm_token"`
+	// Ngôn ngữ app đang dùng (vi, en, fr): thông báo đẩy và email gửi theo ngôn ngữ này
+	Language string `bson:"language,omitempty" json:"language"`
 	// NeedsOnboarding = true với tài khoản mới tạo, app hiện màn hình chào mừng + hướng dẫn
 	// rồi gửi false lên. Tài khoản cũ không có trường này nên coi như đã xong.
 	NeedsOnboarding bool `bson:"needs_onboarding,omitempty" json:"needs_onboarding"`

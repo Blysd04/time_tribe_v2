@@ -40,6 +40,11 @@ services:
         sync: false
       - key: CLOUDINARY_URL
         sync: false
+      # Gửi email qua Brevo HTTP API: gói Free của Render chặn cổng SMTP nên SMTP không gửi được
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: TimeTribe
       - key: SMTP_HOST
         sync: false
       - key: SMTP_USER

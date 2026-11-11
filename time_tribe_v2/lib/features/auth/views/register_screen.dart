@@ -104,12 +104,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
                 decoration: InputDecoration(
                   hintText: l.email,
-                  errorText: l.authError(vm.emailError),
+                  errorText:
+                      vm.emailError == AuthError.emailTypo &&
+                          vm.emailSuggestion != null
+                      ? l.errorEmailTypo(vm.emailSuggestion!)
+                      : l.authError(vm.emailError),
+                  errorMaxLines: 3,
                   prefixIcon: const Icon(Icons.email_outlined),
                 ),
               ),
+              if (vm.emailError == AuthError.emailTypo &&
+                  vm.emailSuggestion != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.auto_fix_high_outlined, size: 18),
+                    label: Text(l.useSuggestion(vm.emailSuggestion!)),
+                    onPressed: () {
+                      _emailController.text = vm.emailSuggestion!;
+                      vm.clearEmailError();
+                    },
+                  ),
+                ),
               const SizedBox(height: 14),
               TextField(
                 controller: _passwordController,

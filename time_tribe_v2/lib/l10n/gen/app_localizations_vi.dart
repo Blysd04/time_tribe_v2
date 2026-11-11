@@ -1434,4 +1434,20 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get passwordChangedRelogin => 'Đã đổi mật khẩu. Hãy đăng nhập lại bằng mật khẩu mới.';
+
+  @override
+  String errorEmailTypo(String email) {
+    return 'Email có vẻ bị gõ nhầm. Có phải ý bạn là $email?';
+  }
+
+  @override
+  String get errorEmailDomainInvalid => 'Tên miền của email này không nhận được thư, hãy kiểm tra lại';
+
+  @override
+  String get errorEmailUnavailable => 'Máy chủ chưa gửi được email lúc này, vui lòng thử lại sau';
+
+  @override
+  String useSuggestion(String email) {
+    return 'Dùng $email';
+  }
 }

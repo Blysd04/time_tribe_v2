@@ -66,6 +66,8 @@ class TimeblockCard extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, c) {
               if (c.maxHeight < 16) return const SizedBox.shrink();
+              // Ngưỡng chiều cao tính theo cỡ chữ của máy (người dùng phóng to chữ thì cần cao hơn)
+              final ts = MediaQuery.textScalerOf(context).scale(1);
               final small = TextStyle(
                 color: fgSoft,
                 fontSize: 11,
@@ -76,7 +78,7 @@ class TimeblockCard extends StatelessWidget {
                   alignment: Alignment.topLeft,
                   maxHeight: double.infinity,
                   child: SizedBox(
-                    height: c.maxHeight < 64 ? null : c.maxHeight,
+                    height: c.maxHeight < 64 * ts ? null : c.maxHeight,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,47 +105,68 @@ class TimeblockCard extends StatelessWidget {
                               Icon(Icons.check_circle, color: fg, size: 14),
                           ],
                         ),
-                        if (c.maxHeight >= 40)
+                        if (c.maxHeight >= 40 * ts)
                           Text(
                             timeLabel,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: small,
                           ),
-                        if (caption != null && c.maxHeight >= 56)
+                        if (caption != null && c.maxHeight >= 56 * ts)
                           Text(
                             caption!,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: small,
                           ),
+                        // Dòng cuối (số người tham gia, nhãn "Chờ bạn") chỉ dùng phần chiều cao còn
+                        // lại và tự thu nhỏ cho vừa, nên không bao giờ tràn khỏi thẻ.
                         if ((footer != null || badge != null) &&
-                            c.maxHeight >= 64) ...[
-                          const Spacer(),
-                          Row(
-                            children: [
-                              if (footer != null)
-                                Flexible(
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerLeft,
-                                    child: DefaultTextStyle(
-                                      style: small,
-                                      child: IconTheme(
-                                        data: IconThemeData(
-                                          color: fg,
-                                          size: 11,
-                                        ),
-                                        child: footer!,
-                                      ),
+                            c.maxHeight >= 64 * ts)
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder: (context, rest) {
+                                if (rest.maxHeight < 10) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Align(
+                                  alignment: Alignment.bottomLeft,
+                                  child: SizedBox(
+                                    height: rest.maxHeight < 18
+                                        ? rest.maxHeight
+                                        : 18,
+                                    child: Row(
+                                      children: [
+                                        if (footer != null)
+                                          Flexible(
+                                            child: FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              alignment: Alignment.centerLeft,
+                                              child: DefaultTextStyle(
+                                                style: small,
+                                                child: IconTheme(
+                                                  data: IconThemeData(
+                                                    color: fg,
+                                                    size: 11,
+                                                  ),
+                                                  child: footer!,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        const Spacer(),
+                                        if (badge != null)
+                                          FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: badge,
+                                          ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                              const Spacer(),
-                              ?badge,
-                            ],
+                                );
+                              },
+                            ),
                           ),
-                        ],
                       ],
                     ),
                   ),

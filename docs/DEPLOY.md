@@ -9,7 +9,7 @@ App Android ──> https://timetribe-api.onrender.com/api/v1/... ──> MongoD
                          │
                          ├──> Firebase  (đăng nhập Google, thông báo đẩy FCM)
                          ├──> Cloudinary (ảnh đại diện)
-                         └──> Gmail SMTP (email quên mật khẩu, xác nhận đổi email)
+                         └──> Brevo (email quên mật khẩu, xác nhận đổi email)
 ```
 
 Làm lần lượt từ bước 0 đến bước 10. Mỗi bước có phần **Kiểm tra** để biết đã làm đúng trước khi sang bước sau.
@@ -49,7 +49,7 @@ Làm lần lượt từ bước 0 đến bước 10. Mỗi bước có phần **
 | `JWT_SECRET` | 2.1 | Render tự sinh nếu dùng Blueprint |
 | `FIREBASE_CREDENTIALS_JSON` | 2.2 | Service account dạng base64 |
 | `CLOUDINARY_URL` | 2.4 | `cloudinary://...` |
-| `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | 2.5 | Mật khẩu ứng dụng Gmail |
+| `BREVO_API_KEY`, `SMTP_FROM` | 2.5 | Gửi email qua Brevo |
 | `APK_URL` | 8 | Link file APK |
 
 ---
@@ -219,25 +219,38 @@ keytool -list -v -keystore timetribe-release.jks -alias timetribe
 2. Key cũ đã lộ trong chat, nên bấm **Generate New API Key**, rồi xoá hoặc vô hiệu key cũ.
 3. Ghép thành: `cloudinary://<API Key>:<API Secret>@<Cloud name>`. Cloud name xem ở góc trên trang Dashboard.
 
-### 2.5. Gmail SMTP → `SMTP_*`
+### 2.5. Gửi email → `BREVO_API_KEY` + `SMTP_FROM`
 
-Bắt buộc phải có thì mới gửi được email **quên mật khẩu** và **xác nhận đổi email**.
+Bắt buộc phải có thì mới gửi được email **quên mật khẩu**, **xác nhận đổi email** và **báo đổi mật khẩu**.
 
-1. Đăng nhập Gmail sẽ dùng để gửi → myaccount.google.com → **Bảo mật**.
-2. Bật **Xác minh 2 bước**. Đây là điều kiện để tạo mật khẩu ứng dụng.
-3. Tìm **Mật khẩu ứng dụng** (App passwords) → đặt tên `TimeTribe` → **Tạo**.
-   Google hiện mã 16 ký tự: bỏ dấu cách, đó là `SMTP_PASS`.
-4. Các biến cần điền:
+> **Vì sao không dùng Gmail SMTP trên Render?** Gói Free của Render chặn các cổng SMTP (25, 465, 587):
+> kết nối tới `smtp.gmail.com` bị treo rồi lỗi, nên link xác nhận không bao giờ tới hộp thư.
+> Backend gửi qua **Brevo HTTP API** (cổng 443, không bị chặn), miễn phí 300 email/ngày.
+
+1. Đăng ký tài khoản miễn phí ở brevo.com.
+2. **Senders, Domains & Dedicated IPs → Senders → Add a sender**:
+   - Name: `TimeTribe`
+   - Email: một Gmail của bạn, ví dụ `timetribe.noreply@gmail.com`
+   Brevo gửi mã vào Gmail đó, nhập mã để **xác minh người gửi**. Chưa xác minh thì Brevo từ chối gửi.
+3. **SMTP & API → API Keys → Generate a new API key**. Đặt tên `timetribe-render` và copy key (bắt đầu bằng `xkeysib-`).
+4. Điền trên Render:
 
 | Biến | Giá trị |
 |---|---|
-| `SMTP_HOST` | `smtp.gmail.com` |
-| `SMTP_PORT` | `587` (Blueprint đã điền) |
-| `SMTP_USER` | địa chỉ Gmail đó |
-| `SMTP_PASS` | mật khẩu ứng dụng 16 ký tự |
-| `SMTP_FROM` | địa chỉ Gmail đó |
+| `BREVO_API_KEY` | key vừa tạo |
+| `SMTP_FROM` | email người gửi đã xác minh ở bước 2 |
+| `MAIL_FROM_NAME` | `TimeTribe` (Blueprint đã điền) |
 
-Gmail miễn phí gửi được khoảng 500 email/ngày, đủ cho đồ án.
+Để trống các biến `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`.
+
+**Kiểm tra:** sau khi deploy, tab **Logs** của Render có dòng `gửi email: Brevo API, người gửi ...`.
+Mỗi email gửi thành công có dòng `đã gửi email "..." tới ... qua Brevo`. Brevo từ chối thì log ghi rõ lý do,
+hay gặp nhất là người gửi chưa xác minh.
+
+**Chạy backend ở máy tính** (không qua Render) thì dùng được cả Gmail SMTP: bật Xác minh 2 bước cho Gmail,
+tạo **Mật khẩu ứng dụng** (myaccount.google.com → Bảo mật), rồi đặt `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`,
+`SMTP_USER` và `SMTP_FROM` là địa chỉ Gmail, `SMTP_PASS` là mật khẩu ứng dụng 16 ký tự.
+Có `BREVO_API_KEY` thì backend ưu tiên Brevo.
 
 ---
 
@@ -292,7 +305,7 @@ Repo đã có sẵn `render.yaml` khai báo toàn bộ service.
 3. Chọn repo, branch `main`. Đặt **Blueprint Name** `timetribe` → **Apply** (hoặc **Deploy Blueprint**).
 4. Render hỏi các biến `sync: false`. Điền theo bảng ở mục 0.3:
    - `MONGO_URI`, `FIREBASE_CREDENTIALS_JSON`, `CLOUDINARY_URL`
-   - `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
+   - `BREVO_API_KEY`, `SMTP_FROM` (các biến `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` để trống)
    - `APK_URL`: chưa có thì tạm điền `https://github.com`, sửa lại ở bước 8.
 5. **Apply**. Render build Docker image (lần đầu 3–6 phút) rồi chạy.
 
@@ -383,7 +396,7 @@ keytool -printcert -jarfile build/app/outputs/flutter-apk/app-release.apk
 ```
 
 6. Cài thử lên điện thoại thật: gỡ bản debug cũ trước, vì khác chữ ký nên không cài đè được.
-   Thử đăng ký, đăng nhập Google, Cài đặt → Trợ giúp → **Gửi thông báo thử**.
+   Thử đăng ký, đăng nhập Google, tạo một lịch nhắc trước 5 phút và chờ thông báo.
 
 ---
 
@@ -448,7 +461,6 @@ Landing page đi kèm backend, không cần deploy riêng.
 - [ ] Cài APK trên một điện thoại **khác** máy dev.
 - [ ] Đăng ký tài khoản mới → thấy màn hình chào mừng và hướng dẫn.
 - [ ] Đăng nhập Google được.
-- [ ] Cài đặt → Trợ giúp → **Gửi thông báo thử** → có thông báo.
 - [ ] Tạo lịch nhắc trước 5 phút, **tắt hẳn app** → tới giờ có thông báo.
 - [ ] Đổi ảnh đại diện → ảnh hiện (Cloudinary).
 - [ ] Hồ sơ → đổi email → email mới nhận link → bấm link thấy "Đã xác nhận email" → mở lại app thấy email mới.
@@ -479,7 +491,7 @@ Landing page đi kèm backend, không cần deploy riêng.
 | `/health` có `firebase_push: false` | `FIREBASE_CREDENTIALS_JSON` bị cắt khi dán, hoặc đã xoá nhầm key đang dùng. Tạo lại theo 2.2 |
 | App báo không kết nối được máy chủ | Sai `productionUrl`, thiếu `/api/v1`, hoặc server đang ngủ (đợi 30–60 giây rồi thử lại) |
 | Đăng nhập Google báo lỗi (mã 10 / `DEVELOPER_ERROR`) | Chưa thêm SHA-1/SHA-256 của khoá phát hành (2.3), hoặc chưa chép `google-services.json` mới rồi build lại |
-| Không nhận email | Thiếu `SMTP_*`, sai mật khẩu ứng dụng, hoặc thư nằm trong Spam. Log ghi `gửi email thất bại` |
+| Không nhận email | Thiếu `BREVO_API_KEY`/`SMTP_FROM`, người gửi chưa xác minh trên Brevo, hoặc thư nằm trong Spam. Log ghi lý do. Dùng Gmail SMTP trên Render gói Free sẽ luôn lỗi vì bị chặn cổng |
 | Không có thông báo đẩy khi tắt app | Server ngủ (bước 6). Máy Xiaomi/Oppo/Vivo: bật **Tự khởi chạy**, pin **Không hạn chế** |
 | `/download` báo "Chưa có file APK" | Chưa đặt `APK_URL` |
 | Cài APK báo "Ứng dụng chưa được cài đặt" | Đang có bản ký khác (bản debug), gỡ bản cũ rồi cài lại |

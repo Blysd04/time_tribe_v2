@@ -27,6 +27,7 @@ class TimeblockViewModel extends ChangeNotifier {
   TimeblockViewModel({ApiClient? api}) : _api = api ?? ApiClient.instance {
     _lastKnownToday = AppTime.today();
     AppTime.changes.addListener(_onTimezoneChanged);
+    AppTime.scheduleShifted.addListener(_reloadAfterShift);
     _loadColors();
   }
 
@@ -165,6 +166,21 @@ class TimeblockViewModel extends ChangeNotifier {
     }
   }
 
+  /// Đổi múi giờ xong: server đã tính lại ngày giờ của lịch cá nhân theo múi giờ mới
+  /// (VD "Học 17:00" giờ Vancouver thành 16:00 giờ Los Angeles), tải lại khoảng đang có.
+  Future<void> _reloadAfterShift() async {
+    final from = _loadedFrom;
+    final to = _loadedTo;
+    _tasks = [];
+    _loadedFrom = null;
+    _loadedTo = null;
+    if (from == null || to == null) {
+      await ensureLoaded(_selectedDate);
+    } else {
+      await _fetch(from, to);
+    }
+  }
+
   /// Hai mốc thời gian có cùng một ngày không.
   static bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
@@ -173,6 +189,7 @@ class TimeblockViewModel extends ChangeNotifier {
   @override
   void dispose() {
     AppTime.changes.removeListener(_onTimezoneChanged);
+    AppTime.scheduleShifted.removeListener(_reloadAfterShift);
     super.dispose();
   }
 
