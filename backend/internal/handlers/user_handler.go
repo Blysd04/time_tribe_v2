@@ -4,6 +4,7 @@ import (
 	"errors"
 	"html"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -123,27 +124,61 @@ func (h *Handler) CancelEmailChange(c *gin.Context) {
 // ConfirmEmail xử lý GET /auth/confirm-email?token=...: người dùng bấm link trong email mới.
 // Trả về trang HTML đơn giản vì link được mở bằng trình duyệt, không phải app.
 func (h *Handler) ConfirmEmail(c *gin.Context) {
+	lang := services.NormalizeLang(c.Query("lang"))
+	t := confirmTexts[lang]
 	email, err := h.svc.Users.ConfirmEmailChange(c.Request.Context(), c.Query("token"))
 	if err != nil {
-		msg := "Có lỗi xảy ra, vui lòng thử lại sau."
+		msg := t["error"]
 		var appErr *utils.AppError
 		if errors.As(err, &appErr) {
-			msg = appErr.Message
+			if m, ok := t[appErr.Code]; ok {
+				msg = m
+			}
 		}
-		confirmPage(c, http.StatusBadRequest, false, msg)
+		confirmPage(c, http.StatusBadRequest, lang, false, msg)
 		return
 	}
-	confirmPage(c, http.StatusOK, true, "Email đăng nhập của bạn đã đổi thành "+email+". Hãy mở lại ứng dụng TimeTribe.")
+	confirmPage(c, http.StatusOK, lang, true, strings.ReplaceAll(t["done"], "{email}", email))
+}
+
+// confirmTexts: câu chữ trang xác nhận email theo ngôn ngữ (lấy từ ?lang= trong link của email).
+var confirmTexts = map[string]map[string]string{
+	services.LangVI: {
+		"title_ok": "Đã xác nhận email", "title_fail": "Không xác nhận được",
+		"done":           "Email đăng nhập của bạn đã đổi thành {email}. Hãy mở lại ứng dụng TimeTribe.",
+		"invalid_token":  "Link xác nhận không hợp lệ hoặc đã được dùng.",
+		"token_expired":  "Link xác nhận đã hết hạn, hãy đổi email lại trong ứng dụng.",
+		"account_exists": "Email này đã được tài khoản khác sử dụng.",
+		"error":          "Có lỗi xảy ra, vui lòng thử lại sau.",
+	},
+	services.LangEN: {
+		"title_ok": "Email confirmed", "title_fail": "Couldn't confirm",
+		"done":           "Your sign-in email is now {email}. Open the TimeTribe app again.",
+		"invalid_token":  "This confirmation link is invalid or has already been used.",
+		"token_expired":  "This confirmation link has expired. Change your email again in the app.",
+		"account_exists": "This email is already used by another account.",
+		"error":          "Something went wrong, please try again later.",
+	},
+	services.LangFR: {
+		"title_ok": "E-mail confirmé", "title_fail": "Confirmation impossible",
+		"done":           "Votre e-mail de connexion est désormais {email}. Rouvrez l'application TimeTribe.",
+		"invalid_token":  "Ce lien de confirmation n'est pas valide ou a déjà été utilisé.",
+		"token_expired":  "Ce lien de confirmation a expiré. Modifiez à nouveau votre e-mail dans l'application.",
+		"account_exists": "Cet e-mail est déjà utilisé par un autre compte.",
+		"error":          "Une erreur s'est produite, veuillez réessayer plus tard.",
+	},
 }
 
 // confirmPage dựng trang kết quả xác nhận email.
-func confirmPage(c *gin.Context, status int, ok bool, msg string) {
-	title, color, icon := "Không xác nhận được", "#E63946", "✕"
+func confirmPage(c *gin.Context, status int, lang string, ok bool, msg string) {
+	t := confirmTexts[lang]
+	title, color, icon := t["title_fail"], "#E63946", "✕"
 	if ok {
-		title, color, icon = "Đã xác nhận email", "#2A9D8F", "✓"
+		title, color, icon = t["title_ok"], "#2A9D8F", "✓"
 	}
-	page := `<!doctype html><html lang="vi"><head><meta charset="utf-8">
+	page := `<!doctype html><html lang="` + lang + `"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>TimeTribe – ` + html.EscapeString(title) + `</title>
+<link rel="icon" type="image/png" href="/favicon.png">
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#F4F7FB;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1B2B44}
 .card{background:#fff;max-width:420px;margin:16px;padding:32px 28px;border-radius:20px;box-shadow:0 10px 30px rgba(27,43,68,.08);text-align:center}
 .icon{width:64px;height:64px;border-radius:50%;margin:0 auto 16px;display:grid;place-items:center;font-size:32px;color:#fff;background:` + color + `}

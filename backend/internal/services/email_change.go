@@ -62,21 +62,16 @@ func (s *UserService) requestEmailChange(ctx context.Context, u *models.User, ne
 		return err
 	}
 
-	link := fmt.Sprintf("%s/api/v1/auth/confirm-email?token=%s", s.auth.cfg.BaseURL, raw)
-	body := fmt.Sprintf("Chào %s,\n\nBạn vừa yêu cầu đổi email đăng nhập TimeTribe sang địa chỉ này.\n"+
-		"Mở đường dẫn sau trong vòng 24 giờ để xác nhận:\n%s\n\n"+
-		"Nếu không phải bạn yêu cầu, hãy bỏ qua email này, email của tài khoản sẽ không thay đổi.\n\nTimeTribe",
-		u.NickName, link)
-	if err := s.auth.mailer.Send(newEmail, "Xác nhận email mới cho TimeTribe", body); err != nil {
+	link := withLang(fmt.Sprintf("%s/api/v1/auth/confirm-email?token=%s", s.auth.cfg.BaseURL, raw), u.Language)
+	subject, body := MailText(u.Language, mailConfirmEmail, map[string]string{"name": u.NickName, "link": link})
+	if err := s.auth.mailer.Send(newEmail, subject, body); err != nil {
 		log.Println(err)
 		_, _ = s.store.UserTokens.DeleteOne(ctx, bson.M{"_id": tok.ID})
 		return utils.NewError(http.StatusBadGateway, "email_send_failed", "Không gửi được email xác nhận, vui lòng thử lại")
 	}
 	// Báo cho email cũ để chủ tài khoản biết nếu có người khác đang đổi email
-	notice := fmt.Sprintf("Chào %s,\n\nCó yêu cầu đổi email đăng nhập TimeTribe của bạn sang %s.\n"+
-		"Email chỉ thay đổi khi địa chỉ mới bấm link xác nhận.\n"+
-		"Nếu không phải bạn, hãy đổi mật khẩu ngay.\n\nTimeTribe", u.NickName, newEmail)
-	if err := s.auth.mailer.Send(u.Email, "Yêu cầu đổi email TimeTribe", notice); err != nil {
+	noticeSubject, notice := MailText(u.Language, mailEmailChangeReq, map[string]string{"name": u.NickName, "email": newEmail})
+	if err := s.auth.mailer.Send(u.Email, noticeSubject, notice); err != nil {
 		log.Println(err)
 	}
 	return nil

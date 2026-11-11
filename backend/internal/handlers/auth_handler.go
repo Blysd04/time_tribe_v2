@@ -86,11 +86,13 @@ func (h *Handler) Logout(c *gin.Context) {
 func (h *Handler) ForgotPassword(c *gin.Context) {
 	var in struct {
 		Email string `json:"email"`
+		// Ngôn ngữ app đang dùng (vi, en, fr) để gửi email đúng ngôn ngữ
+		Language string `json:"language"`
 	}
 	if !utils.BindJSON(c, &in) {
 		return
 	}
-	res, err := h.svc.Auth.ForgotPassword(c.Request.Context(), in.Email)
+	res, err := h.svc.Auth.ForgotPassword(c.Request.Context(), in.Email, in.Language)
 	if err != nil {
 		utils.Fail(c, err)
 		return

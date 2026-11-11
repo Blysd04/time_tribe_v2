@@ -459,7 +459,7 @@ func (s *AuthService) Logout(ctx context.Context, userID, sessionID string) erro
 // ForgotPassword (AU-04 bước 1-3): tạo token khôi phục và gửi email.
 // Luôn trả thành công dù email có tồn tại hay không, tránh lộ danh sách tài khoản.
 // Ở môi trường dev chưa có SMTP thì trả kèm token để test trên Postman.
-func (s *AuthService) ForgotPassword(ctx context.Context, email string) (map[string]any, error) {
+func (s *AuthService) ForgotPassword(ctx context.Context, email, language string) (map[string]any, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 	if !utils.IsEmail(email) {
 		return nil, utils.BadRequest("validation_error", "Email không hợp lệ").WithDetails(map[string]string{"email": "email_invalid"})
@@ -488,10 +488,17 @@ func (s *AuthService) ForgotPassword(ctx context.Context, email string) (map[str
 	if _, err := s.store.UserTokens.InsertOne(ctx, tok); err != nil {
 		return nil, err
 	}
-	link := fmt.Sprintf("%s?token=%s", s.cfg.ResetPasswordURL, raw)
-	body := fmt.Sprintf("Chào %s,\n\nBạn vừa yêu cầu đặt lại mật khẩu TimeTribe. Mở đường dẫn sau trong vòng %d phút để đặt mật khẩu mới:\n%s\n\nNếu không phải bạn yêu cầu, hãy bỏ qua email này.\n\nTimeTribe",
-		user.NickName, int(s.cfg.ResetTokenTTL.Minutes()), link)
-	if err := s.mailer.Send(user.Email, "Đặt lại mật khẩu TimeTribe", body); err != nil {
+	// Ngôn ngữ email: ngôn ngữ app đang dùng lúc bấm "Quên mật khẩu" (chưa đăng nhập nên app gửi kèm),
+	// không có thì theo ngôn ngữ đã lưu của tài khoản
+	lang := user.Language
+	if strings.TrimSpace(language) != "" {
+		lang = language
+	}
+	link := withLang(fmt.Sprintf("%s?token=%s", s.cfg.ResetPasswordURL, raw), lang)
+	subject, body := MailText(lang, mailResetPassword, map[string]string{
+		"name": user.NickName, "minutes": fmt.Sprint(int(s.cfg.ResetTokenTTL.Minutes())), "link": link,
+	})
+	if err := s.mailer.Send(user.Email, subject, body); err != nil {
 		log.Println(err)
 	}
 	if s.cfg.IsDev() && !s.mailer.Enabled() {
@@ -588,11 +595,10 @@ func (s *AuthService) afterPasswordChanged(ctx context.Context, userID string) {
 	if err != nil || u == nil {
 		return
 	}
-	body := fmt.Sprintf("Chào %s,\n\nMật khẩu tài khoản TimeTribe của bạn vừa được thay đổi lúc %s (UTC).\n"+
-		"Mọi thiết bị đã được đăng xuất, yêu cầu đổi email đang chờ (nếu có) đã bị huỷ.\n\n"+
-		"Nếu không phải bạn, hãy dùng chức năng Quên mật khẩu để lấy lại tài khoản ngay.\n\nTimeTribe",
-		u.NickName, time.Now().UTC().Format("15:04 02/01/2006"))
-	if err := s.mailer.Send(u.Email, "Mật khẩu TimeTribe đã thay đổi", body); err != nil {
+	subject, body := MailText(u.Language, mailPasswordChange, map[string]string{
+		"name": u.NickName, "time": time.Now().UTC().Format("15:04 02/01/2006"),
+	})
+	if err := s.mailer.Send(u.Email, subject, body); err != nil {
 		log.Println(err)
 	}
 }

@@ -13,6 +13,10 @@ class LocaleProvider extends ChangeNotifier {
 
   Locale _locale = const Locale('vi');
 
+  /// Mã ngôn ngữ đang dùng (vi, en, fr), đọc được ở nơi không có BuildContext
+  /// (VD gửi kèm khi bấm "Quên mật khẩu" để email về đúng ngôn ngữ).
+  static String currentCode = 'vi';
+
   /// Ngôn ngữ đang dùng.
   Locale get locale => _locale;
 
@@ -23,6 +27,7 @@ class LocaleProvider extends ChangeNotifier {
       final code = prefs.getString(_key);
       if (code != null && supported.any((l) => l.languageCode == code)) {
         _locale = Locale(code);
+        currentCode = code;
       }
     } catch (_) {}
   }
@@ -31,6 +36,7 @@ class LocaleProvider extends ChangeNotifier {
   Future<void> setLocale(Locale locale) async {
     if (locale == _locale) return;
     _locale = locale;
+    currentCode = locale.languageCode;
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();

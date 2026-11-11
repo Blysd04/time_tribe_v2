@@ -22,8 +22,8 @@ import (
 //  3. Chưa cấu hình gì: chỉ in nội dung email ra log để dev test.
 type Mailer struct {
 	host, port, user, pass, from string
-	brevoKey, fromName          string
-	client                      *http.Client
+	brevoKey, fromName           string
+	client                       *http.Client
 }
 
 // NewMailer tạo bộ gửi email, không có địa chỉ gửi riêng thì dùng tài khoản SMTP.

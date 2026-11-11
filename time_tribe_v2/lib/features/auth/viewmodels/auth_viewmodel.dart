@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/l10n/locale_provider.dart';
 import '../../../core/utils/email_check.dart';
 import '../../../core/services/google_auth_service.dart';
 import '../../../core/services/push_service.dart';
@@ -290,7 +291,11 @@ class AuthViewModel extends ChangeNotifier {
     }
     _setLoading(true);
     try {
-      await _api.post('/auth/forgot-password', {'email': value});
+      // Gửi kèm ngôn ngữ app để email đặt lại mật khẩu viết đúng ngôn ngữ đang dùng
+      await _api.post('/auth/forgot-password', {
+        'email': value,
+        'language': LocaleProvider.currentCode,
+      });
       return true;
     } on ApiException catch (e) {
       _identifierError = e.code == 'validation_error'
