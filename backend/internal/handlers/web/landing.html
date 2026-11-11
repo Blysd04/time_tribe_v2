@@ -1,4 +1,8 @@
+<!doctype html>
+<html lang="vi">
+<head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TimeTribe</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="TimeTribe: biết ngay giờ cả nhóm cùng rảnh, nhắc lịch đúng giờ cho mọi múi giờ. Tải APK miễn phí cho Android.">
@@ -242,19 +246,34 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   .part-head h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
 }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } .btn { transition: none; } }
-</style>
 
+/* Chọn ngôn ngữ VI / EN / FR trên thanh đầu trang */
+.lang { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); }
+.lang button { font: 700 .76rem/1 var(--f-head); letter-spacing: .04em; color: var(--muted); background: transparent; border: 0; border-radius: 999px; padding: 7px 9px; cursor: pointer; }
+.lang button:hover { color: var(--ink); }
+.lang button[aria-pressed="true"] { background: var(--brand-tint); color: var(--brand); }
+@media (max-width: 640px) { .top nav { gap: 10px; } }
+/* Điện thoại: thanh đầu chỉ giữ logo + chọn ngôn ngữ (nút tải APK đã có ngay ở phần đầu trang) */
+@media (max-width: 480px) { .top nav a.btn { display: none; } .word { font-size: 1.15rem; } .logo img { width: 34px; height: 34px; } }
+</style>
+</head>
+<body>
 <header class="top pad">
   <div class="wrap">
     <a class="logo" href="#gioi-thieu" aria-label="TimeTribe">
       <img src="logo.png" alt="" width="40" height="40">
       <span class="word">Time<span>Tribe</span></span>
     </a>
-    <nav aria-label="Mục lục">
-      <a href="#loi-ich">Lợi ích</a>
-      <a href="#cai-dat">Cách cài</a>
-      <a href="#hoi-dap">Hỏi đáp</a>
-      <a class="btn small" href="https://timetribe-api.onrender.com/download" target="_blank" rel="noopener">Tải APK</a>
+    <nav data-i18n-aria="navLabel" aria-label="Mục lục">
+      <a href="#loi-ich" data-i18n="navBenefits">Lợi ích</a>
+      <a href="#cai-dat" data-i18n="navInstall">Cách cài</a>
+      <a href="#hoi-dap" data-i18n="navFaq">Hỏi đáp</a>
+      <div class="lang" role="group" data-i18n-aria="langLabel" aria-label="Ngôn ngữ">
+        <button type="button" data-lang="vi" lang="vi">VI</button>
+        <button type="button" data-lang="en" lang="en">EN</button>
+        <button type="button" data-lang="fr" lang="fr">FR</button>
+      </div>
+      <a class="btn small" href="https://timetribe-api.onrender.com/download" target="_blank" rel="noopener" data-i18n="ctaShort">Tải APK</a>
     </nav>
   </div>
 </header>
@@ -263,39 +282,39 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   <section class="hero pad">
     <div class="wrap">
       <div>
-        <span class="kicker"><i></i>Miễn phí cho Android</span>
-        <h1>Hết cảnh nhắn từng người <span class="hl">"tối nay rảnh không?"</span></h1>
-        <p class="lede">TimeTribe xem lịch của cả nhóm và chỉ ra ngay khung giờ mọi người cùng rảnh. Đặt lịch xong, ai cũng được nhắc đúng giờ nơi mình đang sống.</p>
+        <span class="kicker"><i></i><span data-i18n="kicker">Miễn phí cho Android</span></span>
+        <h1 data-i18n-html="heroTitle">Hết cảnh nhắn từng người <span class="hl">"tối nay rảnh không?"</span></h1>
+        <p class="lede" data-i18n="heroLede">TimeTribe xem lịch của cả nhóm và chỉ ra ngay khung giờ mọi người cùng rảnh. Đặt lịch xong, ai cũng được nhắc đúng giờ nơi mình đang sống.</p>
         <div class="actions">
           <a class="btn" href="https://timetribe-api.onrender.com/download" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
-            Tải APK cho Android
+            <span data-i18n="ctaLong">Tải APK cho Android</span>
           </a>
-          <a class="btn ghost" href="#cai-dat">Xem cách cài</a>
+          <a class="btn ghost" href="#cai-dat" data-i18n="ctaHow">Xem cách cài</a>
         </div>
         <ul class="facts">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Không quảng cáo</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Tiếng Việt · English · Français</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Nhóm tới 10 người</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><span data-i18n="fact1">Không quảng cáo</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><span>Tiếng Việt · English · Français</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg><span data-i18n="fact3">Nhóm tới 10 người</span></li>
         </ul>
       </div>
 
-      <div class="stage" aria-label="Màn hình lịch nhóm trong TimeTribe">
-        <div class="toast" role="img" aria-label="Thông báo nhắc lịch">
+      <div class="stage" data-i18n-aria="stageLabel" aria-label="Màn hình lịch nhóm trong TimeTribe">
+        <div class="toast" role="img" data-i18n-aria="toastLabel" aria-label="Thông báo nhắc lịch">
           <img src="logo.png" alt="">
-          <div><b>Sắp tới giờ: Họp chốt tiến độ</b><span>Nhóm Đồ án NIC bắt đầu lúc 19:00.</span></div>
+          <div><b data-i18n="remindTitle">Sắp tới giờ: Họp chốt tiến độ</b><span data-i18n="remindBody">Nhóm Đồ án NIC bắt đầu lúc 19:00.</span></div>
         </div>
         <div class="phone">
           <div class="screen">
             <div class="sbar"><span>18:45</span><span>5G ▮▮▮</span></div>
             <div class="app-head">
-              <div><b>Đồ án NIC</b><small>6 thành viên · 3 múi giờ</small></div>
+              <div><b data-i18n="tribeName">Đồ án NIC</b><small data-i18n="tribeMeta">6 thành viên · 3 múi giờ</small></div>
               <div class="avs" aria-hidden="true">
                 <span style="background:#1B6FE0">N</span><span style="background:#14A37F">M</span><span style="background:#E9A23B">L</span><span style="background:#8E5BD6">H</span><span style="background:#4FADE6">D</span>
               </div>
             </div>
             <div class="days" aria-hidden="true">
-              <div>T2<b>9</b></div><div class="on">T3<b>10</b></div><div>T4<b>11</b></div><div>T5<b>12</b></div><div>T6<b>13</b></div>
+              <div><span data-i18n="d2">T2</span><b>9</b></div><div class="on"><span data-i18n="d3">T3</span><b>10</b></div><div><span data-i18n="d4">T4</span><b>11</b></div><div><span data-i18n="d5">T5</span><b>12</b></div><div><span data-i18n="d6">T6</span><b>13</b></div>
             </div>
             <!-- 17:00 → 22:00, mỗi giờ 58px -->
             <div class="grid" aria-hidden="true">
@@ -304,9 +323,9 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
               <div class="hour" style="top:116px"><span>19:00</span></div>
               <div class="hour" style="top:174px"><span>20:00</span></div>
               <div class="hour" style="top:232px"><span>21:00</span></div>
-              <div class="lane busy" style="top:6px;height:81px">3 người bận</div>
-              <div class="lane free" style="top:93px;height:191px">Cả nhóm rảnh</div>
-              <div class="lane event" style="top:117px;height:56px"><b>Họp chốt tiến độ</b>19:00 – 20:00</div>
+              <div class="lane busy" style="top:6px;height:81px" data-i18n="laneBusy">3 người bận</div>
+              <div class="lane free" style="top:93px;height:191px" data-i18n="laneFree">Cả nhóm rảnh</div>
+              <div class="lane event" style="top:117px;height:56px"><b data-i18n="eventName">Họp chốt tiến độ</b>19:00 – 20:00</div>
             </div>
           </div>
         </div>
@@ -317,21 +336,21 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   <section class="part alt pad" id="loi-ich">
     <div class="wrap">
       <div class="part-head">
-        <span class="eyebrow">Vì sao dùng TimeTribe</span>
-        <h2>Ít tin nhắn qua lại, nhiều buổi hẹn diễn ra đúng giờ</h2>
+        <span class="eyebrow" data-i18n="whyEyebrow">Vì sao dùng TimeTribe</span>
+        <h2 data-i18n="whyTitle">Ít tin nhắn qua lại, nhiều buổi hẹn diễn ra đúng giờ</h2>
       </div>
 
       <div class="rows">
         <div class="row">
           <div class="copy">
-            <h3>Biết ngay giờ cả nhóm cùng rảnh</h3>
-            <p>Mở lịch nhóm là thấy khung nào có người bận (vùng sọc) và khung nào cả nhóm đều trống. Bạn chỉ thấy ai bận, không thấy họ bận việc gì.</p>
+            <h3 data-i18n="f1Title">Biết ngay giờ cả nhóm cùng rảnh</h3>
+            <p data-i18n="f1Body">Mở lịch nhóm là thấy khung nào có người bận (vùng sọc) và khung nào cả nhóm đều trống. Bạn chỉ thấy ai bận, không thấy họ bận việc gì.</p>
             <ul>
-              <li>Gợi ý các khoảng trống từ 30 phút trở lên</li>
-              <li>Cảnh báo trước khi đặt lịch vào giờ có người bận</li>
+              <li data-i18n="f1a">Gợi ý các khoảng trống từ 30 phút trở lên</li>
+              <li data-i18n="f1b">Cảnh báo trước khi đặt lịch vào giờ có người bận</li>
             </ul>
           </div>
-          <div class="visual" role="img" aria-label="Biểu đồ giờ bận của năm thành viên, khung 18:30 đến 21:00 cả nhóm cùng rảnh">
+          <div class="visual" role="img" data-i18n-aria="f1Aria" aria-label="Giờ bận của năm thành viên, từ 19:00 đến 21:00 cả nhóm cùng rảnh">
             <!-- Trục 08:00 → 24:00 (16 giờ). Khung rảnh 19:00–21:00 = 68.75% → 81.25% -->
             <div class="who-wrap">
               <div class="free-col"></div>
@@ -344,61 +363,61 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
               </div>
             </div>
             <div class="who-axis" aria-hidden="true"><span></span><div><span>08</span><span>12</span><span>16</span><span>20</span><span>24</span></div></div>
-            <div class="free-note">● 19:00 – 21:00 · cả 5 người đều rảnh</div>
+            <div class="free-note" data-i18n="freeNote">● 19:00 – 21:00 · cả 5 người đều rảnh</div>
           </div>
         </div>
 
         <div class="row">
           <div class="copy">
-            <h3>Mỗi người thấy đúng giờ của mình</h3>
-            <p>Bạn cùng nhóm đang du học hay làm việc ở nước ngoài? TimeTribe tự đổi giờ theo múi giờ của từng người, không ai phải tự cộng trừ.</p>
+            <h3 data-i18n="f2Title">Mỗi người thấy đúng giờ của mình</h3>
+            <p data-i18n="f2Body">Bạn cùng nhóm đang du học hay làm việc ở nước ngoài? TimeTribe tự đổi giờ theo múi giờ của từng người, không ai phải tự cộng trừ.</p>
             <ul>
-              <li>Tự nhận múi giờ của điện thoại</li>
-              <li>Đi nước khác, lịch tự cập nhật theo</li>
+              <li data-i18n="f2a">Tự nhận múi giờ của điện thoại</li>
+              <li data-i18n="f2b">Đi nước khác, lịch tự cập nhật theo</li>
             </ul>
           </div>
-          <div class="visual" role="img" aria-label="Cùng một buổi họp: 18:00 ở Hà Nội, 20:00 ở Tokyo, 11:00 ở London">
+          <div class="visual" role="img" data-i18n-aria="f2Aria" aria-label="Cùng một buổi họp: 18:00 ở Hà Nội, 20:00 ở Tokyo, 11:00 ở London">
             <div class="cities">
-              <div class="city me"><small>Hà Nội</small><b>18:00</b><span>Thứ Ba</span></div>
-              <div class="city"><small>Tokyo</small><b>20:00</b><span>Thứ Ba</span></div>
-              <div class="city"><small>London</small><b>11:00</b><span>Thứ Ba</span></div>
+              <div class="city me"><small data-i18n="cityHanoi">Hà Nội</small><b>18:00</b><span data-i18n="tuesday">Thứ Ba</span></div>
+              <div class="city"><small>Tokyo</small><b>20:00</b><span data-i18n="tuesday">Thứ Ba</span></div>
+              <div class="city"><small data-i18n="cityLondon">London</small><b>11:00</b><span data-i18n="tuesday">Thứ Ba</span></div>
             </div>
-            <div class="same">Cùng một buổi họp</div>
+            <div class="same" data-i18n="sameMeeting">Cùng một buổi họp</div>
           </div>
         </div>
 
         <div class="row">
           <div class="copy">
-            <h3>Nhắc đúng giờ, kể cả khi đã tắt app</h3>
-            <p>Chọn nhắc trước 5, 10, 15, 30 hoặc 60 phút. Thông báo hiện trên màn hình khoá, bấm vào là mở thẳng danh sách thông báo.</p>
+            <h3 data-i18n="f3Title">Nhắc đúng giờ, kể cả khi đã tắt app</h3>
+            <p data-i18n="f3Body">Chọn nhắc trước 5, 10, 15, 30 hoặc 60 phút. Thông báo hiện trên màn hình khoá, bấm vào là mở thẳng danh sách thông báo.</p>
             <ul>
-              <li>Ai từ chối tham gia thì không bị nhắc</li>
-              <li>Trưởng nhóm biết ngay ai tham gia, ai vắng</li>
+              <li data-i18n="f3a">Ai từ chối tham gia thì không bị nhắc</li>
+              <li data-i18n="f3b">Trưởng nhóm biết ngay ai tham gia, ai vắng</li>
             </ul>
           </div>
-          <div class="visual" role="img" aria-label="Ba thông báo mẫu của TimeTribe">
+          <div class="visual" role="img" data-i18n-aria="f3Aria" aria-label="Ba thông báo mẫu của TimeTribe">
             <div class="stack">
-              <div class="note"><img src="logo.png" alt=""><div><b>Sắp tới giờ: Họp chốt tiến độ</b><span>Nhóm Đồ án NIC bắt đầu lúc 19:00.</span></div><time>bây giờ</time></div>
-              <div class="note"><img src="logo.png" alt=""><div><b>Minh Trần sẽ tham gia</b><span>"Code review sprint 3" · Đồ án NIC</span></div><time>5 phút</time></div>
-              <div class="note dim"><img src="logo.png" alt=""><div><b>Hoạt động mới</b><span>Linh Phạm thêm "Đánh cầu tối" lúc 18:30.</span></div><time>1 giờ</time></div>
+              <div class="note"><img src="logo.png" alt=""><div><b data-i18n="remindTitle">Sắp tới giờ: Họp chốt tiến độ</b><span data-i18n="remindBody">Nhóm Đồ án NIC bắt đầu lúc 19:00.</span></div><time data-i18n="now">bây giờ</time></div>
+              <div class="note"><img src="logo.png" alt=""><div><b data-i18n="n2Title">Minh Trần sẽ tham gia</b><span data-i18n="n2Body">"Code review sprint 3" · Đồ án NIC</span></div><time data-i18n="min5">5 phút</time></div>
+              <div class="note dim"><img src="logo.png" alt=""><div><b data-i18n="n3Title">Hoạt động mới</b><span data-i18n="n3Body">Linh Phạm thêm "Đánh cầu tối" lúc 18:30.</span></div><time data-i18n="hour1">1 giờ</time></div>
             </div>
           </div>
         </div>
 
         <div class="row">
           <div class="copy">
-            <h3>Lịch mẫu dùng lại cả học kỳ</h3>
-            <p>Lưu một tuần học hay lịch tập gym thành mẫu, rồi áp dụng cho tối đa 12 tuần trong một lần bấm. Chia sẻ cho bạn bè bằng mã 8 ký tự.</p>
+            <h3 data-i18n="f4Title">Lịch mẫu dùng lại cả học kỳ</h3>
+            <p data-i18n="f4Body">Lưu một tuần học hay lịch tập gym thành mẫu, rồi áp dụng cho tối đa 12 tuần trong một lần bấm. Chia sẻ cho bạn bè bằng mã 8 ký tự.</p>
             <ul>
-              <li>Trùng giờ với lịch cũ thì hỏi trước khi thay</li>
-              <li>Lưu tối đa 10 lịch mẫu</li>
+              <li data-i18n="f4a">Trùng giờ với lịch cũ thì hỏi trước khi thay</li>
+              <li data-i18n="f4b">Lưu tối đa 10 lịch mẫu</li>
             </ul>
           </div>
-          <div class="visual" role="img" aria-label="Lịch mẫu tập gym 4 buổi một tuần với mã chia sẻ GYM4DAY">
+          <div class="visual" role="img" data-i18n-aria="f4Aria" aria-label="Lịch mẫu tập gym 4 buổi một tuần với mã chia sẻ GYM4DAY">
             <div class="week">
-              <div>T2<i class="on"></i></div><div>T3<i class="on2"></i></div><div>T4<i></i></div><div>T5<i class="on"></i></div><div>T6<i></i></div><div>T7<i class="on2"></i></div><div>CN<i></i></div>
+              <div><span data-i18n="d2">T2</span><i class="on"></i></div><div><span data-i18n="d3">T3</span><i class="on2"></i></div><div><span data-i18n="d4">T4</span><i></i></div><div><span data-i18n="d5">T5</span><i class="on"></i></div><div><span data-i18n="d6">T6</span><i></i></div><div><span data-i18n="d7">T7</span><i class="on2"></i></div><div><span data-i18n="d8">CN</span><i></i></div>
             </div>
-            <div class="code"><b>GYM4DAY</b><span>Bạn bè nhập mã này là có ngay lịch tập 4 buổi.</span></div>
+            <div class="code"><b>GYM4DAY</b><span data-i18n="codeNote">Bạn bè nhập mã này là có ngay lịch tập 4 buổi.</span></div>
           </div>
         </div>
       </div>
@@ -408,14 +427,14 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   <section class="part pad" id="cai-dat">
     <div class="wrap">
       <div class="part-head">
-        <span class="eyebrow">Cài đặt</span>
-        <h2>Dùng được sau 2 phút</h2>
+        <span class="eyebrow" data-i18n="installEyebrow">Cài đặt</span>
+        <h2 data-i18n="installTitle">Dùng được sau 2 phút</h2>
       </div>
       <ol class="steps">
-        <li><b>Tải file APK</b><span>Bấm "Tải APK cho Android" và đợi tải xong.</span></li>
-        <li><b>Cho phép cài đặt</b><span>Mở file vừa tải. Nếu máy hỏi, bật "Cho phép từ nguồn này".</span></li>
-        <li><b>Tạo tài khoản</b><span>Đăng ký bằng email hoặc tài khoản Google. Lần đầu có hướng dẫn từng bước.</span></li>
-        <li><b>Bật thông báo</b><span>Chọn "Cho phép" khi app hỏi để không lỡ lịch nào.</span></li>
+        <li><b data-i18n="s1Title">Tải file APK</b><span data-i18n="s1Body">Bấm "Tải APK cho Android" và đợi tải xong.</span></li>
+        <li><b data-i18n="s2Title">Cho phép cài đặt</b><span data-i18n="s2Body">Mở file vừa tải. Nếu máy hỏi, bật "Cho phép từ nguồn này".</span></li>
+        <li><b data-i18n="s3Title">Tạo tài khoản</b><span data-i18n="s3Body">Đăng ký bằng email hoặc tài khoản Google. Lần đầu có hướng dẫn từng bước.</span></li>
+        <li><b data-i18n="s4Title">Bật thông báo</b><span data-i18n="s4Body">Chọn "Cho phép" khi app hỏi để không lỡ lịch nào.</span></li>
       </ol>
     </div>
   </section>
@@ -423,29 +442,29 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   <section class="part alt pad" id="hoi-dap">
     <div class="wrap">
       <div class="part-head">
-        <span class="eyebrow">Hỏi đáp</span>
-        <h2>Câu hỏi thường gặp</h2>
+        <span class="eyebrow" data-i18n="faqEyebrow">Hỏi đáp</span>
+        <h2 data-i18n="faqTitle">Câu hỏi thường gặp</h2>
       </div>
       <div class="faq">
         <details>
-          <summary>Máy báo "ứng dụng không rõ nguồn gốc", có an toàn không?</summary>
-          <p>Android hiện cảnh báo này với mọi app không cài từ Google Play. TimeTribe chỉ xin quyền gửi thông báo và quyền chọn ảnh đại diện. Cài xong, bạn có thể tắt lại "Cho phép từ nguồn này".</p>
+          <summary data-i18n="q1">Máy báo "ứng dụng không rõ nguồn gốc", có an toàn không?</summary>
+          <p data-i18n="a1">Android hiện cảnh báo này với mọi app không cài từ Google Play. TimeTribe chỉ xin quyền gửi thông báo và quyền chọn ảnh đại diện. Cài xong, bạn có thể tắt lại "Cho phép từ nguồn này".</p>
         </details>
         <details>
-          <summary>Có bản cho iPhone không?</summary>
-          <p>Hiện mới có bản Android. Bản iOS đang được chuẩn bị.</p>
+          <summary data-i18n="q2">Có bản cho iPhone không?</summary>
+          <p data-i18n="a2">Hiện mới có bản Android. Bản iOS đang được chuẩn bị.</p>
         </details>
         <details>
-          <summary>Mở app lần đầu trong ngày thấy tải hơi lâu?</summary>
-          <p>Máy chủ tự nghỉ khi lâu không có ai dùng và cần khoảng 30 giây để khởi động lại. Các lần sau sẽ nhanh.</p>
+          <summary data-i18n="q3">Mở app lần đầu trong ngày thấy tải hơi lâu?</summary>
+          <p data-i18n="a3">Máy chủ tự nghỉ khi lâu không có ai dùng và cần khoảng 30 giây để khởi động lại. Các lần sau sẽ nhanh.</p>
         </details>
         <details>
-          <summary>Không nhận được thông báo nhắc lịch?</summary>
-          <p>Vào Cài đặt của điện thoại → Ứng dụng → TimeTribe → Thông báo, bật "Cho phép thông báo". Với máy Xiaomi, Oppo, Vivo, bật thêm "Tự khởi chạy" và chọn "Không hạn chế" pin cho TimeTribe.</p>
+          <summary data-i18n="q4">Không nhận được thông báo nhắc lịch?</summary>
+          <p data-i18n="a4">Vào Cài đặt của điện thoại → Ứng dụng → TimeTribe → Thông báo, bật "Cho phép thông báo". Với máy Xiaomi, Oppo, Vivo, bật thêm "Tự khởi chạy" và chọn "Không hạn chế" pin cho TimeTribe.</p>
         </details>
         <details>
-          <summary>Cập nhật lên bản mới thế nào?</summary>
-          <p>Tải lại APK từ trang này và cài đè lên bản cũ. Dữ liệu lưu trên máy chủ nên không bị mất.</p>
+          <summary data-i18n="q5">Cập nhật lên bản mới thế nào?</summary>
+          <p data-i18n="a5">Tải lại APK từ trang này và cài đè lên bản cũ. Dữ liệu lưu trên máy chủ nên không bị mất.</p>
         </details>
       </div>
     </div>
@@ -455,12 +474,12 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
     <div class="wrap">
       <img src="logo.png" alt="Logo TimeTribe" width="88" height="88">
       <div>
-        <h2>Hẹn lịch cho cả nhóm, không cần hỏi từng người</h2>
-        <p>Miễn phí, không quảng cáo.</p>
+        <h2 data-i18n="finalTitle">Hẹn lịch cho cả nhóm, không cần hỏi từng người</h2>
+        <p data-i18n="finalNote">Miễn phí, không quảng cáo.</p>
       </div>
       <a class="btn light" href="https://timetribe-api.onrender.com/download" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
-        Tải APK
+        <span data-i18n="ctaShort">Tải APK</span>
       </a>
     </div>
   </section>
@@ -469,14 +488,220 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 <footer class="pad">
   <div class="wrap">
     <span class="logo"><span class="word" style="font-size:1rem">Time<span>Tribe</span></span></span>
-    <span>© 2026 TimeTribe · Đồ án môn học</span>
+    <span data-i18n="footer">© 2026 TimeTribe · Đồ án môn học</span>
   </div>
 </footer>
 
 <script>
+// Ba ngôn ngữ của trang (giống app): vi, en, fr.
+// Thứ tự chọn: ?lang= trên địa chỉ > lần chọn trước (lưu trên máy) > ngôn ngữ trình duyệt > tiếng Việt.
+var I18N = {
+  vi: {
+    pageTitle: 'TimeTribe – Hẹn lịch cả nhóm, đúng giờ mọi múi giờ',
+    pageDesc: 'TimeTribe: biết ngay giờ cả nhóm cùng rảnh, nhắc lịch đúng giờ cho mọi múi giờ. Tải APK miễn phí cho Android.',
+    navLabel: 'Mục lục', langLabel: 'Ngôn ngữ',
+    navBenefits: 'Lợi ích', navInstall: 'Cách cài', navFaq: 'Hỏi đáp', ctaShort: 'Tải APK',
+    kicker: 'Miễn phí cho Android',
+    heroTitle: 'Hết cảnh nhắn từng người <span class="hl">"tối nay rảnh không?"</span>',
+    heroLede: 'TimeTribe xem lịch của cả nhóm và chỉ ra ngay khung giờ mọi người cùng rảnh. Đặt lịch xong, ai cũng được nhắc đúng giờ nơi mình đang sống.',
+    ctaLong: 'Tải APK cho Android', ctaHow: 'Xem cách cài',
+    fact1: 'Không quảng cáo', fact3: 'Nhóm tới 10 người',
+    stageLabel: 'Màn hình lịch nhóm trong TimeTribe', toastLabel: 'Thông báo nhắc lịch',
+    remindTitle: 'Sắp tới giờ: Họp chốt tiến độ', remindBody: 'Nhóm Đồ án NIC bắt đầu lúc 19:00.',
+    tribeName: 'Đồ án NIC', tribeMeta: '6 thành viên · 3 múi giờ',
+    d2: 'T2', d3: 'T3', d4: 'T4', d5: 'T5', d6: 'T6', d7: 'T7', d8: 'CN',
+    laneBusy: '3 người bận', laneFree: 'Cả nhóm rảnh', eventName: 'Họp chốt tiến độ',
+    whyEyebrow: 'Vì sao dùng TimeTribe', whyTitle: 'Ít tin nhắn qua lại, nhiều buổi hẹn diễn ra đúng giờ',
+    f1Title: 'Biết ngay giờ cả nhóm cùng rảnh',
+    f1Body: 'Mở lịch nhóm là thấy khung nào có người bận (vùng sọc) và khung nào cả nhóm đều trống. Bạn chỉ thấy ai bận, không thấy họ bận việc gì.',
+    f1a: 'Gợi ý các khoảng trống từ 30 phút trở lên', f1b: 'Cảnh báo trước khi đặt lịch vào giờ có người bận',
+    f1Aria: 'Giờ bận của năm thành viên, từ 19:00 đến 21:00 cả nhóm cùng rảnh',
+    freeNote: '● 19:00 – 21:00 · cả 5 người đều rảnh',
+    f2Title: 'Mỗi người thấy đúng giờ của mình',
+    f2Body: 'Bạn cùng nhóm đang du học hay làm việc ở nước ngoài? TimeTribe tự đổi giờ theo múi giờ của từng người, không ai phải tự cộng trừ.',
+    f2a: 'Tự nhận múi giờ của điện thoại', f2b: 'Đi nước khác, lịch tự cập nhật theo',
+    f2Aria: 'Cùng một buổi họp: 18:00 ở Hà Nội, 20:00 ở Tokyo, 11:00 ở London',
+    cityHanoi: 'Hà Nội', cityLondon: 'London', tuesday: 'Thứ Ba', sameMeeting: 'Cùng một buổi họp',
+    f3Title: 'Nhắc đúng giờ, kể cả khi đã tắt app',
+    f3Body: 'Chọn nhắc trước 5, 10, 15, 30 hoặc 60 phút. Thông báo hiện trên màn hình khoá, bấm vào là mở thẳng danh sách thông báo.',
+    f3a: 'Ai từ chối tham gia thì không bị nhắc', f3b: 'Trưởng nhóm biết ngay ai tham gia, ai vắng',
+    f3Aria: 'Ba thông báo mẫu của TimeTribe',
+    now: 'bây giờ', n2Title: 'Minh Trần sẽ tham gia', n2Body: '"Code review sprint 3" · Đồ án NIC', min5: '5 phút',
+    n3Title: 'Hoạt động mới', n3Body: 'Linh Phạm thêm "Đánh cầu tối" lúc 18:30.', hour1: '1 giờ',
+    f4Title: 'Lịch mẫu dùng lại cả học kỳ',
+    f4Body: 'Lưu một tuần học hay lịch tập gym thành mẫu, rồi áp dụng cho tối đa 12 tuần trong một lần bấm. Chia sẻ cho bạn bè bằng mã 8 ký tự.',
+    f4a: 'Trùng giờ với lịch cũ thì hỏi trước khi thay', f4b: 'Lưu tối đa 10 lịch mẫu',
+    f4Aria: 'Lịch mẫu tập gym 4 buổi một tuần với mã chia sẻ GYM4DAY',
+    codeNote: 'Bạn bè nhập mã này là có ngay lịch tập 4 buổi.',
+    installEyebrow: 'Cài đặt', installTitle: 'Dùng được sau 2 phút',
+    s1Title: 'Tải file APK', s1Body: 'Bấm "Tải APK cho Android" và đợi tải xong.',
+    s2Title: 'Cho phép cài đặt', s2Body: 'Mở file vừa tải. Nếu máy hỏi, bật "Cho phép từ nguồn này".',
+    s3Title: 'Tạo tài khoản', s3Body: 'Đăng ký bằng email hoặc tài khoản Google. Lần đầu có hướng dẫn từng bước.',
+    s4Title: 'Bật thông báo', s4Body: 'Chọn "Cho phép" khi app hỏi để không lỡ lịch nào.',
+    faqEyebrow: 'Hỏi đáp', faqTitle: 'Câu hỏi thường gặp',
+    q1: 'Máy báo "ứng dụng không rõ nguồn gốc", có an toàn không?',
+    a1: 'Android hiện cảnh báo này với mọi app không cài từ Google Play. TimeTribe chỉ xin quyền gửi thông báo và quyền chọn ảnh đại diện. Cài xong, bạn có thể tắt lại "Cho phép từ nguồn này".',
+    q2: 'Có bản cho iPhone không?', a2: 'Hiện mới có bản Android. Bản iOS đang được chuẩn bị.',
+    q3: 'Mở app lần đầu trong ngày thấy tải hơi lâu?',
+    a3: 'Máy chủ tự nghỉ khi lâu không có ai dùng và cần khoảng 30 giây để khởi động lại. Các lần sau sẽ nhanh.',
+    q4: 'Không nhận được thông báo nhắc lịch?',
+    a4: 'Vào Cài đặt của điện thoại → Ứng dụng → TimeTribe → Thông báo, bật "Cho phép thông báo". Với máy Xiaomi, Oppo, Vivo, bật thêm "Tự khởi chạy" và chọn "Không hạn chế" pin cho TimeTribe.',
+    q5: 'Cập nhật lên bản mới thế nào?', a5: 'Tải lại APK từ trang này và cài đè lên bản cũ. Dữ liệu lưu trên máy chủ nên không bị mất.',
+    finalTitle: 'Hẹn lịch cho cả nhóm, không cần hỏi từng người', finalNote: 'Miễn phí, không quảng cáo.',
+    footer: '© 2026 TimeTribe · Đồ án môn học'
+  },
+  en: {
+    pageTitle: 'TimeTribe – Plan with your group, on time in every time zone',
+    pageDesc: 'TimeTribe shows when your whole group is free and reminds everyone on time in their own time zone. Free APK for Android.',
+    navLabel: 'Sections', langLabel: 'Language',
+    navBenefits: 'Benefits', navInstall: 'Install', navFaq: 'FAQ', ctaShort: 'Get the APK',
+    kicker: 'Free for Android',
+    heroTitle: 'Stop texting everyone <span class="hl">"are you free tonight?"</span>',
+    heroLede: 'TimeTribe reads your group’s schedules and shows right away when everyone is free. Once it’s planned, each person is reminded on time, wherever they live.',
+    ctaLong: 'Download the Android APK', ctaHow: 'How to install',
+    fact1: 'No ads', fact3: 'Groups of up to 10',
+    stageLabel: 'Group schedule screen in TimeTribe', toastLabel: 'Reminder notification',
+    remindTitle: 'Coming up: Progress check-in', remindBody: 'NIC Project starts at 19:00.',
+    tribeName: 'NIC Project', tribeMeta: '6 members · 3 time zones',
+    d2: 'Mon', d3: 'Tue', d4: 'Wed', d5: 'Thu', d6: 'Fri', d7: 'Sat', d8: 'Sun',
+    laneBusy: '3 people busy', laneFree: 'Everyone is free', eventName: 'Progress check-in',
+    whyEyebrow: 'Why TimeTribe', whyTitle: 'Fewer back-and-forth messages, more meetups that start on time',
+    f1Title: 'See instantly when the whole group is free',
+    f1Body: 'Open the group calendar to see which slots have someone busy (striped) and which are free for everyone. You only see who is busy, never what they are doing.',
+    f1a: 'Suggests free slots of 30 minutes or more', f1b: 'Warns you before you book a time when someone is busy',
+    f1Aria: 'Busy times of five members; everyone is free from 19:00 to 21:00',
+    freeNote: '● 19:00 – 21:00 · all 5 people are free',
+    f2Title: 'Everyone sees their own local time',
+    f2Body: 'Teammates studying or working abroad? TimeTribe converts every time to each person’s time zone, so nobody has to do the math.',
+    f2a: 'Picks up your phone’s time zone automatically', f2b: 'Travel abroad and your schedule follows',
+    f2Aria: 'The same meeting: 18:00 in Hanoi, 20:00 in Tokyo, 11:00 in London',
+    cityHanoi: 'Hanoi', cityLondon: 'London', tuesday: 'Tuesday', sameMeeting: 'The same meeting',
+    f3Title: 'Reminders on time, even when the app is closed',
+    f3Body: 'Get reminded 5, 10, 15, 30 or 60 minutes before. Notifications show on the lock screen and open your notification list in one tap.',
+    f3a: 'People who declined are not reminded', f3b: 'Leaders see at once who is coming and who is not',
+    f3Aria: 'Three sample TimeTribe notifications',
+    now: 'now', n2Title: 'Minh Trần is joining', n2Body: '"Code review sprint 3" · NIC Project', min5: '5 min',
+    n3Title: 'New activity', n3Body: 'Linh Phạm added "Evening badminton" at 18:30.', hour1: '1 h',
+    f4Title: 'Reuse a weekly template all semester',
+    f4Body: 'Save a study week or gym routine as a template, then apply it for up to 12 weeks in one tap. Share it with friends using an 8-character code.',
+    f4a: 'Asks before replacing anything that overlaps', f4b: 'Keep up to 10 templates',
+    f4Aria: 'A 4-day gym template with the share code GYM4DAY',
+    codeNote: 'Friends enter this code to get the 4-day routine instantly.',
+    installEyebrow: 'Install', installTitle: 'Ready in 2 minutes',
+    s1Title: 'Download the APK', s1Body: 'Tap "Download the Android APK" and wait for it to finish.',
+    s2Title: 'Allow the install', s2Body: 'Open the downloaded file. If your phone asks, turn on "Allow from this source".',
+    s3Title: 'Create an account', s3Body: 'Sign up with email or your Google account. A step-by-step guide shows the first time.',
+    s4Title: 'Turn on notifications', s4Body: 'Choose "Allow" when the app asks so you never miss a plan.',
+    faqEyebrow: 'FAQ', faqTitle: 'Frequently asked questions',
+    q1: 'My phone says "unknown app". Is it safe?',
+    a1: 'Android shows this warning for every app that is not installed from Google Play. TimeTribe only asks to send notifications and to pick a profile photo. After installing, you can turn "Allow from this source" off again.',
+    q2: 'Is there an iPhone version?', a2: 'Only Android for now. An iOS version is in the works.',
+    q3: 'The app is slow to load the first time each day?',
+    a3: 'The server sleeps when nobody has used it for a while and needs about 30 seconds to wake up. After that it is fast.',
+    q4: 'Not getting reminder notifications?',
+    a4: 'Open your phone Settings → Apps → TimeTribe → Notifications and turn on "Allow notifications". On Xiaomi, Oppo or Vivo phones, also turn on "Autostart" and set battery to "No restrictions" for TimeTribe.',
+    q5: 'How do I update to a new version?', a5: 'Download the APK again from this page and install it over the old one. Your data lives on the server, so nothing is lost.',
+    finalTitle: 'Plan for the whole group without asking everyone', finalNote: 'Free, no ads.',
+    footer: '© 2026 TimeTribe · Student project'
+  },
+  fr: {
+    pageTitle: 'TimeTribe – Planifier en groupe, à l’heure dans chaque fuseau',
+    pageDesc: 'TimeTribe montre quand tout le groupe est libre et rappelle chacun à l’heure, dans son propre fuseau horaire. APK gratuit pour Android.',
+    navLabel: 'Sommaire', langLabel: 'Langue',
+    navBenefits: 'Avantages', navInstall: 'Installation', navFaq: 'FAQ', ctaShort: 'Télécharger',
+    kicker: 'Gratuit sur Android',
+    heroTitle: 'Fini les messages à chacun : <span class="hl">« tu es libre ce soir ? »</span>',
+    heroLede: 'TimeTribe lit les agendas du groupe et indique tout de suite quand tout le monde est disponible. Une fois planifié, chacun reçoit un rappel à l’heure, où qu’il vive.',
+    ctaLong: 'Télécharger l’APK Android', ctaHow: 'Comment installer',
+    fact1: 'Sans publicité', fact3: 'Groupes jusqu’à 10 personnes',
+    stageLabel: 'Écran d’agenda de groupe dans TimeTribe', toastLabel: 'Notification de rappel',
+    remindTitle: 'Bientôt : Point d’avancement', remindBody: 'Projet NIC commence à 19:00.',
+    tribeName: 'Projet NIC', tribeMeta: '6 membres · 3 fuseaux horaires',
+    d2: 'Lun', d3: 'Mar', d4: 'Mer', d5: 'Jeu', d6: 'Ven', d7: 'Sam', d8: 'Dim',
+    laneBusy: '3 personnes occupées', laneFree: 'Tout le monde est libre', eventName: 'Point d’avancement',
+    whyEyebrow: 'Pourquoi TimeTribe', whyTitle: 'Moins d’allers-retours, plus de rendez-vous à l’heure',
+    f1Title: 'Voir aussitôt quand tout le groupe est libre',
+    f1Body: 'Ouvrez l’agenda du groupe : les créneaux où quelqu’un est occupé sont hachurés, les autres sont libres pour tous. Vous voyez qui est occupé, jamais ce qu’il fait.',
+    f1a: 'Propose les créneaux libres de 30 minutes ou plus', f1b: 'Prévient avant de réserver un moment où quelqu’un est occupé',
+    f1Aria: 'Disponibilités de cinq membres ; tout le monde est libre de 19:00 à 21:00',
+    freeNote: '● 19:00 – 21:00 · les 5 personnes sont libres',
+    f2Title: 'Chacun voit sa propre heure locale',
+    f2Body: 'Des coéquipiers qui étudient ou travaillent à l’étranger ? TimeTribe convertit chaque horaire dans le fuseau de chacun, personne n’a à calculer.',
+    f2a: 'Détecte automatiquement le fuseau du téléphone', f2b: 'En voyage, votre agenda suit',
+    f2Aria: 'La même réunion : 18:00 à Hanoï, 20:00 à Tokyo, 11:00 à Londres',
+    cityHanoi: 'Hanoï', cityLondon: 'Londres', tuesday: 'Mardi', sameMeeting: 'La même réunion',
+    f3Title: 'Des rappels à l’heure, même application fermée',
+    f3Body: 'Rappel 5, 10, 15, 30 ou 60 minutes avant. Les notifications s’affichent sur l’écran verrouillé et ouvrent la liste des notifications en un geste.',
+    f3a: 'Ceux qui ont décliné ne sont pas rappelés', f3b: 'Le chef voit aussitôt qui vient et qui ne vient pas',
+    f3Aria: 'Trois exemples de notifications TimeTribe',
+    now: 'maintenant', n2Title: 'Minh Trần participe', n2Body: '« Code review sprint 3 » · Projet NIC', min5: '5 min',
+    n3Title: 'Nouvelle activité', n3Body: 'Linh Phạm a ajouté « Badminton du soir » à 18:30.', hour1: '1 h',
+    f4Title: 'Un modèle de semaine pour tout le semestre',
+    f4Body: 'Enregistrez une semaine de cours ou un programme de sport comme modèle, puis appliquez-le jusqu’à 12 semaines en un geste. Partagez-le avec un code de 8 caractères.',
+    f4a: 'Demande avant de remplacer ce qui se chevauche', f4b: 'Jusqu’à 10 modèles enregistrés',
+    f4Aria: 'Un modèle de sport sur 4 jours avec le code de partage GYM4DAY',
+    codeNote: 'Vos amis saisissent ce code et obtiennent le programme de 4 jours.',
+    installEyebrow: 'Installation', installTitle: 'Prêt en 2 minutes',
+    s1Title: 'Télécharger l’APK', s1Body: 'Touchez « Télécharger l’APK Android » et attendez la fin.',
+    s2Title: 'Autoriser l’installation', s2Body: 'Ouvrez le fichier téléchargé. Si le téléphone le demande, activez « Autoriser cette source ».',
+    s3Title: 'Créer un compte', s3Body: 'Inscrivez-vous par e-mail ou avec Google. Un guide pas à pas s’affiche la première fois.',
+    s4Title: 'Activer les notifications', s4Body: 'Choisissez « Autoriser » quand l’application le demande pour ne rien manquer.',
+    faqEyebrow: 'FAQ', faqTitle: 'Questions fréquentes',
+    q1: 'Le téléphone parle d’« application inconnue ». Est-ce sûr ?',
+    a1: 'Android affiche cet avertissement pour toute application qui ne vient pas de Google Play. TimeTribe demande seulement d’envoyer des notifications et de choisir une photo de profil. Après l’installation, vous pouvez désactiver « Autoriser cette source ».',
+    q2: 'Existe-t-il une version iPhone ?', a2: 'Seulement Android pour l’instant. Une version iOS est en préparation.',
+    q3: 'L’application met du temps à charger la première fois de la journée ?',
+    a3: 'Le serveur se met en veille quand personne ne l’utilise et met environ 30 secondes à redémarrer. Ensuite, tout est rapide.',
+    q4: 'Vous ne recevez pas les rappels ?',
+    a4: 'Ouvrez Paramètres du téléphone → Applications → TimeTribe → Notifications et activez « Autoriser les notifications ». Sur Xiaomi, Oppo ou Vivo, activez aussi « Démarrage auto » et réglez la batterie sur « Aucune restriction ».',
+    q5: 'Comment passer à une nouvelle version ?', a5: 'Téléchargez à nouveau l’APK depuis cette page et installez-le par-dessus l’ancien. Vos données sont sur le serveur, rien n’est perdu.',
+    finalTitle: 'Planifiez pour tout le groupe sans demander à chacun', finalNote: 'Gratuit, sans publicité.',
+    footer: '© 2026 TimeTribe · Projet étudiant'
+  }
+};
+
+(function () {
+  var KEY = 'timetribe.landing.lang';
+  function pick() {
+    var q = new URLSearchParams(location.search).get('lang');
+    if (I18N[q]) return q;
+    try { var saved = localStorage.getItem(KEY); if (I18N[saved]) return saved; } catch (_) {}
+    var nav = (navigator.language || 'vi').slice(0, 2).toLowerCase();
+    return I18N[nav] ? nav : 'vi';
+  }
+  function apply(lang) {
+    var t = I18N[lang] || I18N.vi;
+    document.documentElement.lang = lang;
+    document.title = t.pageTitle;
+    var desc = document.querySelector('meta[name="description"]');
+    if (desc) desc.setAttribute('content', t.pageDesc);
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var v = t[el.getAttribute('data-i18n')]; if (v != null) el.textContent = v;
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(function (el) {
+      var v = t[el.getAttribute('data-i18n-html')]; if (v != null) el.innerHTML = v;
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function (el) {
+      var v = t[el.getAttribute('data-i18n-aria')]; if (v != null) el.setAttribute('aria-label', v);
+    });
+    document.querySelectorAll('.lang button').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-lang') === lang ? 'true' : 'false');
+    });
+  }
+  var current = pick();
+  apply(current);
+  document.querySelectorAll('.lang button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      current = b.getAttribute('data-lang');
+      apply(current);
+      try { localStorage.setItem(KEY, current); } catch (_) {}
+    });
+  });
+})();
+
 // Mục lục (Lợi ích / Cách cài / Hỏi đáp):
-// - Bấm link: tự cuộn tới đúng phần, trừ chiều cao thanh đầu trang. Không phó mặc cho trình duyệt,
-//   vì cuộn mượt mặc định có thể bị huỷ giữa chừng khi font chữ vừa tải xong làm trang đổi chiều cao.
+// - Bấm link: tự cuộn tới đúng phần, trừ chiều cao thanh đầu trang (không phó mặc cho cuộn mượt
+//   mặc định của trình duyệt, vì nó có thể bị huỷ giữa chừng khi font chữ tải xong làm trang đổi chiều cao).
 // - Mở trang có sẵn #cai-dat... trên địa chỉ: đợi font tải xong rồi mới cuộn tới phần đó.
 // - Tô sáng link của phần đang xem.
 (function () {
@@ -502,7 +727,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
       if (!id || !document.getElementById(id)) return;
       e.preventDefault();
       goTo(id, true);
-      try { history.replaceState(null, '', '#' + id); } catch (_) {}
+      try { history.replaceState(null, '', location.search + '#' + id); } catch (_) {}
     });
   });
 
@@ -521,3 +746,5 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   }
 })();
 </script>
+</body>
+</html>

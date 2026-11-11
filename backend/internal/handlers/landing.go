@@ -7,11 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// landing.html là trang giới thiệu + nút tải APK (cùng nội dung với trang đã publish).
-// File chỉ có phần thân trang nên khi phục vụ thì bọc thêm khung HTML.
+// landing.html là trang giới thiệu + nút tải APK, một file HTML đầy đủ (mở thẳng bằng trình duyệt
+// hay Live Server cũng chạy), có sẵn 3 ngôn ngữ vi/en/fr.
 //
 //go:embed web/landing.html
-var landingBody string
+var landingPage []byte
 
 //go:embed web/reset.html
 var resetPage []byte
@@ -21,11 +21,6 @@ var logoPNG []byte
 
 //go:embed web/favicon.png
 var faviconPNG []byte
-
-var landingPage = []byte(`<!doctype html><html lang="vi"><head><meta charset="utf-8">` +
-	`<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">` +
-	`<title>TimeTribe</title><style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>` +
-	landingBody + `</body></html>`)
 
 // Landing xử lý GET /: trang tải ứng dụng.
 func Landing(c *gin.Context) {
