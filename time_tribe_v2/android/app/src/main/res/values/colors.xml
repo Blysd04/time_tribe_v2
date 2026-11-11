@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Màu icon thông báo -->
+    <color name="notification_color">#3A86FF</color>
+</resources>

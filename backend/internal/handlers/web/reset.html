@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TimeTribe</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Mulish:wght@400;600;700&display=swap">
+<style>
+:root { --bg:#F6F9FE; --card:#FFFFFF; --ink:#0E2447; --muted:#566781; --line:#DDE6F3; --brand:#1B6FE0; --ok:#14A37F; --err:#D64545; }
+@media (prefers-color-scheme: dark) { :root { --bg:#08142A; --card:#0F1F3B; --ink:#E8EEF9; --muted:#9DAECB; --line:#213456; --brand:#4A90F5; --ok:#2CC79E; --err:#FF7A7A; color-scheme: dark; } }
+* { box-sizing: border-box; }
+body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--ink); font:400 1rem/1.6 "Mulish", system-ui, sans-serif; padding:16px; }
+.card { width:100%; max-width:400px; background:var(--card); border:1px solid var(--line); border-radius:24px; padding:32px 26px; }
+.logo { display:flex; align-items:center; gap:10px; margin-bottom:22px; font:800 1.2rem/1 "Montserrat", system-ui, sans-serif; color:var(--brand); }
+.logo img { width:36px; height:36px; } .logo span span { font-weight:400; }
+h1 { font:800 1.5rem/1.2 "Montserrat", system-ui, sans-serif; margin:0 0 6px; }
+p { margin:0 0 20px; color:var(--muted); }
+label { display:block; font-weight:700; font-size:.9rem; margin:14px 0 6px; }
+input { width:100%; font:inherit; color:inherit; background:var(--bg); border:1.5px solid var(--line); border-radius:12px; padding:12px 14px; }
+input:focus { outline:none; border-color:var(--brand); }
+button { width:100%; margin-top:22px; font:700 1rem/1 "Montserrat", system-ui, sans-serif; color:#fff; background:var(--brand); border:0; border-radius:999px; padding:15px; cursor:pointer; }
+button:disabled { opacity:.6; cursor:default; }
+.msg { margin-top:16px; font-weight:600; }
+.msg.err { color:var(--err); } .msg.ok { color:var(--ok); }
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="logo"><img src="/logo.png" alt=""><span>Time<span>Tribe</span></span></div>
+  <div id="form-view">
+    <h1 data-t="title">Đặt lại mật khẩu</h1>
+    <p data-t="intro">Nhập mật khẩu mới cho tài khoản TimeTribe của bạn (tối thiểu 6 ký tự).</p>
+    <form id="form" novalidate>
+      <label for="pw" data-t="pw">Mật khẩu mới</label>
+      <input id="pw" type="password" autocomplete="new-password" minlength="6" required>
+      <label for="pw2" data-t="pw2">Nhập lại mật khẩu mới</label>
+      <input id="pw2" type="password" autocomplete="new-password" minlength="6" required>
+      <button id="submit" type="submit" data-t="save">Lưu mật khẩu mới</button>
+      <div id="msg" class="msg" role="alert"></div>
+    </form>
+  </div>
+  <div id="done" hidden>
+    <h1 data-t="doneTitle">Đã đổi mật khẩu</h1>
+    <p data-t="done">Mở ứng dụng TimeTribe và đăng nhập bằng mật khẩu mới. Các thiết bị đang đăng nhập đều đã được đăng xuất.</p>
+  </div>
+</main>
+<script>
+(function () {
+  // Ngôn ngữ lấy từ ?lang= trong link của email (theo ngôn ngữ tài khoản), không có thì theo trình duyệt
+  var T = {
+    vi: { title: 'Đặt lại mật khẩu', intro: 'Nhập mật khẩu mới cho tài khoản TimeTribe của bạn (tối thiểu 6 ký tự).',
+      pw: 'Mật khẩu mới', pw2: 'Nhập lại mật khẩu mới', save: 'Lưu mật khẩu mới', doneTitle: 'Đã đổi mật khẩu',
+      done: 'Mở ứng dụng TimeTribe và đăng nhập bằng mật khẩu mới. Các thiết bị đang đăng nhập đều đã được đăng xuất.',
+      noToken: 'Link không hợp lệ. Hãy mở đúng link trong email đặt lại mật khẩu.', short: 'Mật khẩu cần tối thiểu 6 ký tự.',
+      mismatch: 'Hai ô mật khẩu chưa khớp nhau.', invalid: 'Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Hãy yêu cầu link mới trong ứng dụng.',
+      failed: 'Không đặt lại được mật khẩu, vui lòng thử lại.', network: 'Không kết nối được máy chủ, vui lòng thử lại.' },
+    en: { title: 'Reset your password', intro: 'Enter a new password for your TimeTribe account (at least 6 characters).',
+      pw: 'New password', pw2: 'Confirm new password', save: 'Save new password', doneTitle: 'Password changed',
+      done: 'Open the TimeTribe app and sign in with your new password. Every signed-in device has been signed out.',
+      noToken: 'This link is invalid. Open the exact link from the password reset email.', short: 'The password needs at least 6 characters.',
+      mismatch: 'The two passwords do not match.', invalid: 'This reset link is invalid or has expired. Request a new one in the app.',
+      failed: "Couldn't reset the password, please try again.", network: "Can't reach the server, please try again." },
+    fr: { title: 'Réinitialiser le mot de passe', intro: 'Saisissez un nouveau mot de passe pour votre compte TimeTribe (6 caractères minimum).',
+      pw: 'Nouveau mot de passe', pw2: 'Confirmer le nouveau mot de passe', save: 'Enregistrer', doneTitle: 'Mot de passe modifié',
+      done: "Ouvrez l'application TimeTribe et connectez-vous avec le nouveau mot de passe. Tous les appareils connectés ont été déconnectés.",
+      noToken: "Ce lien n'est pas valide. Ouvrez le lien exact de l'e-mail de réinitialisation.", short: 'Le mot de passe doit contenir au moins 6 caractères.',
+      mismatch: 'Les deux mots de passe ne correspondent pas.', invalid: "Ce lien n'est pas valide ou a expiré. Demandez-en un nouveau dans l'application.",
+      failed: 'Impossible de réinitialiser le mot de passe, réessayez.', network: 'Impossible de joindre le serveur, réessayez.' }
+  };
+  var params = new URLSearchParams(location.search);
+  var lang = params.get('lang') || (navigator.language || 'vi').slice(0, 2);
+  var t = T[lang] || T.vi;
+  document.documentElement.lang = T[lang] ? lang : 'vi';
+  document.title = t.title + ' · TimeTribe';
+  document.querySelectorAll('[data-t]').forEach(function (el) { el.textContent = t[el.getAttribute('data-t')]; });
+
+  var token = params.get('token') || '';
+  var form = document.getElementById('form'), msg = document.getElementById('msg'), btn = document.getElementById('submit');
+  function show(text) { msg.className = 'msg err'; msg.textContent = text; }
+  if (!token) { show(t.noToken); btn.disabled = true; }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var pw = document.getElementById('pw').value, pw2 = document.getElementById('pw2').value;
+    if (pw.length < 6) return show(t.short);
+    if (pw !== pw2) return show(t.mismatch);
+    btn.disabled = true; msg.textContent = '';
+    fetch('/api/v1/auth/reset-password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: token, new_password: pw, confirm_password: pw2 })
+    }).then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (res) {
+        if (res.success) { document.getElementById('form-view').hidden = true; document.getElementById('done').hidden = false; return; }
+        var code = res.error && res.error.code;
+        show(code === 'invalid_reset_token' ? t.invalid : code === 'validation_error' ? t.short : t.failed);
+        btn.disabled = false;
+      })
+      .catch(function () { show(t.network); btn.disabled = false; });
+  });
+})();
+</script>
+</body>
+</html>
