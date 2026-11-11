@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -57,6 +58,7 @@ func Favicon(c *gin.Context) {
 //   - Không có file mà có apkURL thì server tải từ link đó rồi chuyển tiếp từng phần cho người dùng,
 //     địa chỉ thật của file không lộ ra trình duyệt.
 func Download(apkPath, apkURL string) gin.HandlerFunc {
+	logAPK(apkPath, apkURL)
 	client := &http.Client{Timeout: 10 * time.Minute}
 	return func(c *gin.Context) {
 		c.Header("Content-Type", apkMime)
@@ -111,4 +113,18 @@ func noAPK(c *gin.Context) {
 	c.Header("Content-Type", "text/plain; charset=utf-8")
 	c.Header("Content-Disposition", "")
 	c.String(http.StatusServiceUnavailable, "Chưa có file APK, vui lòng quay lại sau.")
+}
+
+// logAPK ghi ra log lúc khởi động server đang lấy APK từ đâu, để biết vì sao /download báo thiếu file.
+func logAPK(apkPath, apkURL string) {
+	abs, _ := filepath.Abs(apkPath)
+	if st, err := os.Stat(apkPath); err == nil && !st.IsDir() {
+		log.Printf("APK: %s (%.1f MB)", abs, float64(st.Size())/(1<<20))
+		return
+	}
+	if apkURL != "" {
+		log.Printf("APK: không thấy %s, tải qua APK_URL", abs)
+		return
+	}
+	log.Printf("APK: không thấy %s và APK_URL trống, /download sẽ báo chưa có file", abs)
 }
