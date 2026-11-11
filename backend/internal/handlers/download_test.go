@@ -62,3 +62,16 @@ func TestDownloadMissing(t *testing.T) {
 		t.Fatalf("code %d headers %v", w.Code, w.Header())
 	}
 }
+
+func TestFindAPKFromRepoRoot(t *testing.T) {
+	root := t.TempDir()
+	os.MkdirAll(filepath.Join(root, "backend", "public"), 0o755)
+	os.WriteFile(filepath.Join(root, "backend", "public", "timetribe.apk"), []byte("x"), 0o644)
+	wd, _ := os.Getwd()
+	defer os.Chdir(wd)
+	os.Chdir(root) // giống Render chạy Go trực tiếp: đứng ở gốc repo
+
+	if got := findAPK("public/timetribe.apk"); got != filepath.Join("backend", "public", "timetribe.apk") {
+		t.Fatalf("got %q", got)
+	}
+}

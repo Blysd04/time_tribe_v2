@@ -58,6 +58,7 @@ func Favicon(c *gin.Context) {
 //   - Không có file mà có apkURL thì server tải từ link đó rồi chuyển tiếp từng phần cho người dùng,
 //     địa chỉ thật của file không lộ ra trình duyệt.
 func Download(apkPath, apkURL string) gin.HandlerFunc {
+	apkPath = findAPK(apkPath)
 	logAPK(apkPath, apkURL)
 	client := &http.Client{Timeout: 10 * time.Minute}
 	return func(c *gin.Context) {
@@ -113,6 +114,26 @@ func noAPK(c *gin.Context) {
 	c.Header("Content-Type", "text/plain; charset=utf-8")
 	c.Header("Content-Disposition", "")
 	c.String(http.StatusServiceUnavailable, "Chưa có file APK, vui lòng quay lại sau.")
+}
+
+// findAPK tìm file APK khi APK_PATH là đường dẫn tương đối. Thư mục chạy server tuỳ cách deploy:
+// Docker chạy ở /app, còn Render chạy Go trực tiếp thường đứng ở gốc repo (file nằm ở backend/public/),
+// nên thử lần lượt: thư mục hiện tại, thư mục backend/, thư mục chứa file chạy và thư mục cha của nó.
+func findAPK(p string) string {
+	if p == "" || filepath.IsAbs(p) {
+		return p
+	}
+	cands := []string{p, filepath.Join("backend", p)}
+	if exe, err := os.Executable(); err == nil {
+		dir := filepath.Dir(exe)
+		cands = append(cands, filepath.Join(dir, p), filepath.Join(dir, "..", p))
+	}
+	for _, c := range cands {
+		if st, err := os.Stat(c); err == nil && !st.IsDir() {
+			return c
+		}
+	}
+	return p
 }
 
 // logAPK ghi ra log lúc khởi động server đang lấy APK từ đâu, để biết vì sao /download báo thiếu file.
