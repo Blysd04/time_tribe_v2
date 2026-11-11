@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>TimeTribe</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="TimeTribe: biết ngay giờ cả nhóm cùng rảnh, nhắc lịch đúng giờ cho mọi múi giờ. Tải APK miễn phí cho Android.">
@@ -232,6 +233,13 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   .city b { grid-row: span 2; grid-column: 2; margin: 0; }
   .visual { padding: 18px; }
   section.part .wrap { padding-block: 64px; }
+}
+/* Màn hình thấp (cửa sổ trình duyệt nhỏ, laptop có thanh taskbar): thu khoảng trống để bấm mục lục
+   là thấy luôn nội dung của phần đó, không chỉ thấy mỗi tiêu đề */
+@media (max-height: 760px) {
+  section.part .wrap { padding-block: 40px 56px; }
+  .part-head { margin-bottom: 24px; }
+  .part-head h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
 }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } .btn { transition: none; } }
 </style>
