@@ -117,20 +117,31 @@ func noAPK(c *gin.Context) {
 }
 
 // findAPK tìm file APK khi APK_PATH là đường dẫn tương đối. Thư mục chạy server tuỳ cách deploy:
-// Docker chạy ở /app, còn Render chạy Go trực tiếp thường đứng ở gốc repo (file nằm ở backend/public/),
-// nên thử lần lượt: thư mục hiện tại, thư mục backend/, thư mục chứa file chạy và thư mục cha của nó.
+// Docker chạy ở /app; Render chạy Go trực tiếp có thể đứng ở gốc repo, ở backend/ hay ở backend/cmd/server.
+// Vì vậy đi ngược lên từ thư mục hiện tại và thư mục chứa file chạy, ở mỗi cấp thử <cấp>/p và <cấp>/backend/p.
 func findAPK(p string) string {
 	if p == "" || filepath.IsAbs(p) {
 		return p
 	}
-	cands := []string{p, filepath.Join("backend", p)}
-	if exe, err := os.Executable(); err == nil {
-		dir := filepath.Dir(exe)
-		cands = append(cands, filepath.Join(dir, p), filepath.Join(dir, "..", p))
+	var starts []string
+	if wd, err := os.Getwd(); err == nil {
+		starts = append(starts, wd)
 	}
-	for _, c := range cands {
-		if st, err := os.Stat(c); err == nil && !st.IsDir() {
-			return c
+	if exe, err := os.Executable(); err == nil {
+		starts = append(starts, filepath.Dir(exe))
+	}
+	for _, dir := range starts {
+		for {
+			for _, c := range []string{filepath.Join(dir, p), filepath.Join(dir, "backend", p)} {
+				if st, err := os.Stat(c); err == nil && !st.IsDir() {
+					return c
+				}
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
 		}
 	}
 	return p
