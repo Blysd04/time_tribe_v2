@@ -1,5 +1,4 @@
 // Lệnh seed xoá sạch 11 collection rồi nạp dữ liệu mẫu để test.
-// Dữ liệu lấy theo dữ liệu giả lập trong front-end (tribe_mock_data.dart, template_viewmodel.dart...),
 // ngày giờ tính tương đối so với lúc chạy để lúc nào test cũng có lịch hôm nay, ngày mai.
 // ID sinh cố định theo tên (UUID v5) nên chạy lại bao nhiêu lần ID cũng không đổi.
 //

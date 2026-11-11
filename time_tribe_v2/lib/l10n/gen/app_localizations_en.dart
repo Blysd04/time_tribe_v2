@@ -1356,25 +1356,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onbWelcomeTitle => 'Welcome to TimeTribe!';
 
   @override
-  String get onbWelcomeBody => 'The place to organise your own time and plan with your whole group in just a few taps.';
+  String get onbWelcomeBody =>
+      'The place to organise your own time and plan with your whole group in just a few taps.';
 
   @override
   String get onbPersonalTitle => 'A tidy personal schedule';
 
   @override
-  String get onbPersonalBody => 'Split your day into time blocks, colour each task, reuse templates and get reminded before things start.';
+  String get onbPersonalBody =>
+      'Split your day into time blocks, colour each task, reuse templates and get reminded before things start.';
 
   @override
   String get onbTribeTitle => 'Group planning made easy';
 
   @override
-  String get onbTribeBody => 'Create a Tribe, invite friends with a code and instantly see when everyone is free, even across time zones.';
+  String get onbTribeBody =>
+      'Create a Tribe, invite friends with a code and instantly see when everyone is free, even across time zones.';
 
   @override
   String get onbNotiTitle => 'Never miss a thing';
 
   @override
-  String get onbNotiBody => 'Get notified when your Tribe adds an activity and answer Join / Decline with a single tap.';
+  String get onbNotiBody =>
+      'Get notified when your Tribe adds an activity and answer Join / Decline with a single tap.';
 
   @override
   String get onbChoiceTitle => 'Are you familiar with TimeTribe?';
@@ -1392,43 +1396,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onbChoiceNewbie => 'I\'m new here';
 
   @override
-  String get onbChoiceNewbieDesc => 'Take a quick tour of the main features (about 1 minute).';
+  String get onbChoiceNewbieDesc =>
+      'Take a quick tour of the main features (about 1 minute).';
 
   @override
   String get tourMenuTitle => 'Feature menu';
 
   @override
-  String get tourMenuBody => 'Switch between Personal schedule, Tribes and Templates here.';
+  String get tourMenuBody =>
+      'Switch between Personal schedule, Tribes and Templates here.';
 
   @override
   String get tourContentTitle => 'Your schedule';
 
   @override
-  String get tourContentBody => 'Your time blocks for the day appear here. Pick another date at the top, tap a block to view or edit it.';
+  String get tourContentBody =>
+      'Your time blocks for the day appear here. Pick another date at the top, tap a block to view or edit it.';
 
   @override
   String get tourAddTitle => 'Create button';
 
   @override
-  String get tourAddBody => 'Add a time block, create or join a Tribe, or make a template, depending on the section you\'re in.';
+  String get tourAddBody =>
+      'Add a time block, create or join a Tribe, or make a template, depending on the section you\'re in.';
 
   @override
   String get tourNotiTitle => 'Notifications';
 
   @override
-  String get tourNotiBody => 'Reminders and Tribe activity invites show up here. You can reply right from the list.';
+  String get tourNotiBody =>
+      'Reminders and Tribe activity invites show up here. You can reply right from the list.';
 
   @override
   String get tourProfileTitle => 'Profile';
 
   @override
-  String get tourProfileBody => 'Change your avatar, name and time zone. Set the right time zone so your Tribe sees your real free time.';
+  String get tourProfileBody =>
+      'Change your avatar, name and time zone. Set the right time zone so your Tribe sees your real free time.';
 
   @override
   String get tourSettingsTitle => 'Settings';
 
   @override
-  String get tourSettingsBody => 'Switch light/dark mode, change language and replay this tour any time.';
+  String get tourSettingsBody =>
+      'Switch light/dark mode, change language and replay this tour any time.';
 
   @override
   String get tourDone => 'Let\'s go!';
@@ -1449,13 +1460,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get testPush => 'Send a test notification';
 
   @override
-  String get testPushSubtitle => 'Check that this phone receives push notifications';
+  String get testPushSubtitle =>
+      'Check that this phone receives push notifications';
 
   @override
   String get testPushSent => 'Sent, it should appear in a few seconds';
 
   @override
-  String get testPushNoToken => 'This phone has no push token yet. Allow notifications for TimeTribe and reopen the app.';
+  String get testPushNoToken =>
+      'This phone has no push token yet. Allow notifications for TimeTribe and reopen the app.';
 
   @override
   String emailPendingLabel(String email) {
@@ -1474,7 +1487,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emailPendingCancelled => 'Email change cancelled';
 
   @override
-  String get emailPendingHint => 'Your email only changes after you open the confirmation link sent to the new address.';
+  String get emailPendingHint =>
+      'Your email only changes after you open the confirmation link sent to the new address.';
 
   @override
   String get changePassword => 'Change password';
@@ -1486,7 +1500,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setPassword => 'Create a password';
 
   @override
-  String get setPasswordSubtitle => 'Google account: add a password to sign in with email';
+  String get setPasswordSubtitle =>
+      'Google account: add a password to sign in with email';
 
   @override
   String get currentPassword => 'Current password';
@@ -1501,10 +1516,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorWrongCurrentPassword => 'Current password is incorrect';
 
   @override
-  String get errorSamePassword => 'The new password must differ from the current one';
+  String get errorSamePassword =>
+      'The new password must differ from the current one';
 
   @override
-  String get changePasswordNote => 'After the change, every device is signed out and you need to sign in again with the new password.';
+  String get changePasswordNote =>
+      'After the change, every device is signed out and you need to sign in again with the new password.';
 
   @override
   String changePasswordPendingEmail(String email) {
@@ -1512,7 +1529,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get passwordChangedRelogin => 'Password changed. Sign in again with your new password.';
+  String get passwordChangedRelogin =>
+      'Password changed. Sign in again with your new password.';
 
   @override
   String errorEmailTypo(String email) {
@@ -1520,10 +1538,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get errorEmailDomainInvalid => 'This email\'s domain can\'t receive mail, please check it';
+  String get errorEmailDomainInvalid =>
+      'This email\'s domain can\'t receive mail, please check it';
 
   @override
-  String get errorEmailUnavailable => 'The server can\'t send email right now, please try again later';
+  String get errorEmailUnavailable =>
+      'The server can\'t send email right now, please try again later';
 
   @override
   String useSuggestion(String email) {

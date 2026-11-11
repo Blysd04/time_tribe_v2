@@ -19,15 +19,18 @@ class ApiConfig {
 
   /// Domain Render cấp cho backend. Đổi lại cho đúng sau khi deploy.
   static const String productionUrl =
-      'https://timetribe-api.onrender.com/api/v1';
+      'https://timetribe.onrender.com/api/v1';
 
   /// Trả về địa chỉ API đang dùng.
   static String get baseUrl {
     if (_fromEnv.isNotEmpty) return _fromEnv;
     if (kReleaseMode) return productionUrl;
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8080/api/v1';
+      // return 'http://10.0.2.2:8080/api/v1';
+      return 'https://timetribe.onrender.com/api/v1';
+      // return 'http://172.31.11.70:8080/api/v1';
     }
-    return 'http://localhost:8080/api/v1';
+    // return 'http://localhost:8080/api/v1';
+      return 'https://timetribe.onrender.com/api/v1';
   }
 }

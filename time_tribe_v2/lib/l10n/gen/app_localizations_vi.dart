@@ -1277,31 +1277,36 @@ class AppLocalizationsVi extends AppLocalizations {
   String get onbWelcomeTitle => 'Chào mừng bạn đến với TimeTribe!';
 
   @override
-  String get onbWelcomeBody => 'Nơi bạn sắp xếp thời gian của mình và hẹn lịch với cả nhóm chỉ trong vài chạm.';
+  String get onbWelcomeBody =>
+      'Nơi bạn sắp xếp thời gian của mình và hẹn lịch với cả nhóm chỉ trong vài chạm.';
 
   @override
   String get onbPersonalTitle => 'Lịch cá nhân gọn gàng';
 
   @override
-  String get onbPersonalBody => 'Chia ngày thành các khối thời gian, tô màu từng việc, áp dụng lịch mẫu và nhận nhắc nhở trước khi bắt đầu.';
+  String get onbPersonalBody =>
+      'Chia ngày thành các khối thời gian, tô màu từng việc, áp dụng lịch mẫu và nhận nhắc nhở trước khi bắt đầu.';
 
   @override
   String get onbTribeTitle => 'Hẹn lịch nhóm dễ dàng';
 
   @override
-  String get onbTribeBody => 'Tạo nhóm (Tribe), mời bạn bè bằng mã và xem ngay khung giờ mọi người cùng rảnh, kể cả khi mỗi người ở một múi giờ.';
+  String get onbTribeBody =>
+      'Tạo nhóm (Tribe), mời bạn bè bằng mã và xem ngay khung giờ mọi người cùng rảnh, kể cả khi mỗi người ở một múi giờ.';
 
   @override
   String get onbNotiTitle => 'Không bỏ lỡ điều gì';
 
   @override
-  String get onbNotiBody => 'Nhận thông báo khi nhóm có hoạt động mới, trả lời Tham gia / Không tham gia chỉ với một chạm.';
+  String get onbNotiBody =>
+      'Nhận thông báo khi nhóm có hoạt động mới, trả lời Tham gia / Không tham gia chỉ với một chạm.';
 
   @override
   String get onbChoiceTitle => 'Bạn đã quen với TimeTribe chưa?';
 
   @override
-  String get onbChoiceSubtitle => 'Chọn một mục để chúng mình hỗ trợ bạn tốt nhất.';
+  String get onbChoiceSubtitle =>
+      'Chọn một mục để chúng mình hỗ trợ bạn tốt nhất.';
 
   @override
   String get onbChoiceExpert => 'Tôi đã biết sử dụng';
@@ -1313,43 +1318,50 @@ class AppLocalizationsVi extends AppLocalizations {
   String get onbChoiceNewbie => 'Tôi là người mới';
 
   @override
-  String get onbChoiceNewbieDesc => 'Xem hướng dẫn nhanh các chức năng chính (khoảng 1 phút).';
+  String get onbChoiceNewbieDesc =>
+      'Xem hướng dẫn nhanh các chức năng chính (khoảng 1 phút).';
 
   @override
   String get tourMenuTitle => 'Menu chức năng';
 
   @override
-  String get tourMenuBody => 'Chuyển giữa Lịch cá nhân, Nhóm và Lịch mẫu tại đây.';
+  String get tourMenuBody =>
+      'Chuyển giữa Lịch cá nhân, Nhóm và Lịch mẫu tại đây.';
 
   @override
   String get tourContentTitle => 'Lịch của bạn';
 
   @override
-  String get tourContentBody => 'Các khối thời gian trong ngày hiện ở đây. Chọn ngày ở phía trên để xem ngày khác, chạm vào một khối để xem hoặc sửa.';
+  String get tourContentBody =>
+      'Các khối thời gian trong ngày hiện ở đây. Chọn ngày ở phía trên để xem ngày khác, chạm vào một khối để xem hoặc sửa.';
 
   @override
   String get tourAddTitle => 'Nút tạo mới';
 
   @override
-  String get tourAddBody => 'Thêm lịch, tạo hoặc tham gia nhóm, tạo lịch mẫu, tuỳ theo mục bạn đang mở.';
+  String get tourAddBody =>
+      'Thêm lịch, tạo hoặc tham gia nhóm, tạo lịch mẫu, tuỳ theo mục bạn đang mở.';
 
   @override
   String get tourNotiTitle => 'Thông báo';
 
   @override
-  String get tourNotiBody => 'Nhắc lịch và lời mời tham gia hoạt động nhóm hiện ở đây. Bạn có thể trả lời ngay trong danh sách.';
+  String get tourNotiBody =>
+      'Nhắc lịch và lời mời tham gia hoạt động nhóm hiện ở đây. Bạn có thể trả lời ngay trong danh sách.';
 
   @override
   String get tourProfileTitle => 'Hồ sơ';
 
   @override
-  String get tourProfileBody => 'Đổi ảnh đại diện, tên và múi giờ. Đặt đúng múi giờ để nhóm thấy đúng giờ rảnh của bạn.';
+  String get tourProfileBody =>
+      'Đổi ảnh đại diện, tên và múi giờ. Đặt đúng múi giờ để nhóm thấy đúng giờ rảnh của bạn.';
 
   @override
   String get tourSettingsTitle => 'Cài đặt';
 
   @override
-  String get tourSettingsBody => 'Đổi giao diện sáng/tối, ngôn ngữ và xem lại hướng dẫn này bất cứ lúc nào.';
+  String get tourSettingsBody =>
+      'Đổi giao diện sáng/tối, ngôn ngữ và xem lại hướng dẫn này bất cứ lúc nào.';
 
   @override
   String get tourDone => 'Bắt đầu thôi!';
@@ -1370,13 +1382,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get testPush => 'Gửi thông báo thử';
 
   @override
-  String get testPushSubtitle => 'Kiểm tra máy có nhận được thông báo đẩy không';
+  String get testPushSubtitle =>
+      'Kiểm tra máy có nhận được thông báo đẩy không';
 
   @override
   String get testPushSent => 'Đã gửi, thông báo sẽ hiện sau vài giây';
 
   @override
-  String get testPushNoToken => 'Máy chưa có mã nhận thông báo. Hãy cho phép thông báo cho TimeTribe rồi mở lại app.';
+  String get testPushNoToken =>
+      'Máy chưa có mã nhận thông báo. Hãy cho phép thông báo cho TimeTribe rồi mở lại app.';
 
   @override
   String emailPendingLabel(String email) {
@@ -1395,7 +1409,8 @@ class AppLocalizationsVi extends AppLocalizations {
   String get emailPendingCancelled => 'Đã huỷ yêu cầu đổi email';
 
   @override
-  String get emailPendingHint => 'Email chỉ thay đổi sau khi bạn bấm link xác nhận gửi tới địa chỉ mới.';
+  String get emailPendingHint =>
+      'Email chỉ thay đổi sau khi bạn bấm link xác nhận gửi tới địa chỉ mới.';
 
   @override
   String get changePassword => 'Đổi mật khẩu';
@@ -1407,7 +1422,8 @@ class AppLocalizationsVi extends AppLocalizations {
   String get setPassword => 'Tạo mật khẩu';
 
   @override
-  String get setPasswordSubtitle => 'Tài khoản Google: tạo mật khẩu để đăng nhập bằng email';
+  String get setPasswordSubtitle =>
+      'Tài khoản Google: tạo mật khẩu để đăng nhập bằng email';
 
   @override
   String get currentPassword => 'Mật khẩu hiện tại';
@@ -1425,7 +1441,8 @@ class AppLocalizationsVi extends AppLocalizations {
   String get errorSamePassword => 'Mật khẩu mới phải khác mật khẩu hiện tại';
 
   @override
-  String get changePasswordNote => 'Sau khi đổi, mọi thiết bị sẽ được đăng xuất và bạn cần đăng nhập lại bằng mật khẩu mới.';
+  String get changePasswordNote =>
+      'Sau khi đổi, mọi thiết bị sẽ được đăng xuất và bạn cần đăng nhập lại bằng mật khẩu mới.';
 
   @override
   String changePasswordPendingEmail(String email) {
@@ -1433,7 +1450,8 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get passwordChangedRelogin => 'Đã đổi mật khẩu. Hãy đăng nhập lại bằng mật khẩu mới.';
+  String get passwordChangedRelogin =>
+      'Đã đổi mật khẩu. Hãy đăng nhập lại bằng mật khẩu mới.';
 
   @override
   String errorEmailTypo(String email) {
@@ -1441,10 +1459,12 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get errorEmailDomainInvalid => 'Tên miền của email này không nhận được thư, hãy kiểm tra lại';
+  String get errorEmailDomainInvalid =>
+      'Tên miền của email này không nhận được thư, hãy kiểm tra lại';
 
   @override
-  String get errorEmailUnavailable => 'Máy chủ chưa gửi được email lúc này, vui lòng thử lại sau';
+  String get errorEmailUnavailable =>
+      'Máy chủ chưa gửi được email lúc này, vui lòng thử lại sau';
 
   @override
   String useSuggestion(String email) {
