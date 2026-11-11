@@ -7,7 +7,7 @@ import '../../utils/time_grid_calculator.dart';
 ///
 /// [layersBuilder] nhận độ rộng phần nội dung (bên phải cột giờ) và trả về
 /// các widget `Positioned` đặt lên lưới.
-class TimeGrid extends StatelessWidget {
+class TimeGrid extends StatefulWidget {
   static const double labelWidth = 80;
   static const double rightPadding = 12;
   static const double totalHeight = 24 * TimeGridCalculator.hourRowHeight;
@@ -17,12 +17,21 @@ class TimeGrid extends StatelessWidget {
   final ValueChanged<int>? onTapHour;
   final EdgeInsets padding;
 
+  /// Giờ cần đưa vào tầm nhìn (VD giờ hiện tại khi xem hôm nay), tính bằng giờ có phần lẻ.
+  /// Lưới tự cuộn tới đây ngay khi được vẽ ra, và mỗi lần [focusKey] đổi.
+  final double? focusHour;
+
+  /// Đổi giá trị này (VD ngày đang xem) để lưới cuộn lại tới [focusHour].
+  final Object? focusKey;
+
   const TimeGrid({
     super.key,
     this.controller,
     required this.layersBuilder,
     this.onTapHour,
     this.padding = const EdgeInsets.only(bottom: 96),
+    this.focusHour,
+    this.focusKey,
   });
 
   /// Toạ độ Y của một mốc (tính bằng phút từ 00:00).
@@ -38,25 +47,72 @@ class TimeGrid extends StatelessWidget {
     controller.jumpTo(offset.clamp(p.minScrollExtent, p.maxScrollExtent));
   }
 
+  @override
+  State<TimeGrid> createState() => _TimeGridState();
+}
+
+class _TimeGridState extends State<TimeGrid> {
+  ScrollController? _own;
+
+  ScrollController get _controller =>
+      widget.controller ?? (_own ??= ScrollController());
+
+  /// Lưới vừa được vẽ ra (mở trang, hoặc tải xong dữ liệu thay cho vòng xoay):
+  /// cuộn ngay tới giờ cần xem, không để người dùng thấy lưới đứng ở 0 giờ.
+  @override
+  void initState() {
+    super.initState();
+    _scheduleFocus();
+  }
+
+  @override
+  void didUpdateWidget(TimeGrid old) {
+    super.didUpdateWidget(old);
+    if (widget.focusKey != old.focusKey) _scheduleFocus();
+  }
+
+  @override
+  void dispose() {
+    _own?.dispose();
+    super.dispose();
+  }
+
+  /// Chờ lưới dựng xong (đã biết chiều cao màn hình) rồi mới cuộn; chưa sẵn sàng thì thử lại vài khung hình.
+  void _scheduleFocus([int attempt = 0]) {
+    final hour = widget.focusHour;
+    if (hour == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final c = _controller;
+      if (!c.hasClients || c.position.maxScrollExtent <= 0) {
+        if (attempt < 5) _scheduleFocus(attempt + 1);
+        return;
+      }
+      TimeGrid.scrollToHour(c, widget.focusHour ?? hour);
+    });
+  }
+
   /// Dựng giao diện lưới 24 giờ.
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final onTapHour = widget.onTapHour;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final contentWidth = constraints.maxWidth - labelWidth - rightPadding;
+        final contentWidth =
+            constraints.maxWidth - TimeGrid.labelWidth - TimeGrid.rightPadding;
         return SingleChildScrollView(
-          controller: controller,
-          padding: padding,
+          controller: _controller,
+          padding: widget.padding,
           child: SizedBox(
-            height: totalHeight,
+            height: TimeGrid.totalHeight,
             child: Stack(
               children: [
                 Column(
                   children: List.generate(24, (h) {
                     return GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: onTapHour == null ? null : () => onTapHour!(h),
+                      onTap: onTapHour == null ? null : () => onTapHour(h),
                       child: Container(
                         height: TimeGridCalculator.hourRowHeight,
                         padding: const EdgeInsets.only(left: 16, top: 8),
@@ -80,7 +136,7 @@ class TimeGrid extends StatelessWidget {
                     );
                   }),
                 ),
-                ...layersBuilder(contentWidth),
+                ...widget.layersBuilder(contentWidth),
               ],
             ),
           ),

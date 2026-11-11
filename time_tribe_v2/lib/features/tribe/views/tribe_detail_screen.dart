@@ -92,26 +92,33 @@ class _TribeDetailScreenState extends State<TribeDetailScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollGridToFocus());
   }
 
-  /// Hôm nay -> giờ hiện tại; ngày khác -> hoạt động đầu tiên (hoặc 7h).
-  void _scrollGridToFocus() {
-    final vm = context.read<TribeViewModel>();
-    double hour = 7;
+  /// Giờ cần đưa vào tầm nhìn: hôm nay -> giờ hiện tại (thanh thời gian);
+  /// ngày khác -> hoạt động đầu tiên (hoặc 7h).
+  double _focusHour(TribeViewModel vm) {
     if (_isSameDay(_selectedDate, AppTime.now())) {
       final now = AppTime.now();
-      hour = now.hour + now.minute / 60;
-    } else {
-      final blocks = vm.blocksInWindow(
-        widget.tribeId,
-        TribeViewModel.dayWindow(_selectedDate),
-      );
-      if (blocks.isNotEmpty) {
-        final local = AppTime.fromUtc(blocks.first.startUtc);
-        hour = _isSameDay(local, _selectedDate)
-            ? local.hour + local.minute / 60
-            : 0;
-      }
+      return now.hour + now.minute / 60;
     }
-    TimeGrid.scrollToHour(_gridController, hour);
+    final blocks = vm.blocksInWindow(
+      widget.tribeId,
+      TribeViewModel.dayWindow(_selectedDate),
+    );
+    if (blocks.isNotEmpty) {
+      final local = AppTime.fromUtc(blocks.first.startUtc);
+      return _isSameDay(local, _selectedDate)
+          ? local.hour + local.minute / 60
+          : 0;
+    }
+    return 7;
+  }
+
+  /// Cuộn lưới tới giờ cần xem (dùng khi đổi ngày, đổi múi giờ).
+  void _scrollGridToFocus() {
+    if (!mounted) return;
+    TimeGrid.scrollToHour(
+      _gridController,
+      _focusHour(context.read<TribeViewModel>()),
+    );
   }
 
   /// Phút tính từ 00:00 của ngày đang xem (theo giờ người xem).
@@ -249,6 +256,9 @@ class _TribeDetailScreenState extends State<TribeDetailScreen> {
           Expanded(
             child: TimeGrid(
               controller: _gridController,
+              // Lưới tự cuộn tới giờ hiện tại ngay khi trang mở ra
+              focusHour: _focusHour(vm),
+              focusKey: _selectedDate,
               onTapHour: canManage
                   ? (h) {
                       final start = AppTime.toUtc(

@@ -38,8 +38,8 @@ class _GridItem {
 
 class _TimeblockHomeTabState extends State<TimeblockHomeTab> {
   final _gridController = ScrollController();
-  bool _pendingScroll = true;
-  DateTime? _lastDate;
+  // Tăng khi đổi múi giờ để lưới cuộn lại tới giờ hiện tại mới
+  int _tzVersion = 0;
 
   /// Chạy một lần lúc trang Lịch cá nhân vừa được tạo, chuẩn bị dữ liệu ban đầu.
   @override
@@ -56,9 +56,9 @@ class _TimeblockHomeTabState extends State<TimeblockHomeTab> {
     super.dispose();
   }
 
-  /// Đổi múi giờ thì vẽ lại lưới giờ.
+  /// Đổi múi giờ thì vẽ lại lưới giờ và cuộn lại tới giờ hiện tại.
   void _onTimezoneChanged() {
-    if (mounted) setState(() => _pendingScroll = true);
+    if (mounted) setState(() => _tzVersion++);
   }
 
   /// Hai mốc thời gian có cùng một ngày không.
@@ -93,16 +93,17 @@ class _TimeblockHomeTabState extends State<TimeblockHomeTab> {
     ];
   }
 
-  /// Hôm nay -> giờ hiện tại; ngày khác -> mục đầu tiên (hoặc 7h).
-  void _scrollToFocus(List<_GridItem> items, DateTime day) {
-    double hour = 7;
+  /// Giờ cần đưa vào tầm nhìn: hôm nay -> giờ hiện tại (thanh thời gian);
+  /// ngày khác -> hoạt động đầu tiên (hoặc 7h).
+  double _focusHour(List<_GridItem> items, DateTime day) {
     if (_same(day, AppTime.now())) {
       final now = AppTime.now();
-      hour = now.hour + now.minute / 60;
-    } else if (items.isNotEmpty) {
-      hour = items.map((i) => i.startMin).reduce((a, b) => a < b ? a : b) / 60;
+      return now.hour + now.minute / 60;
     }
-    TimeGrid.scrollToHour(_gridController, hour);
+    if (items.isNotEmpty) {
+      return items.map((i) => i.startMin).reduce((a, b) => a < b ? a : b) / 60;
+    }
+    return 7;
   }
 
   /// Mở màn hình thêm hoạt động, chạm vào ô giờ nào thì điền sẵn giờ đó.
@@ -128,16 +129,6 @@ class _TimeblockHomeTabState extends State<TimeblockHomeTab> {
     final today = AppTime.today();
     final items = _items(vm, tribeVm);
 
-    if (_lastDate == null || !_same(_lastDate!, vm.selectedDate)) {
-      _lastDate = vm.selectedDate;
-      _pendingScroll = true;
-    }
-    if (_pendingScroll && !vm.isLoading) {
-      _pendingScroll = false;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _scrollToFocus(items, vm.selectedDate);
-      });
-    }
 
     final slots = OverlapLayout.compute([
       for (final i in items) (i.startMin, i.endMin),
@@ -201,6 +192,11 @@ class _TimeblockHomeTabState extends State<TimeblockHomeTab> {
               ? const Center(child: CircularProgressIndicator())
               : TimeGrid(
                   controller: _gridController,
+                  // Lưới tự cuộn tới giờ hiện tại ngay khi hiện ra (kể cả sau vòng xoay tải dữ liệu),
+                  // và cuộn lại khi đổi ngày, đổi múi giờ hoặc khi ngày đó vừa có dữ liệu
+                  focusHour: _focusHour(items, vm.selectedDate),
+                  focusKey:
+                      '${vm.selectedDate}|${items.isEmpty}|$_tzVersion',
                   onTapHour: isPastDay || vm.filter == ScheduleFilter.group
                       ? null
                       : (h) => _openAdd(vm.selectedDate, hour: h),
