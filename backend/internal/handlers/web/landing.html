@@ -43,9 +43,8 @@
 }
 
 * { box-sizing: border-box; }
-/* Bấm mục lục thì cuộn mượt; chừa chỗ cho thanh đầu trang dính phía trên để tiêu đề mục không bị che */
-html { scroll-behavior: smooth; scroll-padding-top: calc(76px + env(safe-area-inset-top, 0px)); }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+/* Chừa chỗ cho thanh đầu trang dính phía trên để tiêu đề mục không bị che (cuộn mượt do script cuối trang lo) */
+html { scroll-padding-top: calc(76px + env(safe-area-inset-top, 0px)); }
 body { background: var(--bg); color: var(--ink); font: 400 1.0625rem/1.65 var(--f-body); }
 .pad { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .wrap { max-width: 1120px; margin-inline: auto; }
@@ -467,21 +466,50 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 </footer>
 
 <script>
-// Tô sáng mục lục theo phần đang xem (Lợi ích / Cách cài / Hỏi đáp).
-// Cuộn tới từng phần thì HTML (href="#...") + CSS scroll-behavior đã lo, script này chỉ đổi màu link.
+// Mục lục (Lợi ích / Cách cài / Hỏi đáp):
+// - Bấm link: tự cuộn tới đúng phần, trừ chiều cao thanh đầu trang. Không phó mặc cho trình duyệt,
+//   vì cuộn mượt mặc định có thể bị huỷ giữa chừng khi font chữ vừa tải xong làm trang đổi chiều cao.
+// - Mở trang có sẵn #cai-dat... trên địa chỉ: đợi font tải xong rồi mới cuộn tới phần đó.
+// - Tô sáng link của phần đang xem.
 (function () {
   var links = Array.prototype.slice.call(document.querySelectorAll('.top nav a[href^="#"]'));
-  var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
-  if (!('IntersectionObserver' in window) || !sections.length) return;
+  var header = document.querySelector('.top');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   function mark(id) {
     links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + id); });
   }
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) { if (e.isIntersecting) mark(e.target.id); });
-  }, { rootMargin: '-40% 0px -55% 0px' });
-  sections.forEach(function (s) { io.observe(s); });
-  links.forEach(function (a) {
-    a.addEventListener('click', function () { mark(a.getAttribute('href').slice(1)); });
+  function goTo(id, smooth) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var offset = (header ? header.offsetHeight : 0) + 8;
+    var top = el.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({ top: Math.max(0, top), behavior: smooth && !reduce ? 'smooth' : 'auto' });
+    mark(id);
+  }
+
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var id = a.getAttribute('href').slice(1);
+      if (!id || !document.getElementById(id)) return;
+      e.preventDefault();
+      goTo(id, true);
+      try { history.replaceState(null, '', '#' + id); } catch (_) {}
+    });
   });
+
+  var initial = location.hash.slice(1);
+  if (initial && document.getElementById(initial)) {
+    var ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+    ready.then(function () { goTo(initial, false); });
+  }
+
+  var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+  if ('IntersectionObserver' in window && sections.length) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) mark(e.target.id); });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    sections.forEach(function (sec) { io.observe(sec); });
+  }
 })();
 </script>
