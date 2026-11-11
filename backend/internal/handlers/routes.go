@@ -30,7 +30,7 @@ func Routes(svc *services.Services) *gin.Engine {
 	r.GET("/logo.png", Logo)
 	r.GET("/favicon.png", Favicon)
 	r.GET("/favicon.ico", Favicon)
-	r.GET("/download", Download(svc.Cfg.APKURL))
+	r.GET("/download", Download(svc.Cfg.APKPath, svc.Cfg.APKURL))
 
 	api := r.Group("/api/v1")
 

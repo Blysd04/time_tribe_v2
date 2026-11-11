@@ -2,16 +2,21 @@ package handlers
 
 import (
 	_ "embed"
+	"io"
+	"log"
 	"net/http"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-// landing.html là trang giới thiệu + nút tải APK (cùng nội dung với trang đã publish).
-// File chỉ có phần thân trang nên khi phục vụ thì bọc thêm khung HTML.
+// landing.html là trang giới thiệu + nút tải APK, một file HTML đầy đủ (mở thẳng bằng trình duyệt
+// hay Live Server cũng chạy), có sẵn 3 ngôn ngữ vi/en/fr.
 //
 //go:embed web/landing.html
-var landingBody string
+var landingPage []byte
 
 //go:embed web/reset.html
 var resetPage []byte
@@ -21,11 +26,6 @@ var logoPNG []byte
 
 //go:embed web/favicon.png
 var faviconPNG []byte
-
-var landingPage = []byte(`<!doctype html><html lang="vi"><head><meta charset="utf-8">` +
-	`<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">` +
-	`<title>TimeTribe</title><style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>` +
-	landingBody + `</body></html>`)
 
 // Landing xử lý GET /: trang tải ứng dụng.
 func Landing(c *gin.Context) {
@@ -51,14 +51,64 @@ func Favicon(c *gin.Context) {
 	c.Data(http.StatusOK, "image/png", faviconPNG)
 }
 
-// Download xử lý GET /download: chuyển tới file APK mới nhất (biến APK_URL),
-// đổi chỗ lưu APK chỉ cần sửa biến môi trường, không phải sửa trang.
-func Download(apkURL string) gin.HandlerFunc {
+// Download xử lý GET /download: trả thẳng file APK trong response, không chuyển hướng.
+//   - Có file ở apkPath (mặc định public/timetribe.apk, chép vào image lúc build) thì gửi file đó.
+//     http.ServeContent lo Content-Length, Range (tải tiếp khi rớt mạng) và If-Modified-Since.
+//   - Không có file mà có apkURL thì server tải từ link đó rồi chuyển tiếp từng phần cho người dùng,
+//     địa chỉ thật của file không lộ ra trình duyệt.
+func Download(apkPath, apkURL string) gin.HandlerFunc {
+	client := &http.Client{Timeout: 10 * time.Minute}
 	return func(c *gin.Context) {
+		c.Header("Content-Type", apkMime)
+		c.Header("Content-Disposition", `attachment; filename="`+apkName+`"`)
+		c.Header("Cache-Control", "no-cache") // bản mới thay file là người dùng tải được ngay
+
+		if f, err := os.Open(apkPath); err == nil {
+			defer f.Close()
+			if st, err := f.Stat(); err == nil && !st.IsDir() {
+				http.ServeContent(c.Writer, c.Request, apkName, st.ModTime(), f)
+				return
+			}
+		}
 		if apkURL == "" {
-			c.String(http.StatusServiceUnavailable, "Chưa có file APK, vui lòng quay lại sau.")
+			noAPK(c)
 			return
 		}
-		c.Redirect(http.StatusFound, apkURL)
+
+		req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodGet, apkURL, nil)
+		if err != nil {
+			noAPK(c)
+			return
+		}
+		resp, err := client.Do(req) // tự đi theo redirect của GitHub Releases / Google Drive
+		if err != nil {
+			log.Printf("download apk: %v", err)
+			noAPK(c)
+			return
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			log.Printf("download apk: %s trả về %d", apkURL, resp.StatusCode)
+			noAPK(c)
+			return
+		}
+		if resp.ContentLength > 0 {
+			c.Header("Content-Length", strconv.FormatInt(resp.ContentLength, 10))
+		}
+		c.Status(http.StatusOK)
+		if _, err := io.Copy(c.Writer, resp.Body); err != nil {
+			log.Printf("download apk: ngắt giữa chừng: %v", err)
+		}
 	}
+}
+
+const (
+	apkName = "timetribe.apk"
+	apkMime = "application/vnd.android.package-archive"
+)
+
+func noAPK(c *gin.Context) {
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	c.Header("Content-Disposition", "")
+	c.String(http.StatusServiceUnavailable, "Chưa có file APK, vui lòng quay lại sau.")
 }

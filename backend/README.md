@@ -83,7 +83,8 @@ go build -o bin/timetribe ./cmd/server
 
 Xem `docs/DEPLOY.md`. Tóm tắt: `render.yaml` ở gốc repo tạo web service từ `backend/Dockerfile`,
 biến môi trường theo `.env.production.example`, service account Firebase truyền qua `FIREBASE_CREDENTIALS_JSON` (base64).
-Trang tải app phục vụ ở `/`, nút tải đi qua `/download` tới `APK_URL`.
+Trang tải app phục vụ ở `/`. `/download` gửi thẳng file `public/timetribe.apk` (đổi bằng `APK_PATH`);
+không có file thì server tải từ `APK_URL` rồi chuyển tiếp, không redirect.
 
 ## Ghi chú
 
