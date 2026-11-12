@@ -247,13 +247,29 @@ func toNotificationDTO(n models.Notification) NotificationDTO {
 	return dto
 }
 
+// windows trả mốc thời gian sớm nhất được xem: since cho thông báo riêng (30 ngày gần nhất) và
+// sharedSince cho thông báo chung của admin. Thông báo chung gửi trước lúc tạo tài khoản không dành cho
+// người này (VD tài khoản tạo hôm nay không thấy lời chào "4 ngày trước"), nên lấy mốc muộn hơn trong hai mốc.
+func (s *NotificationService) windows(ctx context.Context, userID string) (since, sharedSince time.Time) {
+	since = time.Now().UTC().AddDate(0, 0, -models.NotificationRetentionDays)
+	sharedSince = since
+	u, err := repository.FindOne[models.User](ctx, s.store.Users, repository.ByID(userID),
+		options.FindOne().SetProjection(bson.M{"created_at": 1}))
+	if err == nil && u != nil && u.CreatedAt.After(sharedSince) {
+		sharedSince = u.CreatedAt
+	}
+	return since, sharedSince
+}
+
 // List trả thông báo 30 ngày gần nhất của người dùng, kể cả thông báo chung (user_id null).
 // filter: all, personal, hoặc id của một nhóm.
 func (s *NotificationService) List(ctx context.Context, userID, filter string) ([]NotificationDTO, error) {
-	since := time.Now().UTC().AddDate(0, 0, -models.NotificationRetentionDays)
+	since, sharedSince := s.windows(ctx, userID)
 	rows, err := repository.FindMany[models.Notification](ctx, s.store.Notifications, bson.M{
-		"$or":        bson.A{bson.M{"user_id": userID}, bson.M{"user_id": nil}},
-		"created_at": bson.M{"$gte": since},
+		"$or": bson.A{
+			bson.M{"user_id": userID, "created_at": bson.M{"$gte": since}},
+			bson.M{"user_id": nil, "created_at": bson.M{"$gte": sharedSince}},
+		},
 	}, options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}}).SetLimit(500))
 	if err != nil {
 		return nil, err
@@ -282,13 +298,12 @@ func (s *NotificationService) List(ctx context.Context, userID, filter string) (
 // UnreadSummary đếm thông báo chưa đọc: tổng, cá nhân và theo từng nhóm (để hiện badge trên chip lọc).
 // Thông báo chung của admin tính vào mục cá nhân nếu người này chưa đọc.
 func (s *NotificationService) UnreadSummary(ctx context.Context, userID string) (map[string]any, error) {
-	since := time.Now().UTC().AddDate(0, 0, -models.NotificationRetentionDays)
+	since, sharedSince := s.windows(ctx, userID)
 	rows, err := repository.FindMany[models.Notification](ctx, s.store.Notifications, bson.M{
 		"$or": bson.A{
-			bson.M{"user_id": userID, "is_read": false},
-			bson.M{"user_id": nil, "read_by": bson.M{"$ne": userID}},
+			bson.M{"user_id": userID, "is_read": false, "created_at": bson.M{"$gte": since}},
+			bson.M{"user_id": nil, "read_by": bson.M{"$ne": userID}, "created_at": bson.M{"$gte": sharedSince}},
 		},
-		"created_at": bson.M{"$gte": since},
 	})
 	if err != nil {
 		return nil, err
