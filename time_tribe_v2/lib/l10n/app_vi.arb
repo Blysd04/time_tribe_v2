@@ -1,0 +1,1066 @@
+{
+  "@@locale": "vi",
+  "cancel": "Hủy",
+  "ok": "OK",
+  "save": "Lưu",
+  "saved": "Đã lưu",
+  "delete": "Xoá",
+  "edit": "Chỉnh sửa",
+  "share": "Chia sẻ",
+  "copy": "Sao chép",
+  "create": "Tạo",
+  "add": "Thêm",
+  "done": "Xong",
+  "hide": "Ẩn",
+  "continueLabel": "Tiếp tục",
+  "selected": "Đã chọn",
+  "clearAll": "Bỏ chọn hết",
+  "viewDetails": "Xem chi tiết",
+  "menu": "Menu",
+  "today": "Hôm nay",
+  "tomorrow": "Ngày mai",
+  "you": "Bạn",
+  "busy": "Bận",
+  "free": "Rảnh",
+  "linkCopied": "Đã sao chép đường link!",
+  "weekdaysShort": "T2,T3,T4,T5,T6,T7,CN",
+  "weekdaysLong": "Thứ Hai,Thứ Ba,Thứ Tư,Thứ Năm,Thứ Sáu,Thứ Bảy,Chủ Nhật",
+  "monthYearFormat": "{date}",
+  "@monthYearFormat": {
+    "placeholders": {
+      "date": {
+        "type": "DateTime",
+        "format": "yMMMM"
+      }
+    }
+  },
+  "monthView": "Xem lịch tháng",
+  "justNow": "Vừa xong",
+  "minutesAgo": "{n} phút trước",
+  "@minutesAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{n} giờ trước",
+  "@hoursAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{n} ngày trước",
+  "@daysAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "home": "Trang chủ",
+  "profile": "Hồ sơ",
+  "notifications": "Thông báo",
+  "settings": "Cài đặt",
+  "personalSchedule": "Lịch cá nhân",
+  "tribes": "Lịch nhóm",
+  "templates": "Lịch mẫu",
+  "workspace": "Không gian",
+  "workspaceSubtitle": "Quản lý lịch trình của bạn",
+  "appTagline": "Sắp xếp thời gian, kết nối mọi người",
+  "emailOrUsernameHint": "Email hoặc tên người dùng",
+  "passwordHint": "Mật khẩu",
+  "confirmPasswordHint": "Xác nhận mật khẩu",
+  "rememberMe": "Ghi nhớ đăng nhập",
+  "forgotPassword": "Quên mật khẩu?",
+  "login": "Đăng nhập",
+  "loginWithGoogle": "Đăng nhập với Google",
+  "noAccountYet": "Chưa có tài khoản?",
+  "register": "Đăng ký",
+  "createAccount": "Tạo tài khoản mới",
+  "createAccountSubtitle": "Chỉ mất chưa tới một phút thôi",
+  "displayName": "Tên hiển thị",
+  "email": "Email",
+  "registerSuccess": "Đăng ký thành công! Mời bạn đăng nhập.",
+  "errorIdentifierRequired": "Bạn chưa nhập email hoặc tên người dùng",
+  "errorPasswordRequired": "Bạn chưa nhập mật khẩu",
+  "errorWrongCredentials": "Tài khoản hoặc mật khẩu chưa đúng",
+  "errorDisplayNameRequired": "Bạn chưa nhập tên",
+  "errorEmailRequired": "Bạn chưa nhập email",
+  "errorEmailInvalid": "Email chưa đúng định dạng",
+  "errorCreatePassword": "Bạn hãy tạo một mật khẩu",
+  "errorPasswordMismatch": "Mật khẩu xác nhận chưa khớp",
+  "personalInfo": "Thông tin cá nhân",
+  "regionTimezone": "Khu vực & Múi giờ",
+  "editField": "Sửa {field}",
+  "@editField": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmSaveTitle": "Lưu thay đổi?",
+  "confirmSaveMessage": "Bạn có chắc muốn lưu thay đổi này không?",
+  "confirmSaveTimezone": "Bạn có chắc muốn lưu cấu hình múi giờ này không?",
+  "followDevice": "Theo thiết bị · {tz}",
+  "@followDevice": {
+    "placeholders": {
+      "tz": {
+        "type": "String"
+      }
+    }
+  },
+  "autoTimezone": "Tự động theo múi giờ thiết bị",
+  "country": "Quốc gia",
+  "chooseCountry": "Chọn quốc gia",
+  "city": "Thành phố",
+  "cityHint": "(kèm múi giờ)",
+  "chooseCity": "Chọn thành phố",
+  "errorPickCountryCity": "Cần chọn quốc gia và thành phố",
+  "timezoneExplanation": "Mọi giờ giấc trong app (lịch cá nhân, lịch nhóm, thông báo) đều hiển thị theo múi giờ này. Bạn bè ở nước khác vẫn thấy đúng giờ của họ.",
+  "countryName": "{code, select, vn{Việt Nam} ca{Canada} jp{Nhật Bản} kr{Hàn Quốc} gb{Anh} fr{Pháp} us{Mỹ} au{Úc} other{{code}}}",
+  "@countryName": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "appearance": "Giao diện",
+  "darkMode": "Chế độ tối",
+  "language": "Ngôn ngữ",
+  "account": "Tài khoản",
+  "logout": "Đăng xuất",
+  "logoutConfirm": "Bạn có chắc muốn đăng xuất không?",
+  "deleteAccount": "Xoá tài khoản",
+  "deleteAccountSubtitle": "Xoá vĩnh viễn tài khoản và dữ liệu",
+  "deleteAccountWarningTitle": "Thao tác này không thể hoàn tác",
+  "deleteConsequence1": "Toàn bộ lịch cá nhân và lịch mẫu của bạn sẽ bị xoá.",
+  "deleteConsequence2": "Bạn sẽ rời khỏi tất cả các nhóm. Nhóm bạn làm trưởng sẽ được chuyển cho người kế tiếp.",
+  "deleteConsequence3": "Bạn sẽ không đăng nhập lại được bằng tài khoản này.",
+  "tribesYouLead": "Nhóm bạn đang làm trưởng",
+  "leadershipGoesTo": "{tribe}: {name} sẽ trở thành trưởng nhóm",
+  "@leadershipGoesTo": {
+    "placeholders": {
+      "tribe": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tribeWillBeDissolved": "{tribe}: chỉ có mình bạn nên nhóm sẽ bị giải tán",
+  "@tribeWillBeDissolved": {
+    "placeholders": {
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteReasonTitle": "Vì sao bạn muốn rời đi?",
+  "reasonNotUsing": "Mình không còn dùng nữa",
+  "reasonOtherApp": "Mình tìm được ứng dụng khác",
+  "reasonPrivacy": "Mình lo ngại về quyền riêng tư",
+  "reasonOther": "Lý do khác",
+  "reasonOtherHint": "Chia sẻ thêm với tụi mình nhé...",
+  "deleteUnderstand": "Mình hiểu là thao tác này không thể hoàn tác",
+  "deleteAccountPermanently": "Xoá tài khoản vĩnh viễn",
+  "deleteAccountHint": "Chọn lý do và tích vào ô xác nhận để tiếp tục.",
+  "deleteAccountFinalTitle": "Xoá tài khoản?",
+  "deleteAccountFinalMessage": "Đây là bước cuối cùng. Sau khi xoá, dữ liệu của bạn sẽ không khôi phục được.",
+  "accountDeleted": "Tài khoản của bạn đã được xoá. Hẹn gặp lại!",
+  "markAllRead": "Đánh dấu đã đọc tất cả",
+  "filterAll": "Tất cả",
+  "filterPersonal": "Cá nhân",
+  "filterGroup": "Nhóm",
+  "last30Days": "Thông báo trong 30 ngày gần nhất",
+  "noNotifications": "Không có thông báo nào",
+  "nTitleNewBlock": "Hoạt động mới: {task}",
+  "@nTitleNewBlock": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      }
+    }
+  },
+  "nTitleBlockUpdated": "Đã cập nhật: {task}",
+  "@nTitleBlockUpdated": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      }
+    }
+  },
+  "nTitleBlockRescheduled": "Đổi giờ: {task}",
+  "@nTitleBlockRescheduled": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      }
+    }
+  },
+  "nTitleBlockCancelled": "Hoạt động đã bị huỷ",
+  "nTitleResponseAccepted": "Có người tham gia",
+  "nTitleResponseDeclined": "Có người không tham gia",
+  "nTitleMemberJoined": "Thành viên mới",
+  "nTitleMemberLeft": "Thành viên rời nhóm",
+  "nTitleKicked": "Bạn đã được mời rời nhóm",
+  "nTitleRenamed": "Nhóm đã đổi tên",
+  "nTitleDissolved": "Nhóm đã giải tán",
+  "nTitleRoleChanged": "Thay đổi chức vụ",
+  "nTitlePersonalAdded": "Lịch cá nhân mới",
+  "nBodyNewBlock": "{actor} vừa thêm hoạt động vào {tribe}. Bạn có tham gia không?",
+  "@nBodyNewBlock": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyBlockUpdated": "{actor} đã cập nhật thông tin hoạt động.",
+  "@nBodyBlockUpdated": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyBlockRescheduled": "{actor} đã đổi giờ, cần xác nhận lại.",
+  "@nBodyBlockRescheduled": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyBlockCancelled": "{actor} đã huỷ \"{task}\" của nhóm {tribe}.",
+  "@nBodyBlockCancelled": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "task": {
+        "type": "String"
+      },
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyResponseAccepted": "{actor} sẽ tham gia \"{task}\".",
+  "@nBodyResponseAccepted": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "task": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyResponseDeclined": "{actor} không tham gia \"{task}\".",
+  "@nBodyResponseDeclined": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "task": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyMemberJoined": "{actor} vừa tham gia {tribe}.",
+  "@nBodyMemberJoined": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyMemberLeft": "{actor} không còn ở trong {tribe}.",
+  "@nBodyMemberLeft": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyKicked": "{actor} đã mời bạn rời nhóm {tribe}.",
+  "@nBodyKicked": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyRenamed": "{actor} đã đổi tên nhóm \"{oldName}\" thành \"{newName}\".",
+  "@nBodyRenamed": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "oldName": {
+        "type": "String"
+      },
+      "newName": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyDissolved": "{actor} đã giải tán nhóm {tribe}.",
+  "@nBodyDissolved": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      },
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyRoleVice": "Bạn đã được bổ nhiệm làm phó nhóm {tribe}.",
+  "@nBodyRoleVice": {
+    "placeholders": {
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyRoleViceRemoved": "Bạn không còn là phó nhóm {tribe}.",
+  "@nBodyRoleViceRemoved": {
+    "placeholders": {
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyRoleLeader": "Bạn đã được bổ nhiệm làm trưởng nhóm {tribe}.",
+  "@nBodyRoleLeader": {
+    "placeholders": {
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyPersonalAdded": "Bạn đã thêm \"{task}\" lúc {time}.",
+  "@nBodyPersonalAdded": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "itemsTodaySubtitle": "{count} hoạt động • Hôm nay {date}",
+  "@itemsTodaySubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "emptyDayHint": "Ngày trống — chạm vào giờ bất kỳ để thêm hoạt động",
+  "noGroupActivitiesDay": "Không có hoạt động nhóm nào trong ngày này",
+  "newActivity": "Hoạt động mới",
+  "editActivity": "Sửa hoạt động",
+  "activityNameHint": "Tên hoạt động...",
+  "errorNameRequired": "Bạn chưa đặt tên cho hoạt động",
+  "errorNameTooShort": "Tên cần ít nhất 2 ký tự",
+  "date": "Ngày",
+  "start": "Bắt đầu",
+  "end": "Kết thúc",
+  "color": "Màu sắc",
+  "colorLongPressHint": "(nhấn giữ để đổi màu)",
+  "pickNewColor": "Chọn màu mới",
+  "reminder": "Nhắc nhở",
+  "remindOnTime": "Đúng giờ",
+  "remindBefore": "Trước {minutes} phút",
+  "@remindBefore": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "note": "Ghi chú",
+  "noteHint": "Thêm ghi chú...",
+  "duplicateToOtherDays": "Nhân bản sang ngày khác",
+  "duplicateNone": "Chưa chọn ngày nào",
+  "duplicateTitle": "Chọn ngày để nhân bản",
+  "duplicateDescription": "Chỉ chọn được từ hôm nay trở đi. Ngày đã có lịch trùng khung giờ này sẽ bị khoá.",
+  "conflictingDay": "Trùng giờ",
+  "selectedDays": "Chọn {count} ngày",
+  "@selectedDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "savedWithCopies": "Đã lưu và nhân bản sang {count} ngày",
+  "@savedWithCopies": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorEndBeforeStart": "Giờ kết thúc phải sau giờ bắt đầu",
+  "errorMinDuration": "Hoạt động cần dài ít nhất 5 phút",
+  "errorPastDate": "Không thể tạo lịch cho ngày đã qua",
+  "errorOverlap": "Khung giờ này bị trùng với một hoạt động khác",
+  "errorColorDuplicate": "Màu này đã có trong bảng màu của bạn",
+  "deleteActivityTitle": "Xoá hoạt động?",
+  "deleteActivityMessage": "Bạn có chắc muốn xoá \"{name}\"?",
+  "@deleteActivityMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "activityDeleted": "Đã xoá hoạt động",
+  "yourTemplates": "Mẫu của bạn",
+  "noTemplatesTitle": "Chưa có lịch mẫu nào",
+  "noTemplatesMessage": "Tạo một tuần mẫu để áp dụng nhanh vào lịch, hoặc nhập mẫu bạn bè chia sẻ.",
+  "createTemplate": "Tạo lịch mẫu",
+  "createTemplateHint": "Bắt đầu từ một tuần trống",
+  "importTemplate": "Nhập bằng liên kết",
+  "importTemplateHint": "Nhập mã chia sẻ từ bạn bè",
+  "importAction": "Nhập",
+  "templateImported": "Đã thêm lịch mẫu!",
+  "errorLinkEmpty": "Bạn chưa dán link vào",
+  "errorTemplateNotFound": "Không tìm thấy lịch mẫu nào với mã này",
+  "errorTemplateDuplicate": "Lịch mẫu này đã có trong kho rồi",
+  "errorTemplateLimit": "Kho đã đầy (tối đa {max} mẫu)",
+  "@errorTemplateLimit": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errorTemplateNameEmpty": "Bạn chưa đặt tên cho lịch mẫu",
+  "templateNameHint": "Tên lịch mẫu...",
+  "activitiesCount": "{count} hoạt động",
+  "@activitiesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "apply": "Áp dụng",
+  "applyTemplate": "Áp dụng lịch mẫu",
+  "applyTemplateDescription": "Chọn các thứ trong mẫu để chép vào lịch cá nhân.",
+  "applyTemplateNote": "Bắt đầu từ ngày gần nhất (hôm nay hoặc sau đó) ứng với mỗi thứ.",
+  "repeatWeeks": "Số tuần",
+  "applyNow": "Áp dụng ngay",
+  "errorPickAtLeastOneDay": "Cần chọn ít nhất 1 ngày",
+  "conflictTitle": "Phát hiện trùng lịch",
+  "conflictMessage": "Có {count} hoạt động bị trùng giờ vào các ngày: {dates}.\n\nHoạt động cũ bị trùng sẽ bị thay thế.",
+  "@conflictMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "dates": {
+        "type": "String"
+      }
+    }
+  },
+  "replaceAndAdd": "Thay thế & thêm",
+  "templateApplied": "Đã chép {count} hoạt động vào lịch!",
+  "@templateApplied": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "templateAppliedReplaced": "Đã chép {added} hoạt động (thay thế {replaced} hoạt động cũ)",
+  "@templateAppliedReplaced": {
+    "placeholders": {
+      "added": {
+        "type": "int"
+      },
+      "replaced": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteTemplateTitle": "Xoá lịch mẫu?",
+  "deleteTemplateMessage": "Bạn có chắc muốn xoá \"{name}\"?",
+  "@deleteTemplateMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "templateDeleted": "Đã xoá lịch mẫu",
+  "shareTemplate": "Chia sẻ lịch mẫu",
+  "shareTemplateDescription": "Gửi mã này cho bạn bè, họ nhập mã ở mục Nhập lịch mẫu để chép về tài khoản của họ.",
+  "addActivity": "Thêm hoạt động",
+  "dayOfWeek": "Thứ trong tuần",
+  "yourTribes": "Nhóm của bạn",
+  "noTribesTitle": "Bạn chưa ở trong nhóm nào",
+  "noTribesMessage": "Tạo nhóm để cùng bạn bè tìm giờ rảnh chung, hoặc tham gia bằng link được mời.",
+  "createTribe": "Tạo Tribe mới",
+  "createTribeHint": "Bạn sẽ là trưởng nhóm",
+  "joinTribe": "Tham gia Tribe",
+  "joinTribeHint": "Dùng link mời từ bạn bè",
+  "joinTribeDescription": "Dán đường link mời mà bạn nhận được.",
+  "join": "Vào nhóm",
+  "openTribe": "Mở nhóm",
+  "tribeNameHint": "VD: Nhóm đồ án, CLB cầu lông...",
+  "tribeCreated": "Đã tạo nhóm! Mời bạn bè vào bằng link trong mục thành viên.",
+  "joinedTribe": "Đã tham gia {name}!",
+  "@joinedTribe": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "infoAlreadyMember": "Bạn đã ở trong nhóm này rồi",
+  "infoAlreadyMemberOf": "Bạn đã là thành viên của \"{name}\" rồi, không cần tham gia lại.",
+  "@infoAlreadyMemberOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "renameTribe": "Đổi tên nhóm",
+  "tribeRenamed": "Đã đổi tên nhóm",
+  "tribeColor": "Đổi màu nhóm",
+  "tribeColorUpdated": "Đã cập nhật màu nhóm",
+  "inviteShareLink": "Mời / chia sẻ link",
+  "inviteTo": "Mời vào {name}",
+  "@inviteTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteDescription": "Ai có link này đều có thể vào nhóm (tối đa {max} thành viên, hiện có {current}).",
+  "@inviteDescription": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      },
+      "current": {
+        "type": "int"
+      }
+    }
+  },
+  "inviteMembers": "Mời thành viên",
+  "dissolveTribe": "Giải tán nhóm",
+  "dissolveTribeTitle": "Giải tán nhóm?",
+  "dissolveTribeMessage": "Bạn chắc chắn muốn giải tán {name}? Mọi hoạt động của nhóm sẽ bị xoá và các thành viên sẽ nhận được thông báo.",
+  "@dissolveTribeMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dissolve": "Giải tán",
+  "tribeDissolved": "Đã giải tán {name}",
+  "@tribeDissolved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "membersCount": "{count}/{max} thành viên",
+  "@membersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "noUpcomingActivity": "Chưa có hoạt động sắp tới",
+  "pendingForYou": "{count} hoạt động chờ bạn xác nhận",
+  "@pendingForYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roleLeader": "Trưởng nhóm",
+  "roleVice": "Phó nhóm",
+  "roleMember": "Thành viên",
+  "members": "Thành viên",
+  "tribeSubtitle": "{count} thành viên · Giờ {offset}",
+  "@tribeSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "offset": {
+        "type": "String"
+      }
+    }
+  },
+  "createGroupActivity": "Tạo hoạt động cho nhóm",
+  "groupActivitiesToday": "{count} hoạt động nhóm • Hôm nay {date}",
+  "@groupActivitiesToday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "legendFree": "Rảnh",
+  "legendHalf": "Nửa bận",
+  "legendBusy": "Bận",
+  "commonFreeTime": "Giờ rảnh chung",
+  "membersSchedule": "Lịch thành viên",
+  "groupActivities": "Hoạt động nhóm",
+  "noCommonFreeTime": "Ngày này không có khung giờ nào mọi người cùng rảnh. Hãy thử ngày có màu xanh!",
+  "busyCount": "{busy}/{total} bận",
+  "@busyCount": {
+    "placeholders": {
+      "busy": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "everyoneIsFree": "Mọi người đều rảnh",
+  "freeSlotTapToCreate": "Mọi người rảnh · chạm để tạo",
+  "everyoneFree": "Tất cả {total} thành viên đều rảnh 🎉",
+  "@everyoneFree": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "someBusy": "{busy}/{total} thành viên bận. Nội dung lịch riêng được ẩn để bảo vệ quyền riêng tư.",
+  "@someBusy": {
+    "placeholders": {
+      "busy": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "theirTime": "Giờ của họ",
+  "createInThisSlot": "Tạo hoạt động trong khung này",
+  "waitingForYou": "Chờ bạn",
+  "leaveTribe": "Rời nhóm",
+  "leaveTribeTitle": "Rời nhóm?",
+  "leaveTribeMessage": "Bạn chắc chắn muốn rời {tribe}? Các thành viên sẽ nhận được thông báo.",
+  "@leaveTribeMessage": {
+    "placeholders": {
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveAloneMessage": "Nhóm chỉ còn mình bạn, rời nhóm đồng nghĩa với giải tán {tribe}.",
+  "@leaveAloneMessage": {
+    "placeholders": {
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveAsLeaderMessage": "{name} sẽ trở thành trưởng nhóm. Bạn chắc chắn muốn rời {tribe}?",
+  "@leaveAsLeaderMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "leftTribe": "Bạn đã rời {tribe}",
+  "@leftTribe": {
+    "placeholders": {
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseNewLeader": "Chọn trưởng nhóm mới",
+  "chooseNewLeaderMessage": "Nhóm cần có trưởng nhóm, hãy bổ nhiệm một người trước khi rời nhóm.",
+  "appointVice": "Bổ nhiệm phó nhóm",
+  "appointLeader": "Bổ nhiệm trưởng nhóm",
+  "dismissVice": "Bãi nhiệm phó nhóm",
+  "kick": "Mời rời nhóm",
+  "appoint": "Bổ nhiệm",
+  "dismiss": "Bãi nhiệm",
+  "appointedVice": "Đã bổ nhiệm {name} làm phó nhóm.",
+  "@appointedVice": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appointedLeader": "Đã bổ nhiệm {name} làm trưởng nhóm.",
+  "@appointedLeader": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dismissedVice": "Đã bãi nhiệm {name}.",
+  "@dismissedVice": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dismissViceTitle": "Bãi nhiệm phó nhóm?",
+  "dismissViceMessage": "{name} sẽ trở lại làm thành viên.",
+  "@dismissViceMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "transferLeaderTitle": "Chuyển quyền trưởng nhóm?",
+  "transferLeaderToVice": "{name} sẽ trở thành trưởng nhóm. Bạn sẽ trở thành phó nhóm.",
+  "@transferLeaderToVice": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "transferLeaderToMember": "{name} sẽ trở thành trưởng nhóm. Bạn sẽ trở thành thành viên (nhóm đã đủ 3 phó).",
+  "@transferLeaderToMember": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kickTitle": "Mời rời nhóm?",
+  "kickMessage": "Bạn chắc chắn muốn mời {name} rời {tribe}?",
+  "@kickMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "tribe": {
+        "type": "String"
+      }
+    }
+  },
+  "kicked": "Đã mời {name} rời nhóm",
+  "@kicked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "newGroupActivity": "Hoạt động nhóm mới",
+  "activityDetails": "Chi tiết hoạt động",
+  "timezoneNote": "Giờ theo múi giờ của bạn ({offset}). Mỗi thành viên sẽ thấy đúng giờ địa phương của họ.",
+  "@timezoneNote": {
+    "placeholders": {
+      "offset": {
+        "type": "String"
+      }
+    }
+  },
+  "membersFreeCount": "{free}/{total} thành viên rảnh",
+  "@membersFreeCount": {
+    "placeholders": {
+      "free": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "areBusy": "đang bận",
+  "eachMembersTime": "Giờ từng người",
+  "oneHourBefore": "Trước 1 tiếng",
+  "noteHintGroup": "Thêm ghi chú cho mọi người...",
+  "noNote": "Không có ghi chú",
+  "areYouJoining": "Bạn có tham gia không?",
+  "attendanceAccepted": "Tham gia",
+  "attendanceDeclined": "Không tham gia",
+  "attendancePending": "Chưa phản hồi",
+  "nobodyYet": "Chưa có ai",
+  "saveChangesTitle": "Lưu thay đổi?",
+  "createActivityTitle": "Tạo hoạt động?",
+  "warnOverlapsWith": "Trùng giờ với: {list}.",
+  "@warnOverlapsWith": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "warnMembersBusy": "{count} thành viên đang bận trong khung giờ này.",
+  "@warnMembersBusy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "warnReconfirm": "Đổi giờ sẽ yêu cầu mọi người xác nhận lại.",
+  "everyoneWillBeNotified": "Tất cả thành viên sẽ nhận được thông báo.",
+  "savedAndNotified": "Đã lưu và gửi thông báo cho {count} thành viên",
+  "@savedAndNotified": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "errorSlotInPast": "Khung giờ này đã qua rồi",
+  "activityCancelled": "Hoạt động này đã bị huỷ.",
+  "activityEnded": "Hoạt động đã kết thúc.",
+  "respondedAccepted": "Đã xác nhận tham gia. Hoạt động sẽ hiện trong lịch cá nhân của bạn.",
+  "respondedDeclined": "Đã báo không tham gia. Trưởng/phó nhóm sẽ nhận được thông báo.",
+  "errorTribeNameEmpty": "Bạn chưa nhập tên nhóm",
+  "errorTribeNameTooLong": "Tên nhóm dài quá rồi (tối đa {max} ký tự)",
+  "@errorTribeNameTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errorTribeLimit": "Bạn đã ở trong {max} nhóm. Rời bớt một nhóm để tạo hoặc tham gia thêm nhé.",
+  "@errorTribeLimit": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errorInvalidLink": "Link không hợp lệ, hãy kiểm tra lại đường link",
+  "errorTribeNotFound": "Không tìm thấy nhóm nào với link này. Có thể nhóm đã bị giải tán hoặc link bị sai.",
+  "errorTribeFull": "Nhóm đã đủ {max} thành viên",
+  "@errorTribeFull": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errorTribeFullNamed": "\"{name}\" đã đủ {max} thành viên nên không vào thêm được.",
+  "@errorTribeFullNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errorViceLimit": "Đã đủ {max} phó nhóm",
+  "@errorViceLimit": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "errorNeedNewLeader": "Bạn cần bổ nhiệm trưởng nhóm mới trước khi rời",
+  "errorNotAllowed": "Bạn không có quyền thực hiện thao tác này",
+  "errorItemGone": "Dữ liệu này không còn tồn tại",
+  "errorNameLength": "Tên hiển thị phải từ 2 đến 100 ký tự",
+  "errorPasswordTooShort": "Mật khẩu tối thiểu 6 ký tự",
+  "errorEmailTaken": "Email này đã được sử dụng",
+  "errorNameTaken": "Tên hiển thị này đã có người dùng",
+  "errorAccountBanned": "Tài khoản của bạn đang bị khoá",
+  "errorAccountDeleted": "Tài khoản này đã bị xoá",
+  "errorGoogleAccount": "Tài khoản này đăng nhập bằng Google, hãy chọn Đăng nhập với Google",
+  "errorGoogleFailed": "Đăng nhập Google không thành công, vui lòng thử lại",
+  "errorGoogleUnsupported": "Thiết bị này chưa hỗ trợ đăng nhập Google",
+  "errorNetwork": "Không kết nối được máy chủ, vui lòng kiểm tra mạng",
+  "errorServer": "Có lỗi xảy ra, vui lòng thử lại",
+  "forgotPasswordTitle": "Quên mật khẩu",
+  "forgotPasswordMessage": "Nhập email đã đăng ký, chúng tôi sẽ gửi đường dẫn đặt lại mật khẩu.",
+  "forgotPasswordSent": "Nếu email có trong hệ thống, đường dẫn đặt lại mật khẩu đã được gửi",
+  "sendLabel": "Gửi",
+  "sessionEnded": "Phiên đăng nhập đã kết thúc, có thể tài khoản vừa đăng nhập trên máy khác",
+  "changeAvatar": "Đổi ảnh đại diện",
+  "pickFromGallery": "Chọn ảnh từ thư viện",
+  "takePhoto": "Chụp ảnh",
+  "avatarUpdated": "Đã cập nhật ảnh đại diện",
+  "errorBlockEnded": "Hoạt động này đã kết thúc",
+  "pullToRefresh": "Kéo xuống để tải lại",
+  "importTemplateCodeHint": "Nhập mã chia sẻ bạn bè gửi cho bạn, ví dụ GYM4DAY",
+  "errorCodeEmpty": "Bạn chưa nhập mã",
+  "codeCopied": "Đã sao chép mã!",
+  "nTitleReminder": "Sắp tới giờ: {task}",
+  "@nTitleReminder": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyPersonalReminder": "\"{task}\" bắt đầu lúc {time}.",
+  "@nBodyPersonalReminder": {
+    "placeholders": {
+      "task": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "nBodyTribeReminder": "Hoạt động của nhóm {tribe} bắt đầu lúc {time}.",
+  "@nBodyTribeReminder": {
+    "placeholders": {
+      "tribe": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "onbSkip": "Bỏ qua",
+  "onbNext": "Tiếp tục",
+  "onbBack": "Quay lại",
+  "onbWelcomeTitle": "Chào mừng bạn đến với TimeTribe!",
+  "onbWelcomeBody": "Nơi bạn sắp xếp thời gian của mình và hẹn lịch với cả nhóm chỉ trong vài chạm.",
+  "onbPersonalTitle": "Lịch cá nhân gọn gàng",
+  "onbPersonalBody": "Chia ngày thành các khối thời gian, tô màu từng việc, áp dụng lịch mẫu và nhận nhắc nhở trước khi bắt đầu.",
+  "onbTribeTitle": "Hẹn lịch nhóm dễ dàng",
+  "onbTribeBody": "Tạo nhóm (Tribe), mời bạn bè bằng mã và xem ngay khung giờ mọi người cùng rảnh, kể cả khi mỗi người ở một múi giờ.",
+  "onbNotiTitle": "Không bỏ lỡ điều gì",
+  "onbNotiBody": "Nhận thông báo khi nhóm có hoạt động mới, trả lời Tham gia / Không tham gia chỉ với một chạm.",
+  "onbChoiceTitle": "Bạn đã quen với TimeTribe chưa?",
+  "onbChoiceSubtitle": "Chọn một mục để chúng mình hỗ trợ bạn tốt nhất.",
+  "onbChoiceExpert": "Tôi đã biết sử dụng",
+  "onbChoiceExpertDesc": "Vào thẳng trang chủ và bắt đầu ngay.",
+  "onbChoiceNewbie": "Tôi là người mới",
+  "onbChoiceNewbieDesc": "Xem hướng dẫn nhanh các chức năng chính (khoảng 1 phút).",
+  "tourMenuTitle": "Menu chức năng",
+  "tourMenuBody": "Chuyển giữa Lịch cá nhân, Nhóm và Lịch mẫu tại đây.",
+  "tourContentTitle": "Lịch của bạn",
+  "tourContentBody": "Các khối thời gian trong ngày hiện ở đây. Chọn ngày ở phía trên để xem ngày khác, chạm vào một khối để xem hoặc sửa.",
+  "tourAddTitle": "Nút tạo mới",
+  "tourAddBody": "Thêm lịch, tạo hoặc tham gia nhóm, tạo lịch mẫu, tuỳ theo mục bạn đang mở.",
+  "tourNotiTitle": "Thông báo",
+  "tourNotiBody": "Nhắc lịch và lời mời tham gia hoạt động nhóm hiện ở đây. Bạn có thể trả lời ngay trong danh sách.",
+  "tourProfileTitle": "Hồ sơ",
+  "tourProfileBody": "Đổi ảnh đại diện, tên và múi giờ. Đặt đúng múi giờ để nhóm thấy đúng giờ rảnh của bạn.",
+  "tourSettingsTitle": "Cài đặt",
+  "tourSettingsBody": "Đổi giao diện sáng/tối, ngôn ngữ và xem lại hướng dẫn này bất cứ lúc nào.",
+  "tourDone": "Bắt đầu thôi!",
+  "help": "Trợ giúp",
+  "replayTour": "Xem hướng dẫn sử dụng",
+  "replayTourSubtitle": "Giới thiệu nhanh các chức năng chính",
+  "view": "Xem",
+  "testPush": "Gửi thông báo thử",
+  "testPushSubtitle": "Kiểm tra máy có nhận được thông báo đẩy không",
+  "testPushSent": "Đã gửi, thông báo sẽ hiện sau vài giây",
+  "testPushNoToken": "Máy chưa có mã nhận thông báo. Hãy cho phép thông báo cho TimeTribe rồi mở lại app.",
+  "emailPendingLabel": "Đang chờ xác nhận: {email}",
+  "@emailPendingLabel": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "emailVerifySent": "Đã gửi link xác nhận tới {email}. Mở email đó và bấm link để hoàn tất đổi email.",
+  "@emailVerifySent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "emailPendingCancel": "Huỷ đổi email",
+  "emailPendingCancelled": "Đã huỷ yêu cầu đổi email",
+  "emailPendingHint": "Email chỉ thay đổi sau khi bạn bấm link xác nhận gửi tới địa chỉ mới.",
+  "changePassword": "Đổi mật khẩu",
+  "changePasswordSubtitle": "Đổi mật khẩu đăng nhập bằng email",
+  "setPassword": "Tạo mật khẩu",
+  "setPasswordSubtitle": "Tài khoản Google: tạo mật khẩu để đăng nhập bằng email",
+  "currentPassword": "Mật khẩu hiện tại",
+  "newPassword": "Mật khẩu mới",
+  "confirmNewPassword": "Nhập lại mật khẩu mới",
+  "errorWrongCurrentPassword": "Mật khẩu hiện tại không đúng",
+  "errorSamePassword": "Mật khẩu mới phải khác mật khẩu hiện tại",
+  "changePasswordNote": "Sau khi đổi, mọi thiết bị sẽ được đăng xuất và bạn cần đăng nhập lại bằng mật khẩu mới.",
+  "changePasswordPendingEmail": "Yêu cầu đổi email sang {email} đang chờ xác nhận sẽ bị huỷ. Bạn có thể gửi lại yêu cầu sau khi đăng nhập.",
+  "@changePasswordPendingEmail": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordChangedRelogin": "Đã đổi mật khẩu. Hãy đăng nhập lại bằng mật khẩu mới.",
+  "errorEmailTypo": "Email có vẻ bị gõ nhầm. Có phải ý bạn là {email}?",
+  "@errorEmailTypo": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "errorEmailDomainInvalid": "Tên miền của email này không nhận được thư, hãy kiểm tra lại",
+  "errorEmailUnavailable": "Máy chủ chưa gửi được email lúc này, vui lòng thử lại sau",
+  "useSuggestion": "Dùng {email}",
+  "@useSuggestion": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
+}

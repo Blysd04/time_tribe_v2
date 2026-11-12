@@ -1,0 +1,57 @@
+# Blueprint cho Render (https://render.com): Dashboard > New > Blueprint > chọn repo này.
+# Render đọc file này, tạo web service chạy backend bằng backend/Dockerfile.
+# Các biến có "sync: false" là bí mật: Render hỏi giá trị lúc tạo, không lưu trong git.
+services:
+  - type: web
+    name: timetribe-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - backend/**
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DB_NAME
+        value: timetribe
+      - key: ENABLE_REMINDER
+        value: "true"
+      - key: ACCESS_TOKEN_TTL_MINUTES
+        value: "60"
+      - key: REFRESH_TOKEN_TTL_DAYS
+        value: "7"
+      - key: REMEMBER_ME_TTL_DAYS
+        value: "30"
+      - key: RESET_TOKEN_TTL_MINUTES
+        value: "30"
+      - key: SMTP_PORT
+        value: "587"
+      # Render tự sinh chuỗi ngẫu nhiên 256 bit
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGO_URI
+        sync: false
+      - key: FIREBASE_CREDENTIALS_JSON
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      # Gửi email qua Brevo HTTP API: gói Free của Render chặn cổng SMTP nên SMTP không gửi được
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: TimeTribe
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: APK_URL
+        sync: false

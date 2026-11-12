@@ -1,0 +1,8 @@
+# Bí mật, không đưa lên git
+.env
+serviceAccountKey.json
+
+/bin/
+*.exe
+
+.env.production
