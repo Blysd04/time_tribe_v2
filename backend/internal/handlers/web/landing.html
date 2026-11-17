@@ -1021,6 +1021,59 @@
           height: 34px;
         }
       }
+
+      /* Tiếng Việt có dấu chồng hai tầng (Ấ, Ở, Ữ...) cao hơn chữ Latin thường. Montserrat với
+         line-height sát và letter-spacing âm làm dấu dòng dưới chạm chân chữ dòng trên, chữ dính vào nhau.
+         Khi trang ở tiếng Việt (JS đặt <html lang="vi">) nới khoảng dòng và bỏ letter-spacing âm. */
+      html:lang(vi) body {
+        line-height: 1.75;
+      }
+      html:lang(vi) .hero h1 {
+        line-height: 1.26;
+        letter-spacing: -0.005em;
+        margin: 26px 0 24px;
+      }
+      html:lang(vi) .part-head h2,
+      html:lang(vi) .final h2 {
+        line-height: 1.32;
+        letter-spacing: 0;
+      }
+      html:lang(vi) .copy h3 {
+        line-height: 1.4;
+        letter-spacing: 0;
+      }
+      html:lang(vi) .city b {
+        line-height: 1.3;
+        letter-spacing: 0;
+      }
+      html:lang(vi) .app-head b,
+      html:lang(vi) .days b,
+      html:lang(vi) .lane.event b,
+      html:lang(vi) .toast b,
+      html:lang(vi) .note b,
+      html:lang(vi) .steps b {
+        line-height: 1.5;
+      }
+      html:lang(vi) .lane,
+      html:lang(vi) .toast span {
+        line-height: 1.5;
+      }
+      html:lang(vi) .faq summary {
+        line-height: 1.55;
+      }
+      html:lang(vi) .lede,
+      html:lang(vi) .part-head p,
+      html:lang(vi) .copy p {
+        line-height: 1.75;
+      }
+      html:lang(vi) .btn {
+        line-height: 1.35;
+      }
+      html:lang(vi) .kicker,
+      html:lang(vi) .eyebrow {
+        line-height: 1.45;
+        letter-spacing: 0.05em;
+      }
     </style>
   </head>
   <body>
