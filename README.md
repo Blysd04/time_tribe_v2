@@ -4,6 +4,7 @@
 App tự tìm khung giờ cả nhóm cùng rảnh, nhắc lịch bằng thông báo đẩy, và cho chia sẻ lịch mẫu bằng mã.
 
 - **Tải app:** https://timetribe.onrender.com/
+- **Cài đặt từ mã nguồn:** [HUONG_DAN_CAI_DAT.md](HUONG_DAN_CAI_DAT.md)
 - **Ngôn ngữ:** Tiếng Việt, English, Français
 - **Nền tảng:** Android
 
@@ -159,6 +160,9 @@ Không. Lịch, nhóm, lịch mẫu, múi giờ và trạng thái hướng dẫn
 ---
 
 ## 4. Dành cho nhà phát triển
+
+> Hướng dẫn cài đặt chi tiết từng bước (cài công cụ, file cấu hình, tài khoản mẫu, xử lý lỗi):
+> [HUONG_DAN_CAI_DAT.md](HUONG_DAN_CAI_DAT.md)
 
 ### 4.1. Kiến trúc
 
